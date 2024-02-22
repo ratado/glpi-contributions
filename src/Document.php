@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -1893,7 +1893,7 @@ class Document extends CommonDBTM
 
         switch ($name) {
             case 'cleanorphans':
-                return ['description' => __('Clean orphaned documents')];
+                return ['description' => __('Clean orphaned documents: deletes all documents that are not associated with any items.')];
         }
         return [];
     }

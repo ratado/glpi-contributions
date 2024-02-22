@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -842,7 +842,7 @@ abstract class LevelAgreement extends CommonDBChild
                     return $cal->computeEndDate(
                         $start_date,
                         $delay,
-                        $additional_delay,
+                        (int) $additional_delay,
                         $work_in_days,
                         $this->fields['end_of_working_day']
                     );
@@ -852,7 +852,7 @@ abstract class LevelAgreement extends CommonDBChild
            // No calendar defined or invalid calendar
             if ($this->fields['number_time'] >= 0) {
                 $starttime = strtotime($start_date);
-                $endtime   = $starttime + $delay + $additional_delay;
+                $endtime   = $starttime + $delay + (int) $additional_delay;
                 return date('Y-m-d H:i:s', $endtime);
             }
         }

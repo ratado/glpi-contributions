@@ -3,7 +3,7 @@
 The present file will list all changes made to the project; according to the
 [Keep a Changelog](http://keepachangelog.com/) project.
 
-## [10.0.12] unreleased
+## [10.0.13] unreleased
 
 ### Added
 
@@ -20,6 +20,29 @@ The present file will list all changes made to the project; according to the
 #### Changes
 
 #### Deprecated
+
+#### Removed
+
+
+## [10.0.12] 2024-02-01
+
+### Added
+
+### Changed
+- Permissions for historical data and system logs (Administration > Logs) are now managed by "Historical (READ)" and "System Logs (READ)" respectively.
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+- `Entity::cleanEntitySelectorCache()` no longer has any effect as the entity selector is no longer cached as a unique entry
 
 #### Removed
 

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -1173,7 +1173,6 @@ class Toolbox
                 return __('You have the latest available version');
             }
         }
-        return 1;
     }
 
 
@@ -2804,7 +2803,6 @@ class Toolbox
                                 $new_image,
                                 $content_text
                             );
-                            $content_text = $content_text;
                         }
 
                         // If the tag is from another ticket : link document to ticket

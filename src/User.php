@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -248,6 +248,11 @@ class User extends CommonDBTM
        /// Specific case for show_count_on_tabs : global config can forbid
         if ($CFG_GLPI['show_count_on_tabs'] == -1) {
             $this->fields['show_count_on_tabs'] = 0;
+        }
+
+        // Fallback for invalid language
+        if (!isset($CFG_GLPI['languages'][$this->fields["language"]])) {
+            $this->fields["language"] = $CFG_GLPI["language"];
         }
     }
 
@@ -550,15 +555,20 @@ class User extends CommonDBTM
     /**
      * Retrieve a user from the database using it's dn.
      *
-     * @since 0.84
-     *
      * @param string $user_dn dn of the user
      *
      * @return boolean
      */
     public function getFromDBbyDn($user_dn)
     {
-        return $this->getFromDBByCrit(['user_dn' => $user_dn]);
+        /**
+         * We use the 'user_dn_hash' field instead of 'user_dn' for performance reasons.
+         * The 'user_dn_hash' field is a hashed version of the 'user_dn' field
+         * and is indexed in the database, making it faster to search.
+         */
+        return $this->getFromDBByCrit([
+            'user_dn_hash' => md5($user_dn)
+        ]);
     }
 
     /**
@@ -642,7 +652,7 @@ class User extends CommonDBTM
     public function getDefaultEmail()
     {
 
-        if (!isset($this->fields['id'])) {
+        if ($this->isNewItem()) {
             return '';
         }
 
@@ -831,6 +841,14 @@ class User extends CommonDBTM
         return Toolbox::slugify(
             $this->baseComputeCloneName($current_name, $copy_index)
         );
+    }
+
+    public function pre_addInDB()
+    {
+        // Hash user_dn if set
+        if (isset($this->input['user_dn']) && is_string($this->input['user_dn']) && strlen($this->input['user_dn']) > 0) {
+            $this->input['user_dn_hash'] = md5($this->input['user_dn']);
+        }
     }
 
     public function post_addItem()
@@ -1186,8 +1204,6 @@ class User extends CommonDBTM
             );
         }
     }
-
-
 
     /**
      * Apply rules to determine dynamic rights of the user.
@@ -3116,7 +3132,7 @@ HTML;
                 echo "<td><label for='dropdown_language$langrand'>" . __('Language') . "</label></td><td>";
                // Language is stored as null in DB if value is same as the global config.
                 $language = $this->fields["language"];
-                if (null === $this->fields["language"]) {
+                if (null === $this->fields["language"] || !isset($CFG_GLPI['languages'][$this->fields["language"]])) {
                     $language = $CFG_GLPI['language'];
                 }
                 Dropdown::showLanguages(
@@ -3482,6 +3498,12 @@ HTML;
                 unset($this->updates[$key]);
                 unset($this->oldvalues['comment']);
             }
+        }
+
+        // Hash user_dn if is updated
+        if (in_array('user_dn', $this->updates)) {
+            $this->updates[] = 'user_dn_hash';
+            $this->fields['user_dn_hash'] = is_string($this->input['user_dn']) && strlen($this->input['user_dn']) > 0 ? md5($this->input['user_dn']) : null;
         }
     }
 
@@ -6343,6 +6365,13 @@ HTML;
             return null;
         }
 
+        if (null === $this->fields['password_last_update']) {
+            // password never updated
+            return strtotime(
+                '+ ' . $expiration_delay . ' days',
+                strtotime($this->fields['date_creation'])
+            );
+        }
         return strtotime(
             '+ ' . $expiration_delay . ' days',
             strtotime($this->fields['password_last_update'])
@@ -6392,6 +6421,26 @@ HTML;
         }
 
         return $expiration_time < time();
+    }
+
+    public function getPasswordExpirationMessage(): ?string
+    {
+        /** @var array $CFG_GLPI */
+        global $CFG_GLPI;
+        $expiration_msg = null;
+        if ($this->fields['authtype'] == Auth::DB_GLPI && $this->shouldChangePassword()) {
+            $expire_time = $this->getPasswordExpirationTime();
+            $expire_has_passed = $expire_time < time();
+            if ($expire_has_passed) {
+                $expiration_msg = __('Your password has expired.');
+            } else {
+                $expiration_msg = sprintf(
+                    __('Your password will expire on %s.'),
+                    Html::convDateTime(date('Y-m-d H:i:s', $expire_time))
+                );
+            }
+        }
+        return $expiration_msg;
     }
 
     public static function getFriendlyNameSearchCriteria(string $filter): array

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -39,6 +39,7 @@ use CommonDBTM;
 use CommonITILActor;
 use CommonITILObject;
 use Computer;
+use CronTask;
 use DbTestCase;
 use Entity;
 use Glpi\Team\Team;
@@ -58,7 +59,7 @@ use User;
 
 class Ticket extends DbTestCase
 {
-    protected function actorsProvider(): iterable
+    protected function addActorsProvider(): iterable
     {
         $default_use_notifications = 1;
 
@@ -519,7 +520,7 @@ class Ticket extends DbTestCase
     }
 
     /**
-     * @dataProvider actorsProvider
+     * @dataProvider addActorsProvider
      */
     public function testCreateTicketWithActors(array $actors_input, array $expected_actors): void
     {
@@ -538,11 +539,280 @@ class Ticket extends DbTestCase
         $this->checkActors($ticket, $expected_actors);
     }
 
-    /**
-     * @dataProvider actorsProvider
-     */
-    public function testUpdateTicketWithActors(array $actors_input, array $expected_actors): void
+
+    protected function updateActorsProvider(): iterable
     {
+        foreach ($this->addActorsProvider() as $params) {
+            yield [
+                'add_actors_input'       => [],
+                'add_expected_actors'    => [],
+                'update_actors_input'    => $params['actors_input'],
+                'update_expected_actors' => $params['expected_actors'],
+            ];
+
+            // Update without an actor input should not change actors
+            yield [
+                'add_actors_input'       => $params['actors_input'],
+                'add_expected_actors'    => $params['expected_actors'],
+                'update_actors_input'    => [],
+                'update_expected_actors' => $params['expected_actors'],
+            ];
+        }
+
+        $postonly_user_id = getItemByTypeName(User::class, 'post-only', true);
+
+        $actor_types = ['requester', 'assign', 'observer'];
+        foreach ($actor_types as $actor_type) {
+            $actor_type_value = constant(CommonITILActor::class . '::' . strtoupper($actor_type));
+
+            // single email actor updated
+            yield [
+                'add_actors_input'       => [
+                    '_actors' => [
+                        $actor_type => [
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 1,
+                                'alternative_email' => 'extern1@localhost.local',
+                            ],
+                        ],
+                    ],
+                ],
+                'add_expected_actors'    => [
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 1,
+                        'alternative_email' => 'extern1@localhost.local',
+                    ],
+                ],
+                'update_actors_input'    => [
+                    '_actors' => [
+                        $actor_type => [
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 0,
+                                'alternative_email' => 'extern1@localhost.local',
+                            ],
+                        ],
+                    ],
+                ],
+                'update_expected_actors' => [
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 0,
+                        'alternative_email' => 'extern1@localhost.local',
+                    ],
+                ],
+            ];
+
+            // single email actor replaced
+            yield [
+                'add_actors_input'       => [
+                    '_actors' => [
+                        $actor_type => [
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 1,
+                                'alternative_email' => 'extern1@localhost.local',
+                            ],
+                        ],
+                    ],
+                ],
+                'add_expected_actors'    => [
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 1,
+                        'alternative_email' => 'extern1@localhost.local',
+                    ],
+                ],
+                'update_actors_input'    => [
+                    '_actors' => [
+                        $actor_type => [
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 0,
+                                'alternative_email' => 'extern2@localhost.local',
+                            ],
+                        ],
+                    ],
+                ],
+                'update_expected_actors' => [
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 0,
+                        'alternative_email' => 'extern2@localhost.local',
+                    ],
+                ],
+            ];
+
+            // single email actor removed
+            yield [
+                'add_actors_input'       => [
+                    '_actors' => [
+                        $actor_type => [
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 1,
+                                'alternative_email' => 'extern1@localhost.local',
+                            ],
+                        ],
+                    ],
+                ],
+                'add_expected_actors'    => [
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 1,
+                        'alternative_email' => 'extern1@localhost.local',
+                    ],
+                ],
+                'update_actors_input'    => [
+                    '_actors' => [
+                        $actor_type => [
+                        ],
+                    ],
+                ],
+                'update_expected_actors' => [],
+            ];
+
+            // add multiple actors, including multiple email actors, add an update for one of them (in mixed order)
+            // to validate that the expected email actor is updated
+            // also remove an email actor
+            yield [
+                'add_actors_input'       => [
+                    '_actors' => [
+                        $actor_type => [
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 1,
+                                'alternative_email' => 'extern1@localhost.local',
+                            ],
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => $postonly_user_id,
+                                'use_notification'  => 1,
+                                'alternative_email' => '',
+                            ],
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 1,
+                                'alternative_email' => 'extern2@localhost.local',
+                            ],
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 1,
+                                'alternative_email' => 'extern3@localhost.local',
+                            ],
+                        ],
+                    ],
+                ],
+                'add_expected_actors'    => [
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 1,
+                        'alternative_email' => 'extern1@localhost.local',
+                    ],
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => $postonly_user_id,
+                        'use_notification'  => 1,
+                        'alternative_email' => '',
+                    ],
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 1,
+                        'alternative_email' => 'extern2@localhost.local',
+                    ],
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 1,
+                        'alternative_email' => 'extern3@localhost.local',
+                    ],
+                ],
+                'update_actors_input'    => [
+                    '_actors' => [
+                        $actor_type => [
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => $postonly_user_id,
+                                'use_notification'  => 1,
+                                'alternative_email' => '',
+                            ],
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 0,
+                                'alternative_email' => 'extern2@localhost.local',
+                            ],
+                            [
+                                'itemtype'          => User::class,
+                                'items_id'          => 0,
+                                'use_notification'  => 1,
+                                'alternative_email' => 'extern1@localhost.local',
+                            ],
+                        ],
+                    ],
+                ],
+                'update_expected_actors' => [
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 1,
+                        'alternative_email' => 'extern1@localhost.local',
+                    ],
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => $postonly_user_id,
+                        'use_notification'  => 1,
+                        'alternative_email' => '',
+                    ],
+                    [
+                        'type'              => $actor_type_value,
+                        'itemtype'          => User::class,
+                        'items_id'          => 0,
+                        'use_notification'  => 0,
+                        'alternative_email' => 'extern2@localhost.local',
+                    ],
+                ],
+            ];
+        }
+    }
+
+    /**
+     * @dataProvider updateActorsProvider
+     */
+    public function testUpdateTicketWithActors(
+        array $add_actors_input,
+        array $add_expected_actors,
+        array $update_actors_input,
+        array $update_expected_actors
+    ): void {
         $this->login();
 
         $ticket = new \Ticket();
@@ -551,13 +821,15 @@ class Ticket extends DbTestCase
                 'name'        => 'ticket title',
                 'content'     => 'a description',
                 'entities_id' => getItemByTypeName('Entity', '_test_root_entity', true),
-            ]
+            ] + $add_actors_input
         );
         $this->integer($ticket_id)->isGreaterThan(0);
 
-        $this->boolean($ticket->update(['id' => $ticket_id] + $actors_input))->isTrue();
+        $this->checkActors($ticket, $add_expected_actors);
 
-        $this->checkActors($ticket, $expected_actors);
+        $this->boolean($ticket->update(['id' => $ticket_id] + $update_actors_input))->isTrue();
+
+        $this->checkActors($ticket, $update_expected_actors);
     }
 
     /**
@@ -4654,6 +4926,142 @@ HTML
         $this->integer($it->count())->isEqualTo(1);
     }
 
+    public function testCronSurveyCreation(): void
+    {
+        $this->login();
+
+        $root_entity_id    = $this->getTestRootEntity(true);
+        $child_1_entity_id = getItemByTypeName('Entity', '_test_child_1', true);
+        $child_2_entity_id = getItemByTypeName('Entity', '_test_child_2', true);
+
+        $now              = \Session::getCurrentTime();
+        $twelve_hours_ago = date("Y-m-d H:i:s", strtotime('-12 hours'));
+        $six_hours_ago    = date("Y-m-d H:i:s", strtotime('-4 hours'));
+        $four_hours_ago   = date("Y-m-d H:i:s", strtotime('-4 hours'));
+        $two_hours_ago    = date("Y-m-d H:i:s", strtotime('-2 hours'));
+
+        $this->updateItem(
+            Entity::class,
+            0,
+            [
+                'inquest_config' => 1, // GLPI native survey
+                'inquest_rate'   => 100, // always generate a survey for closed tickets
+                'inquest_delay'  => 0, // instant survey generation
+            ]
+        );
+        $this->updateItem(
+            Entity::class,
+            $root_entity_id,
+            [
+                'inquest_config' => Entity::CONFIG_PARENT, // inherits
+            ]
+        );
+        $this->updateItem(
+            Entity::class,
+            $child_1_entity_id,
+            [
+                'inquest_config' => Entity::CONFIG_PARENT, // inherits
+            ]
+        );
+        $this->updateItem(
+            Entity::class,
+            $child_2_entity_id,
+            [
+                'inquest_config' => 1, // GLPI native survey
+                'inquest_rate'   => 100, // always generate a survey for closed tickets
+                'inquest_delay'  => 0, // instant survey generation
+            ]
+        );
+
+        foreach ([0, $root_entity_id, $child_1_entity_id, $child_2_entity_id] as $entity_id) {
+            // Ensure `max_closedate` is in the past
+            $this->updateItem(
+                Entity::class,
+                $entity_id,
+                [
+                    'max_closedate'  => $twelve_hours_ago,
+                ]
+            );
+        }
+
+        // Create a closed ticket on test root entity
+        $_SESSION['glpi_currenttime'] = $six_hours_ago;
+        $root_ticket = $this->createItem(
+            \Ticket::class,
+            [
+                'name'        => "test root entity survey",
+                'content'     => "test root entity survey",
+                'entities_id' => $root_entity_id,
+                'status'      => CommonITILObject::CLOSED
+            ]
+        );
+
+        // Create a closed ticket on test child entity 1
+        $_SESSION['glpi_currenttime'] = $four_hours_ago;
+        $child_1_ticket = $this->createItem(
+            \Ticket::class,
+            [
+                'name'        => "test child entity 1 survey",
+                'content'     => "test child entity 1 survey",
+                'entities_id' => $child_1_entity_id,
+                'status'      => CommonITILObject::CLOSED
+            ]
+        );
+
+        // Create a closed ticket on test child entity 2
+        $_SESSION['glpi_currenttime'] = $two_hours_ago;
+        $child_1_ticket = $this->createItem(
+            \Ticket::class,
+            [
+                'name'        => "test child entity 2 survey",
+                'content'     => "test child entity 2 survey",
+                'entities_id' => $child_2_entity_id,
+                'status'      => CommonITILObject::CLOSED
+            ]
+        );
+
+        // Ensure no survey has been created yet
+        $ticket_satisfaction = new \TicketSatisfaction();
+        $this->integer(count($ticket_satisfaction->find(['tickets_id' => $root_ticket->getID()])))->isEqualTo(0);
+        $this->integer(count($ticket_satisfaction->find(['tickets_id' => $child_1_ticket->getID()])))->isEqualTo(0);
+
+        // Launch cron to create surveys
+        CronTask::launch(
+            - CronTask::MODE_INTERNAL, // force
+            1,
+            'createinquest'
+        );
+
+        // Ensure survey has been created
+        $ticket_satisfaction = new \TicketSatisfaction();
+        $this->integer(count($ticket_satisfaction->find(['tickets_id' => $root_ticket->getID()])))->isEqualTo(1);
+        $this->integer(count($ticket_satisfaction->find(['tickets_id' => $child_1_ticket->getID()])))->isEqualTo(1);
+
+        // Check `max_closedate` values in DB
+        $expected_db_values = [
+            0                  => $four_hours_ago,   // last ticket closedate from entities that inherits the config
+            $root_entity_id    => $twelve_hours_ago, // not updated as it inherits the config
+            $child_1_entity_id => $twelve_hours_ago, // not updated as it inherits the config
+            $child_2_entity_id => $two_hours_ago,    // last ticket closedate from self as it has its own config
+        ];
+        foreach ($expected_db_values as $entity_id => $date) {
+            $entity = new Entity();
+            $this->boolean($entity->getFromDB($entity_id))->isTrue();
+            $this->string($entity->fields['max_closedate'])->isEqualTo($date);
+        }
+
+        // Check `max_closedate` returned by `Entity::getUsedConfig()`
+        $expected_config_values = [
+            0                  => $four_hours_ago, // last ticket closedate from entities that inherits the config
+            $root_entity_id    => $four_hours_ago, // inherited value
+            $child_1_entity_id => $four_hours_ago, // inherited value
+            $child_2_entity_id => $two_hours_ago,  // last ticket closedate from self as it has its own config
+        ];
+        foreach ($expected_config_values as $entity_id => $date) {
+            $this->string(Entity::getUsedConfig('inquest_config', $entity_id, 'max_closedate'))->isEqualTo($date);
+        }
+    }
+
     public function testAddAssignWithoutUpdateRight()
     {
         $this->login();
@@ -6421,5 +6829,61 @@ HTML
 
         $this->boolean(property_exists($ticket, 'plugin_xxx_data'))->isTrue();
         $this->string($ticket->plugin_xxx_data)->isEqualTo('test');
+    }
+
+    public function testRestrictedDropdownValues()
+    {
+        $this->login();
+
+        $fn_dropdown_has_id = static function ($dropdown_values, $id) use (&$fn_dropdown_has_id) {
+            foreach ($dropdown_values as $dropdown_value) {
+                if (isset($dropdown_value['children'])) {
+                    if ($fn_dropdown_has_id($dropdown_value['children'], $id)) {
+                        return true;
+                    }
+                } elseif ((int) $dropdown_value['id'] === (int) $id) {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        $ticket = new \Ticket();
+        $this->integer($not_my_tickets_id = $ticket->add([
+            'name'      => __FUNCTION__,
+            'content'   => __FUNCTION__,
+            'users_id'  => $_SESSION['glpiID'] + 1, // Not current user
+            '_skip_auto_assign' => true,
+            'entities_id' => $this->getTestRootEntity(true),
+        ]))->isGreaterThan(0);
+
+        $dropdown_params = [
+            'itemtype' => \Ticket::class,
+            'entity_restrict' => -1,
+            'page_limit' => 1000
+        ];
+        $idor = \Session::getNewIDORToken(\Ticket::class, $dropdown_params);
+        $values = \Dropdown::getDropdownValue($dropdown_params + ['_idor_token' => $idor], false);
+        $this->array($values['results'])->size->isGreaterThan(1);
+        $this->boolean($fn_dropdown_has_id($values['results'], $not_my_tickets_id))->isTrue();
+
+        // Remove permission to see all tickets
+        $_SESSION['glpiactiveprofile']['ticket'] = READ;
+        $idor = \Session::getNewIDORToken(\Ticket::class, $dropdown_params);
+        $values = \Dropdown::getDropdownValue($dropdown_params + ['_idor_token' => $idor], false);
+        $this->array($values['results'])->size->isGreaterThan(1);
+        $this->boolean($fn_dropdown_has_id($values['results'], $not_my_tickets_id))->isFalse();
+
+        // Add user as requester
+        $ticket_user = new \Ticket_User();
+        $ticket_user->add([
+            'tickets_id' => $not_my_tickets_id,
+            'users_id' => $_SESSION['glpiID'],
+            'type' => CommonITILActor::REQUESTER,
+        ]);
+        $idor = \Session::getNewIDORToken(\Ticket::class, $dropdown_params);
+        $values = \Dropdown::getDropdownValue($dropdown_params + ['_idor_token' => $idor], false);
+        $this->array($values['results'])->size->isGreaterThan(1);
+        $this->boolean($fn_dropdown_has_id($values['results'], $not_my_tickets_id))->isTrue();
     }
 }

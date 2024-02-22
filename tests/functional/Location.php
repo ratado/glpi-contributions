@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -314,6 +314,16 @@ class Location extends DbTestCase
 
         foreach ($imported as $location_data) {
             $this->integer(countElementsInTable(\Location::getTable(), $location_data))->isEqualTo(1, json_encode($location_data));
+        }
+    }
+
+    public function testMaybeLocated()
+    {
+        global $CFG_GLPI;
+
+        foreach ($CFG_GLPI['location_types'] as $type) {
+            $item = new $type();
+            $this->boolean($item->maybeLocated())->isTrue($type . ' cannot be located!');
         }
     }
 }

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -2867,7 +2867,11 @@ class AuthLDAP extends CommonDBTM
 
         $search_parameters = [];
        //Connect to the directory
-        if (isset(self::$conn_cache[$ldap_server])) {
+        if (
+            isset(self::$conn_cache[$ldap_server])
+            // check that connection is still alive
+            && @ldap_read(self::$conn_cache[$ldap_server], '', '(objectclass=*)', ['dn'], 0, 1) !== false
+        ) {
             $ds = self::$conn_cache[$ldap_server];
         } else {
             $ds = $config_ldap->connect();
@@ -2891,7 +2895,12 @@ class AuthLDAP extends CommonDBTM
             ];
 
             try {
-                $infos = self::searchUserDn($ds, $attribs);
+                $error = null;
+                $infos = self::searchUserDn($ds, $attribs, $error);
+
+                if ($error === true) {
+                    return false;
+                }
 
                 if ($infos && $infos['dn']) {
                     $user_dn = $infos['dn'];
@@ -3524,11 +3533,12 @@ class AuthLDAP extends CommonDBTM
      *          - search_parameters array of search parameters
      *          - user_params  array of parameters : method (IDENTIFIER_LOGIN or IDENTIFIER_EMAIL) + value
      *          - condition : ldap condition used
+     * @param bool|null $error  Boolean flag that will be set to `true` if a LDAP error occurs during operation
      *
      * @return array|boolean dn of the user, else false
      * @throws \RuntimeException
      */
-    public static function searchUserDn($ds, $options = [])
+    public static function searchUserDn($ds, $options = [], ?bool &$error = null)
     {
 
         $values = [
@@ -3557,7 +3567,11 @@ class AuthLDAP extends CommonDBTM
        //First : if a user dn is provided, look for it in the directory
        //Before trying to find the user using his login_field
         if ($values['user_dn']) {
-            $info = self::getUserByDn($ds, $values['user_dn'], $attrs);
+            $info = self::getUserByDn($ds, $values['user_dn'], $attrs, true, $error);
+
+            if ($error === true) {
+                return false;
+            }
 
             if ($info) {
                 $ret = [
@@ -3575,6 +3589,8 @@ class AuthLDAP extends CommonDBTM
         $filter_value = $values['user_params']['value'];
         if ($values['login_field'] == 'objectguid' && self::isValidGuid($filter_value)) {
             $filter_value = self::guidToHex($filter_value);
+        } else {
+            $filter_value = ldap_escape($filter_value, '', LDAP_ESCAPE_FILTER);
         }
         $filter = "(" . $values['login_field'] . "=" . $filter_value . ")";
 
@@ -3586,6 +3602,7 @@ class AuthLDAP extends CommonDBTM
         if ($result === false) {
             // 32 = LDAP_NO_SUCH_OBJECT => This error can be silented as it just means that search produces no result.
             if (ldap_errno($ds) !== 32) {
+                $error = true;
                 trigger_error(
                     static::buildError(
                         $ds,
@@ -3598,7 +3615,11 @@ class AuthLDAP extends CommonDBTM
         }
 
         //search has been done, let's check for found results
-        $info = self::get_entries_clean($ds, $result);
+        $info = self::get_entries_clean($ds, $result, $error);
+
+        if ($error === true) {
+            return false;
+        }
 
         if (is_array($info) && ($info['count'] == 1)) {
             $ret = [
@@ -3617,15 +3638,16 @@ class AuthLDAP extends CommonDBTM
     /**
      * Get an object from LDAP by giving his DN
      *
-     * @param resource $ds        the active connection to the directory
-     * @param string   $condition the LDAP filter to use for the search
-     * @param string   $dn        DN of the object
-     * @param array    $attrs     Array of the attributes to retrieve
-     * @param boolean  $clean     (true by default)
+     * @param resource  $ds         the active connection to the directory
+     * @param string    $condition  the LDAP filter to use for the search
+     * @param string    $dn         DN of the object
+     * @param array     $attrs      Array of the attributes to retrieve
+     * @param boolean   $clean      (true by default)
+     * @param bool|null $error      Boolean flag that will be set to `true` if a LDAP error occurs during operation
      *
      * @return array|boolean false if failed
      */
-    public static function getObjectByDn($ds, $condition, $dn, $attrs = [], $clean = true)
+    public static function getObjectByDn($ds, $condition, $dn, $attrs = [], $clean = true, ?bool &$error = null)
     {
         if (!$clean) {
             Toolbox::deprecated('Use of $clean = false is deprecated');
@@ -3635,6 +3657,7 @@ class AuthLDAP extends CommonDBTM
         if ($result === false) {
             // 32 = LDAP_NO_SUCH_OBJECT => This error can be silented as it just means that search produces no result.
             if (ldap_errno($ds) !== 32) {
+                $error = true;
                 trigger_error(
                     static::buildError(
                         $ds,
@@ -3646,7 +3669,12 @@ class AuthLDAP extends CommonDBTM
             return false;
         }
 
-        $info = self::get_entries_clean($ds, $result);
+        $info = self::get_entries_clean($ds, $result, $error);
+
+        if ($error === true) {
+            return false;
+        }
+
         if (is_array($info) && ($info['count'] == 1)) {
             return $info[0];
         }
@@ -3658,20 +3686,21 @@ class AuthLDAP extends CommonDBTM
     /**
      * Get user by domain name
      *
-     * @param resource $ds      the active connection to the directory
-     * @param string   $user_dn domain name
-     * @param array    $attrs   attributes
-     * @param boolean  $clean   (true by default)
+     * @param resource  $ds         the active connection to the directory
+     * @param string    $user_dn    domain name
+     * @param array     $attrs      attributes
+     * @param boolean   $clean      (true by default)
+     * @param bool|null $error      Boolean flag that will be set to `true` if a LDAP error occurs during operation
      *
      * @return array|boolean false if failed
      */
-    public static function getUserByDn($ds, $user_dn, $attrs, $clean = true)
+    public static function getUserByDn($ds, $user_dn, $attrs, $clean = true, ?bool &$error = null)
     {
         if (!$clean) {
             Toolbox::deprecated('Use of $clean = false is deprecated');
         }
 
-        return self::getObjectByDn($ds, "objectClass=*", $user_dn, $attrs);
+        return self::getObjectByDn($ds, "objectClass=*", $user_dn, $attrs, $clean, $error);
     }
 
     /**
@@ -4464,15 +4493,17 @@ class AuthLDAP extends CommonDBTM
     /**
      * Get ldap query results and clean them at the same time
      *
-     * @param resource $link   link to the directory connection
-     * @param array    $result the query results
+     * @param resource  $link   link to the directory connection
+     * @param array     $result the query results
+     * @param bool|null $error  Boolean flag that will be set to `true` if a LDAP error occurs during operation
      *
      * @return array which contains ldap query results
      */
-    public static function get_entries_clean($link, $result)
+    public static function get_entries_clean($link, $result, ?bool &$error = null)
     {
         $entries = @ldap_get_entries($link, $result);
         if ($entries === false) {
+            $error = true;
             trigger_error(
                 static::buildError(
                     $link,

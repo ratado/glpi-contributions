@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -544,12 +544,14 @@ class Auth extends CommonGLPI
                 } else {
                     // Starting from version 1.6.0, `$service_base_url` argument was added at 5th position, and `$changeSessionID`
                     // was moved at 6th position.
+                    $url_base = parse_url($CFG_GLPI["url_base"]);
+                    $service_base_url = $url_base["scheme"] . "://" . $url_base["host"] . (isset($url_base["port"]) ? ":" . $url_base["port"] : "");
                     phpCAS::client(
                         constant($CFG_GLPI["cas_version"]),
                         $CFG_GLPI["cas_host"],
                         intval($CFG_GLPI["cas_port"]),
                         $CFG_GLPI["cas_uri"],
-                        $CFG_GLPI["url_base"],
+                        $service_base_url,
                         false
                     );
                 }
@@ -825,7 +827,7 @@ class Auth extends CommonGLPI
                 $ldapservers = [];
                 $ldapservers_status = false;
                //if LDAP enabled too, get user's infos from LDAP
-                if (Toolbox::canUseLdap()) {
+                if ((!isset($this->user->fields['authtype']) || $this->user->fields['authtype'] === self::LDAP) && Toolbox::canUseLdap()) {
                    //User has already authenticated, at least once: it's ldap server if filled
                     if (
                         isset($this->user->fields["auths_id"])

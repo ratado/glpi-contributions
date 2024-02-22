@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -312,7 +312,12 @@ class Reminder extends CommonDBVisible implements
             ];
 
             $or = ['glpi_groups_reminders.no_entity_restriction' => 1];
-            $restrict = getEntitiesRestrictCriteria('glpi_groups_reminders', '', '', true);
+            $restrict = getEntitiesRestrictCriteria(
+                'glpi_groups_reminders',
+                '',
+                $_SESSION['glpiactiveentities'],
+                true
+            );
             if (count($restrict)) {
                 $or = $or + $restrict;
             }
@@ -338,7 +343,12 @@ class Reminder extends CommonDBVisible implements
             ];
 
             $or = ['glpi_profiles_reminders.no_entity_restriction' => 1];
-            $restrict = getEntitiesRestrictCriteria('glpi_profiles_reminders', '', '', true);
+            $restrict = getEntitiesRestrictCriteria(
+                'glpi_profiles_reminders',
+                '',
+                $_SESSION['glpiactiveentities'],
+                true
+            );
             if (count($restrict)) {
                 $or = $or + $restrict;
             }

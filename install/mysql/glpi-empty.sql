@@ -5,7 +5,7 @@
 --
 -- http://glpi-project.org
 --
--- @copyright 2015-2023 Teclib' and contributors.
+-- @copyright 2015-2024 Teclib' and contributors.
 -- @copyright 2003-2014 by the INDEPNET Development Team.
 -- @licence   https://www.gnu.org/licenses/gpl-3.0.html
 --
@@ -1984,6 +1984,7 @@ CREATE TABLE `glpi_items_devicecameras` (
   `is_dynamic` tinyint NOT NULL DEFAULT '0',
   `entities_id` int unsigned NOT NULL DEFAULT '0',
   `is_recursive` tinyint NOT NULL DEFAULT '0',
+  `locations_id` int unsigned NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `items_id` (`items_id`),
   KEY `devicecameras_id` (`devicecameras_id`),
@@ -1991,6 +1992,7 @@ CREATE TABLE `glpi_items_devicecameras` (
   KEY `is_dynamic` (`is_dynamic`),
   KEY `entities_id` (`entities_id`),
   KEY `is_recursive` (`is_recursive`),
+  KEY `locations_id` (`locations_id`),
   KEY `item` (`itemtype`,`items_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
@@ -7610,6 +7612,7 @@ CREATE TABLE `glpi_users` (
   `password_forget_token` char(40) DEFAULT NULL,
   `password_forget_token_date` timestamp NULL DEFAULT NULL,
   `user_dn` text,
+  `user_dn_hash` varchar(32),
   `registration_number` varchar(255) DEFAULT NULL,
   `show_count_on_tabs` tinyint DEFAULT NULL,
   `refresh_views` int DEFAULT NULL,
@@ -7663,8 +7666,8 @@ CREATE TABLE `glpi_users` (
   `default_dashboard_mini_ticket` varchar(100) DEFAULT NULL,
   `default_central_tab` tinyint DEFAULT '0',
   `nickname` varchar(255) DEFAULT NULL,
-  `timeline_action_btn_layout` tinyint DEFAULT '0',
-  `timeline_date_format` tinyint DEFAULT '0',
+  `timeline_action_btn_layout` tinyint DEFAULT NULL,
+  `timeline_date_format` tinyint DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unicityloginauth` (`name`,`authtype`,`auths_id`),
   KEY `firstname` (`firstname`),
@@ -7686,7 +7689,8 @@ CREATE TABLE `glpi_users` (
   KEY `groups_id` (`groups_id`),
   KEY `users_id_supervisor` (`users_id_supervisor`),
   KEY `auths_id` (`auths_id`),
-  KEY `default_requesttypes_id` (`default_requesttypes_id`)
+  KEY `default_requesttypes_id` (`default_requesttypes_id`),
+  KEY `user_dn_hash` (`user_dn_hash`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 

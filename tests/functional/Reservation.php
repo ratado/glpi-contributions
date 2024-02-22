@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -51,12 +51,130 @@ class Reservation extends DbTestCase
             "name"        => "test",
             "entities_id" => $root,
         ]);
-        $this->createItem("ReservationItem", [
+        $reservation_item = $this->createItem("ReservationItem", [
             "itemtype"    => "Computer",
             "items_id"    => $computer->getID(),
             "is_active"   => true,
             "entities_id" => $root,
         ]);
+        // Nothing showing because we are not logged in
+        $this->array(\Reservation::getReservableItemtypes())->size->isEqualTo(0);
+
+        $this->login();
         $this->array(\Reservation::getReservableItemtypes())->isEqualTo(["Computer"]);
+
+        \Session::changeActiveEntities(getItemByTypeName("Entity", "_test_child_1", true));
+        // Nothing showing because we are now in a child entity and the computer is not recursive
+        $this->array(\Reservation::getReservableItemtypes())->size->isEqualTo(0);
+
+        //Make computer recursive and check again
+        $this->boolean($computer->update([
+            'id' => $computer->getID(),
+            "is_recursive" => true,
+        ]))->isTrue();
+        $this->boolean($reservation_item->update([
+            'id' => $reservation_item->getID(),
+            "is_recursive" => true,
+        ]))->isTrue();
+        $this->array(\Reservation::getReservableItemtypes())->isEqualTo(["Computer"]);
+    }
+
+    public function testAddRecurrentReservation(): void
+    {
+        $this->login();
+        $computer = $this->createItem("Computer", [
+            "name"        => "test",
+            "entities_id" => 0,
+        ]);
+        $res_item = $this->createItem("ReservationItem", [
+            "itemtype"    => "Computer",
+            "items_id"    => $computer->getID(),
+            "is_active"   => true,
+            "entities_id" => 0,
+        ]);
+        $reservation = new \Reservation();
+        $this->integer(count($reservation->find()))->isEqualTo(0);
+
+        \Reservation::handleAddForm([
+            "itemtype"  => "Computer",
+            "items" => [
+                0       => (string) $res_item->fields["id"]
+            ],
+            "resa" => [
+                "begin" => "2023-11-02 00:00:00",
+                "end"   => "2023-11-03 00:00:00",
+            ],
+            "periodicity" => [
+                "type"  => "week",
+                "end"   => "2023-11-30",
+                "days"  => [
+                    "Wednesday" => "on",
+                ],
+            ],
+            "users_id"  => getItemByTypeName('User', TU_USER, true),
+            "comment"   => ""
+        ]);
+        $this->integer(count($reservation->find()))->isEqualTo(5);
+    }
+
+    protected function dataAddReservationTest(): array
+    {
+        return [
+            [
+                'begin'                   => "2023-11-01 00:00:00",
+                'end'                     => "2023-11-01 00:10:00",
+            ],
+            [
+                'begin'                   => "2023-11-02 00:00:00",
+                'end'                     => "2023-11-25 23:00:00",
+            ],
+            [
+                'begin'                   => "2023-11-03 00:00:00",
+                'end'                     => "2023-11-04 00:00:00",
+            ]
+        ];
+    }
+
+    /**
+     * @dataprovider dataAddReservationTest
+     */
+    public function testAddJustOneReservation($begin, $end): void
+    {
+        $this->login();
+        $computer = $this->createItem("Computer", [
+            "name"        => "test",
+            "entities_id" => 0,
+        ]);
+        $res_item = $this->createItem("ReservationItem", [
+            "itemtype"    => "Computer",
+            "items_id"    => $computer->getID(),
+            "is_active"   => true,
+            "entities_id" => 0,
+        ]);
+
+        $data = [
+            'begin'                   => $begin,
+            'end'                     => $end,
+            'reservationitems_id'     => $res_item->getID(),
+            'users_id'                => getItemByTypeName('User', TU_USER, true),
+        ];
+        $reservation = new \Reservation();
+        $this->integer(count($reservation->find($data)))->isEqualTo(0);
+
+        $reservation->add($data);
+        $this->integer(count($reservation->find($data)))->isEqualTo(1);
+    }
+
+    public function testDeleteRecurrentReservation(): void
+    {
+        self::testAddRecurrentReservation();
+        $reservation = new \Reservation();
+        $this->integer(count($reservation->find()))->isEqualTo(5);
+        foreach ($reservation->find() as $res) {
+            $firstres = $res;
+            break;
+        }
+        $reservation->delete($firstres + ['_delete_group' => 'on']);
+        $this->integer(count($reservation->find()))->isEqualTo(0);
     }
 }

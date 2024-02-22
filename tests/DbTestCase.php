@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -119,7 +119,7 @@ class DbTestCase extends \GLPITestCase
     {
         $input = Sanitizer::dbUnescapeRecursive($input); // slashes in input should not be stored in DB
 
-        $this->integer((int)$id)->isGreaterThan(0);
+        $this->integer($id)->isGreaterThan($object instanceof Entity ? -1 : 0);
         $this->boolean($object->getFromDB($id))->isTrue();
         $this->variable($object->getField('id'))->isEqualTo($id);
 

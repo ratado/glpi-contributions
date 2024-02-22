@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -3744,9 +3744,26 @@ JAVASCRIPT;
                                 $name1 = 'realname';
                                 $name2 = 'firstname';
                             }
-                            $criterion = "`" . $table . $addtable . "`.`$name1` $order,
-                                 `" . $table . $addtable . "`.`$name2` $order,
-                                 `" . $table . $addtable . "`.`name` $order";
+                            $addaltemail = "";
+                            if (
+                                in_array($itemtype, ['Ticket', 'Change', 'Problem'])
+                                && isset($searchopt[$ID]['joinparams']['beforejoin']['table'])
+                                && in_array($searchopt[$ID]['joinparams']['beforejoin']['table'], ['glpi_tickets_users', 'glpi_changes_users', 'glpi_problems_users'])
+                            ) { // For tickets_users
+                                $ticket_user_table = $searchopt[$ID]['joinparams']['beforejoin']['table'] . "_" .
+                                    self::computeComplexJoinID($searchopt[$ID]['joinparams']['beforejoin']['joinparams']);
+                                $addaltemail = ",
+                                IFNULL(`$ticket_user_table`.`alternative_email`, '')";
+                            }
+                            $criterion = "GROUP_CONCAT(DISTINCT CONCAT(
+                                IFNULL(`$table$addtable`.`$name1`, ''),
+                                IFNULL(`$table$addtable`.`$name2`, ''),
+                                IFNULL(`$table$addtable`.`name`, '')$addaltemail
+                            ) ORDER BY CONCAT(
+                                IFNULL(`$table$addtable`.`$name1`, ''),
+                                IFNULL(`$table$addtable`.`$name2`, ''),
+                                IFNULL(`$table$addtable`.`name`, '')$addaltemail) ASC
+                            ) $order";
                         } else {
                             $criterion = "`" . $table . $addtable . "`.`name` $order";
                         }

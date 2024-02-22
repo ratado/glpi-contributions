@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2023 Teclib' and contributors.
+ * @copyright 2015-2024 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -858,6 +858,7 @@ $RELATION = [
         'glpi_devicesensors'             => 'locations_id',
         'glpi_enclosures'                => 'locations_id',
         'glpi_items_devicebatteries'     => 'locations_id',
+        'glpi_items_devicecameras'       => 'locations_id',
         'glpi_items_devicecases'         => 'locations_id',
         'glpi_items_devicecontrols'      => 'locations_id',
         'glpi_items_devicedrives'        => 'locations_id',
