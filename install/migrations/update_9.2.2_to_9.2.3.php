@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -54,11 +53,11 @@ function update922to923()
     $updateresult     = true;
     $ADDTODISPLAYPREF = [];
 
-   //TRANS: %s is the number of new version
+    //TRANS: %s is the number of new version
     $migration->displayTitle(sprintf(__('Update to %s'), '9.2.3'));
     $migration->setVersion('9.2.3');
 
-   //add a column for the model
+    //add a column for the model
     if (!$DB->fieldExists("glpi_devicepcis", "devicenetworkcardmodels_id")) {
         $migration->addField(
             "glpi_devicepcis",
@@ -69,10 +68,10 @@ function update922to923()
         $migration->addKey('glpi_devicepcis', 'devicenetworkcardmodels_id');
     }
 
-   //fix notificationtemplates_id in translations table
+    //fix notificationtemplates_id in translations table
     $notifs = [
         'Certificate',
-        'SavedSearch_Alert'
+        'SavedSearch_Alert',
     ];
     foreach ($notifs as $notif) {
         $notification = new Notification();
@@ -95,7 +94,7 @@ function update922to923()
                     [
                         'notifications_id'            =>  $notification->fields['id'],
                         'notificationtemplates_id'    => $template->fields['id'],
-                        'mode'                        => Notification_NotificationTemplate::MODE_MAIL
+                        'mode'                        => Notification_NotificationTemplate::MODE_MAIL,
                     ]
                 ) == 0
             ) {
@@ -103,13 +102,13 @@ function update922to923()
                 $DB->insertOrDie("glpi_notifications_notificationtemplates", [
                     'notifications_id'         => $notification->fields['id'],
                     'mode'                     => Notification_NotificationTemplate::MODE_MAIL,
-                    'notificationtemplates_id' => $template->fields['id']
+                    'notificationtemplates_id' => $template->fields['id'],
                 ]);
             }
         }
     }
 
-   // ************ Keep it at the end **************
+    // ************ Keep it at the end **************
     $migration->executeMigration();
 
     return $updateresult;

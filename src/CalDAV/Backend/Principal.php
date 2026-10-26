@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -53,9 +53,9 @@ class Principal extends AbstractBackend
     use CalDAVPrincipalsTrait;
     use CalDAVUriUtilTrait;
 
-    const PRINCIPALS_ROOT = 'principals';
-    const PREFIX_GROUPS   = self::PRINCIPALS_ROOT . '/groups';
-    const PREFIX_USERS    = self::PRINCIPALS_ROOT . '/users';
+    public const PRINCIPALS_ROOT = 'principals';
+    public const PREFIX_GROUPS   = self::PRINCIPALS_ROOT . '/groups';
+    public const PREFIX_USERS    = self::PRINCIPALS_ROOT . '/users';
 
     public function getPrincipalsByPrefix($prefixPath)
     {
@@ -162,7 +162,7 @@ class Principal extends AbstractBackend
                 ],
                 'WHERE'     => [
                     \Group_User::getTableField('groups_id') => $group_id,
-                ]
+                ],
             ]
         );
         foreach ($users_iterator as $user_fields) {
@@ -213,12 +213,12 @@ class Principal extends AbstractBackend
                                 ),
                             ],
                         ],
-                    ]
+                    ],
                 ];
                 break;
             default:
                 return []; // No groups if principal is not a user or a group
-            break;
+                break;
         }
 
         $groups_iterator = $DB->request($groups_query);

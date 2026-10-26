@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -37,15 +37,16 @@
 /// @since 0.83
 class Reminder_User extends CommonDBRelation
 {
-   // From CommonDBRelation
+    // From CommonDBRelation
     public static $itemtype_1          = 'Reminder';
     public static $items_id_1          = 'reminders_id';
     public static $itemtype_2          = 'User';
     public static $items_id_2          = 'users_id';
 
-    public static $checkItem_2_Rights  = self::DONT_CHECK_ITEM_RIGHTS;
+    public static $checkItem_2_Rights  = self::HAVE_VIEW_RIGHT_ON_ITEM;
     public static $logs_for_item_2     = false;
 
+    public static $checkAlwaysBothItems   = true;
 
     /**
      * Get users for a reminder
@@ -64,8 +65,8 @@ class Reminder_User extends CommonDBRelation
         $iterator = $DB->request([
             'FROM'   => self::getTable(),
             'WHERE'  => [
-                'reminders_id' => $reminders_id
-            ]
+                'reminders_id' => $reminders_id,
+            ],
         ]);
 
         foreach ($iterator as $data) {

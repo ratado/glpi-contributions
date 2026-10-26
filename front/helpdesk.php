@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -40,7 +40,7 @@ $SECURITY_STRATEGY = 'no_check'; // Anonymous access may be allowed by configura
 
 include('../inc/includes.php');
 
-if ((int)$CFG_GLPI['use_anonymous_helpdesk'] === 0) {
+if ((int) $CFG_GLPI['use_anonymous_helpdesk'] === 0) {
     Html::redirect($CFG_GLPI["root_doc"] . "/front/central.php");
 }
 

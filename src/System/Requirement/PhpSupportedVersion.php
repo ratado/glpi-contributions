@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -46,7 +46,7 @@ class PhpSupportedVersion extends AbstractRequirement
      * @var string
      * @see https://www.php.net/supported-versions
      */
-    private const MIN_SECURITY_SUPPORTED_VERSION = '8.1';
+    private const MIN_SECURITY_SUPPORTED_VERSION = '8.2';
 
     public function __construct()
     {
@@ -60,7 +60,7 @@ class PhpSupportedVersion extends AbstractRequirement
 
     protected function check()
     {
-        $php_version =  preg_replace('/^(\d+\.\d+)\..*$/', '$1', phpversion());
+        $php_version =  preg_replace('/^(\d+\.\d+)\..*$/', '$1', $this->getPHPVersion());
 
         if (version_compare($php_version, self::MIN_SECURITY_SUPPORTED_VERSION, '>=')) {
             $this->validated = true;
@@ -71,5 +71,10 @@ class PhpSupportedVersion extends AbstractRequirement
             $this->validation_messages[] = __('Even if GLPI still supports this PHP version, an upgrade to a more recent PHP version is recommended.');
             $this->validation_messages[] = __('Indeed, this PHP version may contain unpatched security vulnerabilities.');
         }
+    }
+
+    protected function getPHPVersion(): string
+    {
+        return phpversion();
     }
 }

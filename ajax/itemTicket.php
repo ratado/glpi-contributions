@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -41,30 +41,37 @@ Html::header_nocache();
 Session::checkLoginUser();
 $item_ticket = new Item_Ticket();
 
-switch ($_GET['action']) {
+switch ($_POST['action']) {
     case 'add':
-        if (isset($_GET['my_items']) && !empty($_GET['my_items'])) {
-            list($_GET['itemtype'], $_GET['items_id']) = explode('_', $_GET['my_items']);
+        if (!empty($_POST['my_items'])) {
+            [$_POST['itemtype'], $_POST['items_id']] = explode('_', $_POST['my_items']);
         }
-        if (isset($_GET['items_id']) && isset($_GET['itemtype']) && !empty($_GET['items_id'])) {
-            $_GET['params']['items_id'][$_GET['itemtype']][$_GET['items_id']] = $_GET['items_id'];
+        if (!empty($_POST['itemtype']) && !empty($_POST['items_id'])) {
+            $_POST['params']['items_id'][$_POST['itemtype']][$_POST['items_id']] = $_POST['items_id'];
         }
-        Item_Ticket::itemAddForm(new Ticket(), $_GET['params']);
+        Item_Ticket::itemAddForm(new Ticket(), $_POST['params']);
         break;
 
     case 'delete':
-        if (isset($_GET['items_id']) && isset($_GET['itemtype']) && !empty($_GET['items_id'])) {
+        if (!empty($_POST['itemtype']) && !empty($_POST['items_id'])) {
             $deleted = true;
-            if ($_GET['params']['id'] > 0) {
-                $deleted = $item_ticket->deleteByCriteria(['tickets_id' => $_GET['params']['id'],
-                    'items_id'   => $_GET['items_id'],
-                    'itemtype'   => $_GET['itemtype']
-                ]);
+            if ($_POST['params']['id'] > 0) {
+                $criteria = [
+                    'tickets_id' => $_POST['params']['id'],
+                    'items_id' => $_POST['items_id'],
+                    'itemtype' => $_POST['itemtype'],
+                ];
+                if (
+                    $item_ticket->getFromDBByCrit($criteria)
+                    && $item_ticket->can($item_ticket->getID(), DELETE)
+                ) {
+                    $deleted = $item_ticket->delete(['id' => $item_ticket->getID()]);
+                }
             }
             if ($deleted) {
-                unset($_GET['params']['items_id'][$_GET['itemtype']][array_search($_GET['items_id'], $_GET['params']['items_id'][$_GET['itemtype']])]);
+                unset($_POST['params']['items_id'][$_POST['itemtype']][array_search($_POST['items_id'], $_POST['params']['items_id'][$_POST['itemtype']])]);
             }
-            Item_Ticket::itemAddForm(new Ticket(), $_GET['params']);
+            Item_Ticket::itemAddForm(new Ticket(), $_POST['params']);
         }
 
         break;

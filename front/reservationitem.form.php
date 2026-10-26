@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -62,7 +62,7 @@ if (isset($_POST["add"])) {
         );
     }
     Html::back();
-} else if (isset($_POST["delete"])) {
+} elseif (isset($_POST["delete"])) {
     $ri->check($_POST["id"], DELETE);
     $ri->delete($_POST);
 
@@ -75,7 +75,7 @@ if (isset($_POST["add"])) {
         sprintf(__('%s deletes an item'), $_SESSION["glpiname"])
     );
     Html::back();
-} else if (isset($_POST["purge"])) {
+} elseif (isset($_POST["purge"])) {
     $ri->check($_POST["id"], PURGE);
     $ri->delete($_POST, 1);
 
@@ -88,20 +88,7 @@ if (isset($_POST["add"])) {
         sprintf(__('%s purges an item'), $_SESSION["glpiname"])
     );
     Html::back();
-} else if (isset($_POST["backToStock"])) {
-    $ri->check($_POST["id"], PURGE);
-    $ri->backToStock($_POST);
-
-    Event::log(
-        $_POST['id'],
-        "reservationitem",
-        4,
-        "inventory",
-        //TRANS: %s is the user login
-        sprintf(__('%s restores an item'), $_SESSION["glpiname"])
-    );
-    Html::back();
-} else if (isset($_POST["update"])) {
+} elseif (isset($_POST["update"])) {
     $ri->check($_POST["id"], UPDATE);
     $ri->update($_POST);
     Event::log(

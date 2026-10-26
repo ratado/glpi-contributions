@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -61,7 +61,7 @@ class NetworkPortConnectionLog extends CommonDBChild
     /**
      * Get the tab name used for item
      *
-     * @param object $item the item object
+     * @param CommonGLPI $item the item object
      * @param integer $withtemplate 1 if is a template form
      * @return string|array name of the tab
      */
@@ -82,22 +82,22 @@ class NetworkPortConnectionLog extends CommonDBChild
         return [
             'OR' => [
                 'networkports_id_source'      => $netport->fields['id'],
-                'networkports_id_destination' => $netport->fields['id']
-            ]
+                'networkports_id_destination' => $netport->fields['id'],
+            ],
         ];
     }
 
     /**
      * Display the content of the tab
      *
-     * @param object $item
+     * @param CommonGLPI $item
      * @param integer $tabnum number of the tab to display
      * @param integer $withtemplate 1 if is a template form
      * @return boolean
      */
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
-        if ($item->getType() == NetworkPort::getType() && $item->getID() > 0) {
+        if (get_class($item) == NetworkPort::class && $item->getID() > 0) {
             $connectionlog = new self();
             $connectionlog->showForItem($item);
             return true;
@@ -112,20 +112,20 @@ class NetworkPortConnectionLog extends CommonDBChild
 
         $iterator = $DB->request([
             'FROM'   => $this->getTable(),
-            'WHERE'  => $this->getCriteria($netport)
+            'WHERE'  => $this->getCriteria($netport),
         ]);
 
         echo "<table class='tab_cadre_fixehov'>";
         echo "<thead><tr>";
-        echo "<th>" . _n('State', 'States', 1)  . "</th>";
-        echo "<th>" . _n('Date', 'Dates', 1)  . "</th>";
-        echo "<th>" . __('Connected item')  . "</th>";
+        echo "<th>" . _n('State', 'States', 1) . "</th>";
+        echo "<th>" . _n('Date', 'Dates', 1) . "</th>";
+        echo "<th>" . __('Connected item') . "</th>";
         echo "</tr></thead>";
 
         echo "<tbody>";
 
         if (!count($iterator)) {
-            echo "<tr><td colspan='4' class='center'>" . __('No result found')  . "</td></tr>";
+            echo "<tr><td colspan='4' class='center'>" . __('No result found') . "</td></tr>";
         }
 
         foreach ($iterator as $row) {
@@ -141,7 +141,7 @@ class NetworkPortConnectionLog extends CommonDBChild
             }
             echo "<i class='fas $co_class' title='$title'></i> <span class='sr-only'>$title</span>";
             echo "</td>";
-            echo "<td>" . $row['date']  . "</td>";
+            echo "<td>" . $row['date'] . "</td>";
             echo "<td>";
 
             $is_source = $netport->fields['id'] == $row['networkports_id_source'];
@@ -161,9 +161,9 @@ class NetworkPortConnectionLog extends CommonDBChild
                 echo sprintf(
                     '%1$s on %2$s',
                     $cport_link,
-                    $citem->getLink(1)
+                    $citem->getLink()
                 );
-            } else if ($row['connected'] == 1) {
+            } elseif ($row['connected'] == 1) {
                 echo __('No longer exists in database');
             }
 

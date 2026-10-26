@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -38,7 +38,7 @@ class DatabaseInstance extends CommonDBTM
     use Glpi\Features\Clonable;
     use Glpi\Features\Inventoriable;
 
-   // From CommonDBTM
+    // From CommonDBTM
     public $dohistory                   = true;
     public static $rightname            = 'database';
     protected $usenotepad               = true;
@@ -55,7 +55,7 @@ class DatabaseInstance extends CommonDBTM
             KnowbaseItem_Item::class,
             Certificate_Item::class,
             Domain_Item::class,
-            Database::class
+            Database::class,
         ];
     }
 
@@ -102,8 +102,8 @@ class DatabaseInstance extends CommonDBTM
             'FROM' => Database::getTable(),
             'WHERE' => [
                 'databaseinstances_id' => $this->fields['id'],
-                'is_deleted' => 0
-            ]
+                'is_deleted' => 0,
+            ],
         ]);
 
         foreach ($iterator as $row) {
@@ -133,7 +133,7 @@ class DatabaseInstance extends CommonDBTM
             $CFG_GLPI['databaseinstance_types'],
             [
                 'value' => $itemtype,
-                'rand'  => $rand
+                'rand'  => $rand,
             ]
         );
         echo "</td>";
@@ -146,7 +146,7 @@ class DatabaseInstance extends CommonDBTM
                 'itemtype' => '__VALUE__',
                 'dom_rand' => $rand,
                 'dom_name' => "items_id",
-                'action' => 'get_items_from_itemtype'
+                'action' => 'get_items_from_itemtype',
             ];
             Ajax::updateItemOnSelectEvent(
                 "dropdown_itemtype$rand",
@@ -159,13 +159,13 @@ class DatabaseInstance extends CommonDBTM
                 'name' => 'items_id',
                 'value' => $this->fields['items_id'],
                 'display_emptychoice' => true,
-                'rand' => $rand
+                'rand' => $rand,
             ]);
         } else {
             $p = ['idtable'            => '__VALUE__',
                 'rand'                  => $rand,
                 'name'                  => "items_id",
-                'width'                 => 'unset'
+                'width'                 => 'unset',
             ];
 
             Ajax::updateItemOnSelectEvent(
@@ -195,7 +195,7 @@ class DatabaseInstance extends CommonDBTM
             'value'     => $this->fields["states_id"],
             'entity'    => $this->fields["entities_id"],
             'condition' => ['is_visible_databaseinstance' => 1],
-            'rand'      => $rand
+            'rand'      => $rand,
         ]);
         echo "</td></tr>\n";
 
@@ -204,7 +204,7 @@ class DatabaseInstance extends CommonDBTM
         echo "<td>";
         Location::dropdown(['value'  => $this->fields["locations_id"],
             'entity' => $this->fields["entities_id"],
-            'rand' => $rand
+            'rand' => $rand,
         ]);
         echo "</td>";
         echo "<td><label for='dropdown_databaseinstancetypes_id$rand'>" . DatabaseInstanceType::getFieldLabel() . "</label></td>";
@@ -219,7 +219,7 @@ class DatabaseInstance extends CommonDBTM
             'version',
             [
                 'id' => 'version' . $rand,
-                'value' => $this->fields['version']
+                'value' => $this->fields['version'],
             ]
         );
         echo "</td>";
@@ -244,7 +244,7 @@ class DatabaseInstance extends CommonDBTM
             'value'     => $this->fields['groups_id_tech'],
             'entity'    => $this->fields['entities_id'],
             'condition' => ['is_assign' => 1],
-            'rand' => $rand
+            'rand' => $rand,
         ]);
 
         echo "</td>";
@@ -265,7 +265,7 @@ class DatabaseInstance extends CommonDBTM
             'value'  => $this->fields["users_id_tech"],
             'right'  => 'own_ticket',
             'entity' => $this->fields["entities_id"],
-            'rand'   => $rand
+            'rand'   => $rand,
         ]);
         echo "</td></tr>";
         echo "<tr><td><label for='dropdown_manufacturers_id$rand'>" . Manufacturer::getTypeName(1) . "</label></td>";
@@ -284,7 +284,7 @@ class DatabaseInstance extends CommonDBTM
             "date_lastbackup",
             [
                 'value'      => $this->fields['date_lastbackup'],
-                'maybeempty' => true
+                'maybeempty' => true,
             ]
         );
         echo "</td></tr>\n";
@@ -294,14 +294,14 @@ class DatabaseInstance extends CommonDBTM
         echo "<td>";
         echo Html::input('port', [
             'value' => $this->fields['port'],
-            'id'    => "port$rand"
+            'id'    => "port$rand",
         ]);
         echo "</td>";
         echo "<td><label for='path$rand'>" . __('Path') . "</label></td>";
         echo "<td>";
         echo Html::input('path', [
             'value' => $this->fields['path'],
-            'id'    => "path$rand"
+            'id'    => "path$rand",
         ]);
         echo "</td></tr>\n";
 
@@ -336,7 +336,7 @@ class DatabaseInstance extends CommonDBTM
             'field'              => 'id',
             'name'               => __('ID'),
             'massiveaction'      => false, // implicit field is id
-            'datatype'           => 'number'
+            'datatype'           => 'number',
         ];
 
         $tab = array_merge($tab, Location::rawSearchOptionsToAdd());
@@ -346,7 +346,7 @@ class DatabaseInstance extends CommonDBTM
             'table'              => DatabaseInstanceType::getTable(),
             'field'              => 'name',
             'name'               => _n('Type', 'Types', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -358,22 +358,22 @@ class DatabaseInstance extends CommonDBTM
             'massiveaction'      => false,
             'datatype'           => 'integer',
             'joinparams'         => [
-                'jointype'           => 'child'
-            ]
+                'jointype'           => 'child',
+            ],
         ];
 
         $tab[] = [
             'id'               => '5',
             'table'            => DatabaseInstance::getTable(),
             'field'            => 'items_id',
-            'name'             => _n('Associated item', 'Associated items', 2),
+            'name'             => _n('Item', 'Items', 1),
             'nosearch'         => true,
             'massiveaction'    => false,
             'forcegroupby'     => true,
             'datatype'         => 'specific',
             'searchtype'       => 'equals',
             'additionalfields' => ['itemtype'],
-            'joinparams'       => ['jointype' => 'child']
+            'joinparams'       => ['jointype' => 'child'],
         ];
 
         $tab[] = [
@@ -381,7 +381,34 @@ class DatabaseInstance extends CommonDBTM
             'table'              => DatabaseInstance::getTable(),
             'field'              => 'version',
             'name'               => _n('Version', 'Versions', 1),
-            'datatype'           => 'text'
+            'datatype'           => 'text',
+        ];
+
+        $tab[] = [
+            'id'                 => '7',
+            'table'              => DatabaseInstance::getTable(),
+            'field'              => 'is_active',
+            'name'               => __('Is active'),
+            'massiveaction'      => false,
+            'datatype'           => 'bool',
+        ];
+
+        $tab[] = [
+            'id'                 => '253',
+            'table'              => DatabaseInstance::getTable(),
+            'field'              => 'path',
+            'name'               => __('Path'),
+            'datatype'           => 'text',
+        ];
+
+        $tab[] = [
+            'id'                 => '8',
+            'table'              => DatabaseInstance::getTable(),
+            'field'              => 'itemtype',
+            'name'               => __('Item type'),
+            'massiveaction'      => false,
+            'datatype'           => 'itemtypename',
+            'types'              => self::getTypes(),
         ];
 
         $tab[] = [
@@ -389,7 +416,7 @@ class DatabaseInstance extends CommonDBTM
             'table'              => DatabaseInstanceCategory::getTable(),
             'field'              => 'name',
             'name'               => _n('Category', 'Categories', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -397,7 +424,7 @@ class DatabaseInstance extends CommonDBTM
             'table'              => State::getTable(),
             'field'              => 'name',
             'name'               => _n('State', 'States', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -405,7 +432,7 @@ class DatabaseInstance extends CommonDBTM
             'table'              => $this->getTable(),
             'field'              => 'comment',
             'name'               => __('Comments'),
-            'datatype'           => 'text'
+            'datatype'           => 'text',
         ];
 
         $tab[] = [
@@ -414,7 +441,7 @@ class DatabaseInstance extends CommonDBTM
             'field'              => 'date_mod',
             'name'               => __('Last update'),
             'datatype'           => 'datetime',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -423,7 +450,7 @@ class DatabaseInstance extends CommonDBTM
             'field'              => 'date_creation',
             'name'               => __('Creation date'),
             'datatype'           => 'datetime',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -432,7 +459,7 @@ class DatabaseInstance extends CommonDBTM
             'field'              => 'date_lastboot',
             'name'               => __('Last boot date'),
             'massiveaction'      => false,
-            'datatype'           => 'date'
+            'datatype'           => 'date',
         ];
 
         $tab[] = [
@@ -440,7 +467,7 @@ class DatabaseInstance extends CommonDBTM
             'table'              => Manufacturer::getTable(),
             'field'              => 'name',
             'name'               => Manufacturer::getTypeName(1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -450,7 +477,7 @@ class DatabaseInstance extends CommonDBTM
             'linkfield'          => 'users_id_tech',
             'name'               => __('Technician in charge'),
             'datatype'           => 'dropdown',
-            'right'              => 'own_ticket'
+            'right'              => 'own_ticket',
         ];
 
         $tab[] = [
@@ -460,7 +487,7 @@ class DatabaseInstance extends CommonDBTM
             'linkfield'          => 'groups_id_tech',
             'name'               => __('Group in charge'),
             'condition'          => ['is_assign' => 1],
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab = array_merge($tab, Database::rawSearchOptionsToAdd());
@@ -527,7 +554,7 @@ class DatabaseInstance extends CommonDBTM
     {
         $this->deleteChildrenAndRelationsFromDb(
             [
-                Database::class
+                Database::class,
             ]
         );
     }
@@ -539,12 +566,12 @@ class DatabaseInstance extends CommonDBTM
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-        if (!self::canView()) {
-            return '';
-        }
-
-        $nb = 0;
-        if (in_array($item->getType(), self::getTypes(true))) {
+        if (
+            ($item instanceof CommonDBTM)
+            && self::canView()
+            && in_array($item->getType(), self::getTypes(true))
+        ) {
+            $nb = 0;
             if ($_SESSION['glpishow_count_on_tabs']) {
                 $nb = countElementsInTable(self::getTable(), ['itemtype' => $item->getType(), 'items_id' => $item->fields['id']]);
             }
@@ -574,8 +601,8 @@ class DatabaseInstance extends CommonDBTM
             'FROM'   => self::getTable(),
             'WHERE'  => [
                 'itemtype' => $item->getType(),
-                'items_id' => $item->fields['id']
-            ]
+                'items_id' => $item->fields['id'],
+            ],
         ]);
 
         if (!count($instances)) {

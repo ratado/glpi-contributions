@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -58,8 +58,8 @@ if (isset($_POST["disconnect"])) {
     );
     Html::back();
 
-   // Connect a computer to a printer/monitor/phone/peripheral
-} else if (isset($_POST["add"])) {
+    // Connect a computer to a printer/monitor/phone/peripheral
+} elseif (isset($_POST["add"])) {
     if (isset($_POST["items_id"]) && ($_POST["items_id"] > 0)) {
         $conn->check(-1, CREATE, $_POST);
         if ($conn->add($_POST)) {

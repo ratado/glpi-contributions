@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -48,7 +48,7 @@ class Netpoint extends Socket
 
     public function prepareInputForAdd($input)
     {
-       //Copy input to match new format
+        //Copy input to match new format
 
         if (!isset($input['wiring_side'])) {
             $input['wiring_side'] = Socket::FRONT;
@@ -96,7 +96,7 @@ class Netpoint extends Socket
             $input['networkports_id'] = 0;
         }
 
-       //Copy input to match new format
+        //Copy input to match new format
         return parent::prepareInputForUpdate($input);
     }
 }

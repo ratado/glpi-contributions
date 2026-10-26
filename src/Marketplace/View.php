@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -96,7 +96,7 @@ class View extends CommonGLPI
     public function defineTabs($options = [])
     {
         $tabs = [
-            'no_all_tab' => true
+            'no_all_tab' => true,
         ];
         $this->addStandardTab(__CLASS__, $tabs, $options);
 
@@ -172,7 +172,7 @@ class View extends CommonGLPI
                         . __('and') . " "
                         . "<a href='$config_url'>" . __("fill your registration key in setup.") . "</a>"
                 );
-            } else if (!$registration_info['subscription']['is_running']) {
+            } elseif (!$registration_info['subscription']['is_running']) {
                 $valid = false;
 
                 array_push(
@@ -201,7 +201,6 @@ class View extends CommonGLPI
      *
      * @param bool   $force_refresh do not rely on cache to get plugins list
      * @param bool   $only_lis display only the li tags in return html (used by ajax queries)
-     * @param string $tag_filter filter the plugin list by given tag
      * @param string $string_filter filter the plugin by given string
      *
      * @return void display things
@@ -235,17 +234,18 @@ class View extends CommonGLPI
             }
 
             $clean_plugin = [
-                'key'          => $key,
-                'name'         => $plugin['name'],
-                'logo_url'     => $apidata['logo_url'] ?? "",
-                'description'  => $apidata['descriptions'][0]['short_description'] ?? "",
-                'authors'      => $apidata['authors'] ?? [['id' => 'all', 'name' => $plugin['author'] ?? ""]],
-                'license'      => $apidata['license'] ?? $plugin['license'] ?? "",
-                'note'         => $apidata['note'] ?? -1,
-                'homepage_url' => $apidata['homepage_url'] ?? "",
-                'issues_url'   => $apidata['issues_url'] ?? "",
-                'readme_url'   => $apidata['readme_url'] ?? "",
-                'version'      => $plugin['version'] ?? "",
+                'key'           => $key,
+                'name'          => $plugin['name'],
+                'logo_url'      => $apidata['logo_url'] ?? "",
+                'description'   => $apidata['descriptions'][0]['short_description'] ?? "",
+                'authors'       => $apidata['authors'] ?? [['id' => 'all', 'name' => $plugin['author'] ?? ""]],
+                'license'       => $apidata['license'] ?? $plugin['license'] ?? "",
+                'note'          => $apidata['note'] ?? -1,
+                'homepage_url'  => $apidata['homepage_url'] ?? "",
+                'issues_url'    => $apidata['issues_url'] ?? "",
+                'readme_url'    => $apidata['readme_url'] ?? "",
+                'version'       => $plugin['version'] ?? "",
+                'changelog_url' => $apidata['changelog_url'] ?? "",
             ];
 
             $plugins[] = $clean_plugin;
@@ -257,7 +257,7 @@ class View extends CommonGLPI
     /**
      * Display discover tab (all availble plugins)
      *
-     * @param bool   $force_refresh do not rely on cache to get plugins list
+     * @param bool   $force do not rely on cache to get plugins list
      * @param bool   $only_lis display only the li tags in return html (used by ajax queries)
      * @param string $tag_filter filter the plugin list by given tag
      * @param string $string_filter filter the plugin by given string
@@ -355,7 +355,7 @@ class View extends CommonGLPI
         }
 
         if (!$only_lis) {
-           // check writable state
+            // check writable state
             if (!Controller::hasWriteAccess()) {
                 echo "<div class='alert alert-warning'><i class='fa fa-exclamation-triangle fa-5x'></i>"
                       . sprintf(__("We can't write on the markeplace directory (%s)."), GLPI_MARKETPLACE_DIR)
@@ -609,7 +609,7 @@ HTML;
     /**
      * Return HTML part for plugin stars
      *
-     * @param float|int $value current stars note on 5
+     * @param float $value current stars note on 5
      *
      * @return string plugins stars html
      */
@@ -621,7 +621,7 @@ HTML;
         for ($i = 1; $i < 6; $i++) {
             if ($value >= $i) {
                 $stars .= "<i class='fas fa-star'></i>";
-            } else if ($value + 0.5 == $i) {
+            } elseif ($value + 0.5 == $i) {
                 $stars .= "<i class='fas fa-star-half-alt'></i>";
             } else {
                 $stars .= "<i class='far fa-star'></i>";
@@ -709,7 +709,7 @@ HTML;
                         <i class='ti ti-cloud-download'></i>
                     </button>";
             }
-        } else if (!$is_available) {
+        } elseif (!$is_available) {
             if (!$can_run_local_install) {
                 $rand = mt_rand();
                 $buttons .= "<i class='ti ti-alert-triangle plugin-unavailable' id='plugin-tooltip-$rand'></i>";
@@ -720,7 +720,7 @@ HTML;
                     ]
                 );
             }
-        } else if (
+        } elseif (
             (!$exists && !$mk_controller->hasWriteAccess())
             || ($has_web_update && !$can_be_overwritten && GLPI_MARKETPLACE_MANUAL_DOWNLOADS)
         ) {
@@ -756,14 +756,14 @@ HTML;
                     </button>";
                 }
             }
-        } else if ($can_be_downloaded) {
+        } elseif ($can_be_downloaded) {
             if (!$exists) {
                 $buttons .= "<button class='modify_plugin'
                                      data-action='download_plugin'
                                      title='" . __s("Download") . "'>
                         <i class='ti ti-cloud-download'></i>
                     </button>";
-            } else if ($can_be_updated) {
+            } elseif ($can_be_updated) {
                 $update_title = sprintf(
                     __s("A new version (%s) is available, update?", 'marketplace'),
                     $web_update_version
@@ -782,7 +782,7 @@ HTML;
                 implode(', ', $required_offers)
             );
 
-             $buttons .= "<a href='" . GLPI_NETWORK_SERVICES . "' target='_blank'>
+            $buttons .= "<a href='" . GLPI_NETWORK_SERVICES . "' target='_blank'>
                     <button class='add_tooltip need_offers' title='$warning'>
                         <i class='fas fa-exclamation-triangle'></i>
                     </button>
@@ -1041,12 +1041,12 @@ HTML;
                ? Controller::MP_REPLACE_NEVER
                : Controller::MP_REPLACE_ASK);
             Config::setConfigurationValues('core', [
-                'marketplace_replace_plugins' => $mp_value
+                'marketplace_replace_plugins' => $mp_value,
             ]);
 
             // is user agree, redirect him to marketplace
             if ($mp_value === Controller::MP_REPLACE_YES) {
-                 Html::redirect($CFG_GLPI["root_doc"] . "/front/marketplace.php");
+                Html::redirect($CFG_GLPI["root_doc"] . "/front/marketplace.php");
             }
 
             // avoid annoying user for the current session
@@ -1074,7 +1074,7 @@ HTML;
             echo "<div class='card-footer'>";
             echo Html::submit("<i class='fa fa-check'></i>&nbsp;" . __('Yes'), [
                 'name' => 'marketplace_replace_plugins_yes',
-                'class' => 'btn btn-primary'
+                'class' => 'btn btn-primary',
             ]);
             echo "&nbsp;";
             echo Html::submit("<i class='fa fa-times'></i>&nbsp;" . __('No'), [

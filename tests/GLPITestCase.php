@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -57,10 +56,10 @@ class GLPITestCase extends atoum
 
     public function beforeTestMethod($method)
     {
-       // By default, no session, not connected
+        // By default, no session, not connected
         $this->resetSession();
 
-       // Ensure cache is clear
+        // Ensure cache is clear
         global $GLPI_CACHE;
         $GLPI_CACHE->clear();
 
@@ -125,7 +124,10 @@ class GLPITestCase extends atoum
     protected function callPrivateMethod($instance, string $methodName, ...$args)
     {
         $method = new \ReflectionMethod($instance, $methodName);
-        $method->setAccessible(true);
+        if (PHP_VERSION_ID < 80100) {
+            // Usage of `ReflectionMethod::setAccessible()` is usefull only for PHP < 8.1.
+            $method->setAccessible(true);
+        }
 
         return $method->invoke($instance, ...$args);
     }

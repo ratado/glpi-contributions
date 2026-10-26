@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -58,12 +58,12 @@ class ProjectState extends CommonDropdown
         return [['name'     => 'color',
             'label'    => __('Color'),
             'type'     => 'color',
-            'list'     => true
+            'list'     => true,
         ],
             ['name'     => 'is_finished',
                 'label'    => __('Finished state'),
                 'type'     => 'bool',
-                'list'     => true
+                'list'     => true,
             ],
         ];
     }
@@ -78,7 +78,7 @@ class ProjectState extends CommonDropdown
             'table'              => $this->getTable(),
             'field'              => 'color',
             'name'               => __('Color'),
-            'datatype'           => 'color'
+            'datatype'           => 'color',
         ];
 
         $tab[] = [
@@ -86,7 +86,7 @@ class ProjectState extends CommonDropdown
             'table'              => $this->getTable(),
             'field'              => 'is_finished',
             'name'               => __('Finished state'),
-            'datatype'           => 'bool'
+            'datatype'           => 'bool',
         ];
 
         return $tab;

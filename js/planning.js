@@ -5,7 +5,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -91,6 +91,7 @@ var GLPIPlanning  = {
             timeZone:    'UTC',
             theme:       true,
             weekNumbers: options.full_view ? true : false,
+            defaultView: options.default_view,
             timeFormat:  'H:mm',
             eventLimit:  true, // show 'more' button when too mmany events
             minTime:     CFG_GLPI.planning_begin,
@@ -102,7 +103,6 @@ var GLPIPlanning  = {
             nowIndicator: true,
             now: options.now,// as we set the calendar as UTC, we need to reprecise the current datetime
             listDayAltFormat: false,
-            agendaEventMinHeight: 13,
             header: options.header,
             hiddenDays: hidden_days,
             locale: loadedLocales.length === 1 ? loadedLocales[0] : undefined,
@@ -438,7 +438,17 @@ var GLPIPlanning  = {
                 }).done(function() {
                     // indicate to central page we're done rendering
                     if (!options.full_view) {
-                        $(document).trigger('masonry_grid:layout');
+                        // Observe changes in the DOM before triggering
+                        const observer = new MutationObserver((mutations, obs) => {
+                            if (document.readyState === 'complete') {
+                                obs.disconnect(); // Stop observation once the DOM is stable
+                                setTimeout(() => {
+                                    $(document).trigger('masonry_grid:layout');
+                                }, 100);
+                            }
+                        });
+
+                        observer.observe(document.body, { childList: true, subtree: true });
                     }
                 });
 
@@ -604,9 +614,12 @@ var GLPIPlanning  = {
                         title: __('Add an event'),
                         bs_focus: false
                     });
+                    // Save the original datesRender function which is overwritten by selectable
+                    const originalDatesRender = GLPIPlanning.calendar.getOption('datesRender');
                     GLPIPlanning.calendar.setOption('selectable', false);
                     window.setTimeout(function() {
                         GLPIPlanning.calendar.setOption('selectable', true);
+                        originalDatesRender(info); //Restore datesRender
                     }, 500);
                 }
 
@@ -846,6 +859,7 @@ var GLPIPlanning  = {
         var event      = info.event;
         var revertFunc = info.revert;
         var extProps   = event.extendedProps;
+        var recurringDef = event._def.recurringDef;
 
         var old_itemtype = null;
         var old_items_id = null;
@@ -868,6 +882,28 @@ var GLPIPlanning  = {
 
         var start = event.start;
         var end   = event.end;
+
+        if (
+            !move_instance
+            && recurringDef
+            && recurringDef.typeData
+            && recurringDef.typeData.origOptions.dtstart !== start
+        ) {
+            let startDate = new Date(start);
+            let dtstart = recurringDef.typeData._dtstart || recurringDef.typeData.origOptions.dtstart;
+            let originDate = new Date(dtstart);
+
+            let hours = startDate.getHours();
+            let minutes = startDate.getMinutes();
+
+            originDate.setHours(hours, minutes);
+
+            start = originDate;
+
+            let duration = end - event.start;
+            end = new Date(start.getTime() + duration);
+        }
+
         if (typeof end === 'undefined' || end === null) {
             end = new Date(start.getTime());
             if (event.allDay) {

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -50,34 +50,56 @@ if (!isset($_REQUEST['action'])) {
 
 $answer = [];
 if (($_GET['action'] ?? null) === 'show_pdu_form') {
-    PDU_Rack::showFirstForm((int) $_GET['racks_id']);
-} else if (isset($_POST['action'])) {
+    $rack_id = (int) $_GET['racks_id'];
+
+    $rack = new Rack();
+    if (!$rack->can($rack_id, READ)) {
+        return;
+    }
+
+    PDU_Rack::showFirstForm($rack_id);
+} elseif (isset($_POST['action'])) {
     header("Content-Type: application/json; charset=UTF-8", true);
     switch ($_POST['action']) {
         case 'move_item':
+            $id = (int) $_POST['id'];
+
             $item_rack = new Item_Rack();
-            $item_rack->getFromDB((int) $_POST['id']);
+            if (!$item_rack->getFromDB($id) || !$item_rack->can($id, UPDATE)) {
+                return;
+            }
+
             $answer['status'] = $item_rack->update([
-                'id'       => (int) $_POST['id'],
+                'id'       => $id,
                 'position' => (int) $_POST['position'],
                 'hpos'     => (int) $_POST['hpos'],
             ]);
             break;
 
         case 'move_pdu':
+            $id = (int) $_POST['id'];
+
             $pdu_rack = new PDU_Rack();
-            $pdu_rack->getFromDB((int) $_POST['id']);
+            if (!$pdu_rack->getFromDB($id) || !$pdu_rack->can($id, UPDATE)) {
+                return;
+            }
+
             $answer['status'] = $pdu_rack->update([
-                'id'       => (int) $_POST['id'],
-                'position' => (int) $_POST['position']
+                'id'       => $id,
+                'position' => (int) $_POST['position'],
             ]);
             break;
 
         case 'move_rack':
+            $id = (int) $_POST['id'];
+
             $rack = new Rack();
-            $rack->getFromDB((int) $_POST['id']);
+            if (!$rack->getFromDB($id) || !$rack->can($id, UPDATE)) {
+                return;
+            }
+
             $answer['status'] = $rack->update([
-                'id'         => (int) $_POST['id'],
+                'id'         => $id,
                 'dcrooms_id' => (int) $_POST['dcrooms_id'],
                 'position'   => (int) $_POST['x'] . "," . (int) $_POST['y'],
             ]);

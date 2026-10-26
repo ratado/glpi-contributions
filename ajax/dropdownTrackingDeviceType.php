@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -76,14 +76,14 @@ if ($isValidItemtype) {
     $field_id = Html::cleanId("dropdown_" . $_POST['myname'] . $rand);
     $p = [
         'itemtype'            => $itemtype,
-        'entity_restrict'     => $_POST['entity_restrict'],
+        'entity_restrict'     => Session::getMatchingActiveEntities($_POST['entity_restrict']),
         'table'               => $table,
         'multiple'            => (int) ($_POST["multiple"] ?? 0) !== 0,
         'myname'              => $_POST["myname"],
         'rand'                => $_POST["rand"],
         'width'               => 'calc(100% - 25px)',
         '_idor_token'         => Session::getNewIDORToken($itemtype, [
-            'entity_restrict' => $_POST['entity_restrict'],
+            'entity_restrict' => Session::getMatchingActiveEntities($_POST['entity_restrict']),
         ]),
     ];
 
@@ -93,7 +93,7 @@ if ($isValidItemtype) {
         }
     }
 
-   // Add context if defined
+    // Add context if defined
     if (!empty($context)) {
         $p["context"] = $context;
     }
@@ -105,15 +105,15 @@ if ($isValidItemtype) {
         $p
     );
 
-   // Auto update summary of active or just solved tickets
-    echo "<span id='item_ticket_selection_information{$_POST["myname"]}_$rand' class='ms-1'></span>";
+    // Auto update summary of active or just solved tickets
+    echo "<span id='item_ticket_selection_information{$_POST['myname']}_$rand' class='ms-1'></span>";
     Ajax::updateItemOnSelectEvent(
         $field_id,
-        "item_ticket_selection_information{$_POST["myname"]}_$rand",
+        "item_ticket_selection_information{$_POST['myname']}_$rand",
         $CFG_GLPI["root_doc"] . "/ajax/ticketiteminformation.php",
         [
             'items_id' => '__VALUE__',
-            'itemtype' => $_POST['itemtype']
+            'itemtype' => $_POST['itemtype'],
         ]
     );
 }

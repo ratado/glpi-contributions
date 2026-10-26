@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -33,6 +33,7 @@
  * ---------------------------------------------------------------------
  */
 
+use Glpi\Application\ErrorHandler;
 use Glpi\Toolbox\Sanitizer;
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -52,7 +53,7 @@ class NotificationEventMailing extends NotificationEventAbstract
             !isset($data[$field])
             && isset($data['users_id'])
         ) {
-           // No email set : get default for user
+            // No email set : get default for user
             $data[$field] = UserEmail::getDefaultForUser($data['users_id']);
         }
 
@@ -125,7 +126,7 @@ class NotificationEventMailing extends NotificationEventAbstract
         $processed = [];
 
         foreach ($data as $row) {
-           //make sure mailer is reset on each mail
+            //make sure mailer is reset on each mail
             $mmail = new GLPIMailer();
             $current = new QueuedNotification();
             $current->getFromResultSet($row);
@@ -146,12 +147,12 @@ class NotificationEventMailing extends NotificationEventAbstract
                             [
                                 '%uuid',
                                 '%itemtype',
-                                '%items_id'
+                                '%items_id',
                             ],
                             [
                                 Config::getUuid('notification'),
                                 $current->fields['itemtype'],
-                                $current->fields['items_id']
+                                $current->fields['items_id'],
                             ],
                             "In-Reply-To: <GLPI-%uuid-%itemtype-%items_id>"
                         )
@@ -184,6 +185,8 @@ class NotificationEventMailing extends NotificationEventAbstract
 
                 $documents_ids = [];
                 $documents_to_attach = [];
+                $user = new User();
+                $is_anonymous_requester = !$user->getFromDBbyEmail($current->fields['recipient']);
                 if ($is_html || $CFG_GLPI['attach_ticket_documents_to_mail']) {
                     // Retieve document list if mail is in HTML format (for inline images)
                     // or if documents are attached to mail.
@@ -201,13 +204,13 @@ class NotificationEventMailing extends NotificationEventAbstract
                             'itemtype' => $current->fields['itemtype'],
                         ];
                         if ($item instanceof CommonITILObject) {
-                            $doc_crit = $item->getAssociatedDocumentsCriteria(true);
+                            $doc_crit = $item->getAssociatedDocumentsCriteria(false, $is_anonymous_requester ? null : $user, $is_anonymous_requester);
                             if ($is_html) {
                                 // Remove documents having "NO_TIMELINE" position if mail is HTML, as
                                 // these documents corresponds to inlined images.
                                 // If notification is in plain text, they should be kepts as they cannot be rendered in text.
                                 $doc_crit[] = [
-                                    'timeline_position' => ['>', CommonITILObject::NO_TIMELINE]
+                                    'timeline_position' => ['>', CommonITILObject::NO_TIMELINE],
                                 ];
                             }
                         }
@@ -227,7 +230,9 @@ class NotificationEventMailing extends NotificationEventAbstract
                 $mmail->isHTML($is_html);
                 if (!$is_html) {
                     $mmail->Body = GLPIMailer::normalizeBreaks($current->fields['body_text']);
-                    $documents_to_attach = $documents_ids; // Attach all documents
+                    if (!$is_anonymous_requester || $CFG_GLPI['attach_documents_to_notifications_for_anonymous']) {
+                        $documents_to_attach = $documents_ids; // Attach all documents
+                    }
                 } else {
                     $mmail->Body = '';
                     $inline_docs = [];
@@ -268,7 +273,9 @@ class NotificationEventMailing extends NotificationEventAbstract
                             }
                         } else {
                             // Attach only documents that are not inlined images
-                            $documents_to_attach[] = $document_id;
+                            if (!$is_anonymous_requester || $CFG_GLPI['attach_documents_to_notifications_for_anonymous']) {
+                                $documents_to_attach[] = $document_id;
+                            }
                         }
                     }
 
@@ -391,14 +398,19 @@ class NotificationEventMailing extends NotificationEventAbstract
                 if (!empty($current->fields['messageid'])) {
                     $mmail->MessageID = "<" . $current->fields['messageid'] . ">";
                 }
+
+                $sent = $mmail->Send();
             } catch (\Throwable $e) {
+                // handleFailedSend() below only keeps the exception message, log the full trace here.
+                ErrorHandler::getInstance()->handleException($e, true);
                 self::handleFailedSend($current, $e->getMessage());
+                continue;
             }
 
-            if (!$mmail->Send()) {
+            if (!$sent) {
                 self::handleFailedSend($current, $mmail->ErrorInfo);
             } else {
-               //TRANS to be written in logs %1$s is the to email / %2$s is the subject of the mail
+                //TRANS to be written in logs %1$s is the to email / %2$s is the subject of the mail
                 Toolbox::logInFile(
                     "mail",
                     sprintf(
@@ -413,7 +425,7 @@ class NotificationEventMailing extends NotificationEventAbstract
                 $mmail->ClearAddresses();
                 $processed[] = $current->getID();
                 $current->update(['id'        => $current->fields['id'],
-                    'sent_time' => $_SESSION['glpi_currenttime']
+                    'sent_time' => $_SESSION['glpi_currenttime'],
                 ]);
                 $current->delete(['id'        => $current->fields['id']]);
             }
@@ -468,7 +480,7 @@ class NotificationEventMailing extends NotificationEventAbstract
 
         $input = [
             'id'        => $notification->fields['id'],
-            'sent_try'  => $notification->fields['sent_try'] + 1
+            'sent_try'  => $notification->fields['sent_try'] + 1,
         ];
 
         if ($CFG_GLPI["smtp_retry_time"] > 0) {
@@ -502,18 +514,12 @@ class NotificationEventMailing extends NotificationEventAbstract
                 continue;
             }
             $path = GLPI_DOC_DIR . "/" . $document->fields['filepath'];
-            if (Document::isImage($path)) {
-                $path = Document::getImage(
-                    $path,
-                    'mail'
-                );
-            }
 
             $encoding = PHPMailer::ENCODING_BASE64;
             $mime = mime_content_type($path);
             if ($mime == "message/rfc822") {
-               // messages/rfc822 can't be encoded in base64 according to RFC2046
-               // https://datatracker.ietf.org/doc/html/rfc2046
+                // messages/rfc822 can't be encoded in base64 according to RFC2046
+                // https://datatracker.ietf.org/doc/html/rfc2046
                 $encoding = PHPMailer::ENCODING_8BIT;
             }
 
@@ -527,7 +533,7 @@ class NotificationEventMailing extends NotificationEventAbstract
 
     protected static function extraRaise($params)
     {
-       //Set notification's signature (the one which corresponds to the entity)
+        //Set notification's signature (the one which corresponds to the entity)
         $entity = $params['notificationtarget']->getEntity();
         $params['template']->setSignature(Notification::getMailingSignature($entity));
     }

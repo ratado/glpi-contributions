@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -41,10 +40,10 @@
 $DB->updateOrDie(
     'glpi_rulecriterias',
     [
-        'criteria' => 'itilcategories_id'
+        'criteria' => 'itilcategories_id',
     ],
     [
-        'criteria' => 'itilcategories_id_cn'
+        'criteria' => 'itilcategories_id_cn',
     ],
     '10.0.7 replace old rule criteria itilcategories_id_cn'
 );

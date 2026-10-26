@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -43,9 +43,11 @@ Html::header_nocache();
 Session::checkLoginUser();
 
 if (isset($_POST['action']) && isset($_POST['id'])) {
+    $id = (int) $_POST['id'];
+
     $agent = new Agent();
-    if (!$agent->getFromDB($_POST['id']) || !$agent->canView()) {
-        Response::sendError(404, 'Unable to load agent #' . $_POST['id']);
+    if (!$agent->getFromDB($id) || !$agent->can($id, READ)) {
+        Response::sendError(404, 'Unable to load agent #' . $id);
         return;
     }
     $answer = [];

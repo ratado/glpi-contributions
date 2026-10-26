@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -91,7 +91,7 @@ trait AssetImage
             $to_remove = [];
             foreach ($input_keys as $input_key) {
                 if (strpos($input_key, '_blank_pictures_') === 0 && $input[$input_key]) {
-                    $i = (int)str_replace('_blank_pictures_', '', $input_key);
+                    $i = (int) str_replace('_blank_pictures_', '', $input_key);
                     if (isset($pictures[$i])) {
                         Toolbox::deletePicture($pictures[$i]);
                         $to_remove[] = $i;
@@ -118,7 +118,7 @@ trait AssetImage
                 $prefix = $input["_prefix_pictures"][$input_key] ?? '';
 
                 if ($dest = Toolbox::savePicture($src, $prefix)) {
-                    $new_pictures[$input_key] = $dest;
+                    $new_pictures[] = $dest;
                 } else {
                     Session::addMessageAfterRedirect(__('Unable to save picture file.'), true, ERROR);
                 }

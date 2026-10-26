@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -116,9 +116,11 @@ trait CalDAVUriUtilTrait
         $found = false;
         switch ($principal_itemtype) {
             case \Group::class:
+                /** @var \Group $item */
                 $found = $item->getFromDB($this->getGroupIdFromPrincipalUri($uri));
                 break;
             case \User::class:
+                /** @var \User $item */
                 $found = $item->getFromDBbyName($this->getUsernameFromPrincipalUri($uri));
                 break;
         }
@@ -211,7 +213,7 @@ trait CalDAVUriUtilTrait
                     'FROM'   => getTableForItemType($itemtype),
                     'WHERE'  => [
                         'uuid' => $uid,
-                    ]
+                    ],
                 ]
             );
         }
@@ -220,7 +222,7 @@ trait CalDAVUriUtilTrait
             [
                 'SELECT'   => [
                     'id',
-                    'itemtype'
+                    'itemtype',
                 ],
                 'DISTINCT' => true,
                 'FROM'     => $union,

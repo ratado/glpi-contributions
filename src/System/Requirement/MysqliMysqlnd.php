@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -47,19 +47,29 @@ class MysqliMysqlnd extends Extension
 
     protected function check()
     {
-        $extension_loaded = extension_loaded('mysqli');
-        $driver_is_mysqlnd = defined('MYSQLI_OPT_INT_AND_FLOAT_NATIVE');
+        $extension_loaded = $this->isExtensionLoaded();
+        $driver_is_mysqlnd = $this->isMysqlND();
 
-       // We check for "mysqli_fetch_all" function to be sure that the used driver is "mysqlnd".
-       // Indeed, it is mandatory to be able to use MYSQLI_OPT_INT_AND_FLOAT_NATIVE option.
+        // We check for "mysqli_fetch_all" function to be sure that the used driver is "mysqlnd".
+        // Indeed, it is mandatory to be able to use MYSQLI_OPT_INT_AND_FLOAT_NATIVE option.
         $this->validated = $extension_loaded && $driver_is_mysqlnd;
 
         if ($extension_loaded && $driver_is_mysqlnd) {
             $this->validation_messages[] = sprintf(__('%s extension is installed.'), $this->name);
-        } else if ($extension_loaded && !$driver_is_mysqlnd) {
+        } elseif ($extension_loaded && !$driver_is_mysqlnd) {
             $this->validation_messages[] = sprintf(__('%s extension is installed but is not using mysqlnd driver.'), $this->name);
         } else {
             $this->validation_messages[] = sprintf(__('%s extension is missing.'), $this->name);
         }
+    }
+
+    protected function isExtensionLoaded(): bool
+    {
+        return extension_loaded('mysqli');
+    }
+
+    protected function isMysqlND(): bool
+    {
+        return defined('MYSQLI_OPT_INT_AND_FLOAT_NATIVE');
     }
 }

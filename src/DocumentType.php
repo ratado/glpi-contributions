@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -46,21 +46,21 @@ class DocumentType extends CommonDropdown
 
         return [['name'  => 'icon',
             'label' => __('Icon'),
-            'type'  => 'icon'
+            'type'  => 'icon',
         ],
             ['name'  => 'is_uploadable',
                 'label' => __('Authorized upload'),
-                'type'  => 'bool'
+                'type'  => 'bool',
             ],
             ['name'    => 'ext',
                 'label'   => __('Extension'),
                 'type'    => 'text',
-                'comment' => __('May be a regular expression')
+                'comment' => __('May be a regular expression'),
             ],
             ['name'  => 'mime',
                 'label' => __('MIME type'),
-                'type'  => 'text'
-            ]
+                'type'  => 'text',
+            ],
         ];
     }
 
@@ -94,7 +94,7 @@ class DocumentType extends CommonDropdown
             'field'              => 'icon',
             'name'               => __('Icon'),
             'massiveaction'      => false,
-            'datatype'           => 'specific'
+            'datatype'           => 'specific',
         ];
 
         $tab[] = [
@@ -110,7 +110,7 @@ class DocumentType extends CommonDropdown
             'table'              => $this->getTable(),
             'field'              => 'is_uploadable',
             'name'               => __('Authorized upload'),
-            'datatype'           => 'bool'
+            'datatype'           => 'bool',
         ];
 
         return $tab;
@@ -181,7 +181,7 @@ class DocumentType extends CommonDropdown
             'rand'    => mt_rand(),
         ];
 
-       //merge default options with options parameter
+        //merge default options with options parameter
         $p = array_merge($p, $options);
 
         $display = "&nbsp;";
@@ -192,7 +192,7 @@ class DocumentType extends CommonDropdown
             "documenttypelist_{$p['rand']}",
             $CFG_GLPI["root_doc"] . "/front/documenttype.list.php",
             ['title'   => static::getTypeName(Session::getPluralNumber()),
-                'display' => false
+                'display' => false,
             ]
         );
 
@@ -216,8 +216,8 @@ class DocumentType extends CommonDropdown
         $valid_type_iterator = $DB->request([
             'FROM'   => 'glpi_documenttypes',
             'WHERE'  => [
-                'is_uploadable'   => 1
-            ]
+                'is_uploadable'   => 1,
+            ],
         ]);
 
         $valid_ext_patterns = [];
@@ -229,7 +229,7 @@ class DocumentType extends CommonDropdown
                 // and protect by surrounding parenthesis to prevent conflict with other patterns
                 $valid_ext_patterns[] = '(' . substr($valid_ext, 1, -1) . ')';
             } else {
-               // Filename ends with allowed ext
+                // Filename ends with allowed ext
                 $valid_ext_patterns[] = '\.' . preg_quote($valid_type['ext'], '/') . '$';
             }
         }

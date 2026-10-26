@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -62,7 +62,7 @@ foreach ($CFG_GLPI["contract_types"] as $itemtype) {
     }
 }
 Dropdown::showFromArray('item_type', $values, ['value'    => 0,
-    'multiple' => true
+    'multiple' => true,
 ]);
 echo "</td> ";
 
@@ -74,7 +74,7 @@ for ($i = ($y - 10); $i < ($y + 10); $i++) {
     $values[$i] = $i;
 }
 Dropdown::showFromArray('year', $values, ['value'    => $y,
-    'multiple' => true
+    'multiple' => true,
 ]);
 
 echo "</td></tr>";

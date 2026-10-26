@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -44,9 +44,9 @@ if (
     );
 }
 
-$itemtype = isset($_POST['itemtype']) ? $_POST['itemtype'] : $_GET['itemtype'];
+$itemtype = $_POST['itemtype'] ?? $_GET['itemtype'];
 $options = [
-    'itemtype' => $itemtype
+    'itemtype' => $itemtype,
 ];
 $dropdown = new $itemtype();
 include(GLPI_ROOT . "/front/dropdown.common.form.php");

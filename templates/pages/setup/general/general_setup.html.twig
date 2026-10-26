@@ -5,8 +5,7 @@
  #
  # http://glpi-project.org
  #
- # @copyright 2015-2024 Teclib' and contributors.
- # @copyright 2003-2014 by the INDEPNET Development Team.
+ # @copyright 2015-2026 Teclib' and contributors.
  # @licence   https://www.gnu.org/licenses/gpl-3.0.html
  #
  # ---------------------------------------------------------------------
@@ -93,6 +92,7 @@
         inline_field_options|merge({
             'min': 1,
             'max': 4,
+            'required': true,
         })
     ) }}
 
@@ -149,6 +149,7 @@
         inline_field_options|merge({
             'min': 1,
             'max': 200,
+            'required': true,
         })
     ) }}
 
@@ -161,6 +162,7 @@
             'max': 200,
             'toadd': {'0': __('Never')},
             'width': 'auto',
+            'required': true,
         })
     ) }}
 </div>
@@ -216,6 +218,7 @@
             'min': 5,
             'max': 200,
             'step': 5,
+            'required': true,
         })
     ) }}
 
@@ -225,6 +228,7 @@
         __('Default characters limit (summary text boxes)'),
         inline_field_options|merge({
             'step': 50,
+            'required': true,
         })
     ) }}
 
@@ -236,6 +240,7 @@
             'min': 20,
             'max': 80,
             'step': 5,
+            'required': true,
         })
     ) }}
 
@@ -276,6 +281,9 @@
         inline_field_options|merge(lock_options)|merge({
             'width': 'auto',
             'rand': locks_rand,
+            'condition': {
+                'interface': 'central',
+            }
         })
     ) }}
 

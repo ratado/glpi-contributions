@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -56,13 +56,14 @@ unset($_REQUEST['params']['_idor_token']);
 if (
     !Session::validateIDOR([
         'itemtype'     => $_REQUEST['itemtype'],
-        '_idor_token'  => $idor
+        '_idor_token'  => $idor,
     ] + $_REQUEST['params'])
 ) {
     http_response_code(400);
     die();
 }
 
+/** @var class-string<CommonDBTM> $itemtype */
 $itemtype = $_REQUEST['itemtype'];
 $params = $_REQUEST['params'];
 
@@ -78,12 +79,12 @@ switch ($_REQUEST['widget']) {
                 $showgrouptickets = isset($params['showgrouptickets']) ? ($params['showgrouptickets'] !== 'false') : false;
                 $itemtype::showCentralList($params['start'], $params['status'] ?? 'process', $showgrouptickets);
             }
-        } else if ($itemtype === RSSFeed::class) {
+        } elseif ($itemtype === RSSFeed::class) {
             $personal = $params['personal'] !== 'false';
             $itemtype::showListForCentral($personal);
-        } else if ($itemtype === Planning::class) {
+        } elseif ($itemtype === Planning::class) {
             $itemtype::showCentral($params['who']);
-        } else if ($itemtype === Reminder::class) {
+        } elseif ($itemtype === Reminder::class) {
             $personal = ($params['personal'] ?? true) !== 'false';
             $itemtype::showListForCentral($personal);
         }

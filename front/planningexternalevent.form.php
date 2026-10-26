@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -52,23 +52,23 @@ if (isset($_POST["add"])) {
         }
     }
     Html::back();
-} else if (isset($_POST["delete"])) {
+} elseif (isset($_POST["delete"])) {
     $extevent->check($_POST["id"], DELETE);
     $extevent->delete($_POST);
     $extevent->redirectToList();
-} else if (isset($_POST["restore"])) {
+} elseif (isset($_POST["restore"])) {
     $extevent->check($_POST["id"], DELETE);
     $extevent->restore($_POST);
     $extevent->redirectToList();
-} else if (isset($_POST["purge"])) {
+} elseif (isset($_POST["purge"])) {
     $extevent->check($_POST["id"], PURGE);
     $extevent->delete($_POST, 1);
     $extevent->redirectToList();
-} else if (isset($_POST["purge_instance"])) {
+} elseif (isset($_POST["purge_instance"])) {
     $extevent->check($_POST["id"], PURGE);
     $extevent->deleteInstance((int) $_POST["id"], $_POST['day']);
     $extevent->redirectToList();
-} else if (isset($_POST["update"])) {
+} elseif (isset($_POST["update"])) {
     $extevent->check($_POST["id"], UPDATE);
     $extevent->update($_POST);
     Html::back();

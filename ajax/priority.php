@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -48,8 +48,8 @@ if (
 
     // Fallback to Form value -> Template values -> Medium
     $priority = Ticket::computePriority(
-        $_REQUEST["urgency"] ?: $predefined_fields['urgency'] ?? 3 /* Medium */,
-        $_REQUEST["impact"]  ?: $predefined_fields['impact']  ?? 3 /* Medium */
+        (int) ($_REQUEST["urgency"] ?: $predefined_fields['urgency'] ?? 3) /* Medium */,
+        (int) ($_REQUEST["impact"] ?: $predefined_fields['impact'] ?? 3) /* Medium */
     );
 
     if (isset($_REQUEST['getJson'])) {

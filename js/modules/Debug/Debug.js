@@ -5,7 +5,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -307,7 +307,7 @@ window.GLPI.Debug = new class Debug {
         const post_newline_keywords = ['UNION'];
         let clean_query = '';
         window.CodeMirror.runMode(query, 'text/x-sql', (text, style) => {
-            text.replace('>', `&gt;`).replace('<', `&lt;`);
+            text = escapeMarkupText(text);
             if (style !== null && style !== undefined) {
                 if (newline_keywords.includes(text.toUpperCase())) {
                     clean_query += '</br>';

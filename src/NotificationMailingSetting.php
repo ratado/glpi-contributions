@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -57,11 +57,83 @@ class NotificationMailingSetting extends NotificationSetting
         return Notification_NotificationTemplate::MODE_MAIL;
     }
 
+    public function defineTabs($options = [])
+    {
+        $ong = parent::defineTabs($options);
+        $this->addStandardTab('Log', $ong, $options);
+
+        return $ong;
+    }
+
+    /**
+     * Returns the keys of the config entries related to mail notifications.
+     * @return string[]
+     */
+    public static function getRelatedConfigKeys(): array
+    {
+        return [
+            'admin_email',
+            'admin_email_name',
+            'from_email',
+            'from_email_name',
+            'replyto_email',
+            'replyto_email_name',
+            'noreply_email',
+            'noreply_email_name',
+            'attach_ticket_documents_to_mail',
+            'attach_documents_to_notifications_for_anonymous',
+            'mailing_signature',
+            'smtp_mode',
+            'smtp_max_retries',
+            'smtp_retry_time',
+            'smtp_oauth_provider',
+            'smtp_oauth_client_id',
+            'smtp_oauth_client_secret',
+            'smtp_oauth_options',
+            'smtp_oauth_refresh_token',
+            'smtp_check_certificate',
+            'smtp_host',
+            'smtp_port',
+            'smtp_username',
+            'smtp_passwd',
+            'smtp_sender',
+        ];
+    }
+
+    public function rawSearchOptions()
+    {
+        $tab = [];
+
+        $tab[] = [
+            'id'   => 'common',
+            'name' => __('Characteristics'),
+        ];
+
+        $tab[] = [
+            'id'            => 1,
+            'table'         => $this->getTable(),
+            'field'         => 'value',
+            'name'          => __('Value'),
+            'massiveaction' => false,
+        ];
+
+        return $tab;
+    }
 
     public function showFormConfig($options = [])
     {
         /** @var array $CFG_GLPI */
         global $CFG_GLPI;
+
+        // warning and no form if can't read keyfile
+        // always display no matter what $options['display']
+        // see comment at the end of this function
+        $glpi_encryption_key = new GLPIKey();
+        if ($glpi_encryption_key->hasReadErrors()) {
+            $glpi_encryption_key->showReadErrors();
+
+            return;
+        }
 
         if (!isset($options['display'])) {
             $options['display'] = true;
@@ -95,7 +167,7 @@ class NotificationMailingSetting extends NotificationSetting
 
             $out .= "<tr class='tab_bg_2'>";
             $out .= "<td><label for='from_email'>" . __('Email sender address') . " <i class='pointer fa fa-info' title='" .
-            __s('Address to use in from for sent emails.') . "\n" . __s('If not set, main or entity administrator email address will be used.')  . "'></i></label></td>";
+            __s('Address to use in from for sent emails.') . "\n" . __s('If not set, main or entity administrator email address will be used.') . "'></i></label></td>";
             $out .= "<td><input type='email' class='form-control' name='from_email' id='from_email' value='" .
                     $CFG_GLPI["from_email"] . "'>";
             if (!empty($CFG_GLPI['from_email']) && !NotificationMailing::isUserAddressValid($CFG_GLPI["from_email"])) {
@@ -159,6 +231,17 @@ class NotificationMailingSetting extends NotificationSetting
             $out .= "<td colspan='2'></td></tr>";
 
             $out .= "<tr class='tab_bg_2'>";
+            $out .= "<td><label for='dropdown_attach_documents_to_notifications_for_anonymous$rand'>" . __('Add documents into notifications sent to anonymous users') . "</label></td><td>";
+            $out .= Dropdown::showYesNo(
+                "attach_documents_to_notifications_for_anonymous",
+                $CFG_GLPI["attach_documents_to_notifications_for_anonymous"],
+                -1,
+                ['display' => false, 'rand' => $rand]
+            );
+            $out .= "</td>";
+            $out .= "<td colspan='2'></td></tr>";
+
+            $out .= "<tr class='tab_bg_2'>";
             $out .= "<td><label for='mailing_signature'>" . __('Email signature') . "</label></td>";
             $out .= "<td colspan='3'><textarea class='form-control' rows='3' name='mailing_signature' id='mailing_signature'>" .
                                 $CFG_GLPI["mailing_signature"] . "</textarea></td></tr>";
@@ -187,7 +270,7 @@ class NotificationMailingSetting extends NotificationSetting
                 [
                     'value'     => $CFG_GLPI["smtp_mode"],
                     'display'   => false,
-                    'rand'      => $rand
+                    'rand'      => $rand,
                 ]
             );
             $out .= Html::scriptBlock("
@@ -275,7 +358,7 @@ class NotificationMailingSetting extends NotificationSetting
             $out .= "<tr class='tab_bg_2'>";
             $out .= "<td><label for='smtp_oauth_client_id{$rand}'>" . _x('oauth', 'Client ID') . "</label></td>";
             $out .= "<td>";
-            $out .= "<input class='form-control' name='smtp_oauth_client_id' id='smtp_oauth_client_id{$rand}' value='{$CFG_GLPI["smtp_oauth_client_id"]}'>";
+            $out .= "<input class='form-control' name='smtp_oauth_client_id' id='smtp_oauth_client_id{$rand}' value='{$CFG_GLPI['smtp_oauth_client_id']}'>";
             $out .= "</td>";
             $out .= "<td><label for='smtp_oauth_client_secret{$rand}'>" . _x('oauth', 'Client secret') . "</label></td>";
             $out .= "<td>";
@@ -311,7 +394,8 @@ class NotificationMailingSetting extends NotificationSetting
                 }
             }
             // display/hide additionnal fields on provider change
-            $out .= Html::scriptBlock(<<<JAVASCRIPT
+            $out .= Html::scriptBlock(
+                <<<JAVASCRIPT
                 $(function() {
                     $('[name=smtp_oauth_provider]').on('change', function() {
                         const value = $(this).find('option:selected').val();
@@ -357,7 +441,7 @@ JAVASCRIPT
             $out .= "<tr class='tab_bg_2'><td><label for='smtp_host'>" . __('SMTP host') . "</label></td>";
             $out .= "<td><input type='text' class='form-control' name='smtp_host' id='smtp_host' value='" . $CFG_GLPI["smtp_host"] . "'>";
             $out .= "</td>";
-           //TRANS: SMTP port
+            //TRANS: SMTP port
             $out .= "<td><label for='smtp_port'>" . _n('Port', 'Ports', 1) . "</label></td>";
             $out .= "<td><input type='number' class='form-control' name='smtp_port' id='smtp_port' size='5' value='" . $CFG_GLPI["smtp_port"] . "'>";
             $out .= "</td>";
@@ -382,7 +466,7 @@ JAVASCRIPT
             $out .= "</tr>";
             $out .= "</table>";
         } else {
-            $out .= "<tr><td colspan='4'>" . __('Notifications are disabled.')  .
+            $out .= "<tr><td colspan='4'>" . __('Notifications are disabled.') .
                      "<a href='{$CFG_GLPI['root_doc']}/front/setup.notification.php'>" .
                        __('See configuration') . "</a></td></tr>";
             $out .= "</table>";
@@ -391,7 +475,7 @@ JAVASCRIPT
         if ($CFG_GLPI['notifications_mailing']) {
             $options['addbuttons'] = ['test_smtp_send' => __('Send a test email to the administrator')];
         }
-       //do not satisfy display param since showFormButtons() will not :(
+        //do not satisfy display param since showFormButtons() will not :(
         echo $out;
         $this->showFormButtons($options);
     }

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -49,7 +49,7 @@ function update0901to0905()
     $updateresult     = true;
     $ADDTODISPLAYPREF = [];
 
-   //TRANS: %s is the number of new version
+    //TRANS: %s is the number of new version
     $migration->displayTitle(sprintf(__('Update to %s'), '0.90.5'));
     $migration->setVersion('0.90.5');
 
@@ -57,13 +57,13 @@ function update0901to0905()
     $newtables     = [];
 
     foreach ($newtables as $new_table) {
-       // rename new tables if exists ?
+        // rename new tables if exists ?
         if ($DB->tableExists($new_table)) {
             $migration->dropTable("backup_$new_table");
             $migration->displayWarning("$new_table table already exists. " .
                                     "A backup have been done to backup_$new_table.");
             $backup_tables = true;
-            $query         = $migration->renameTable("$new_table", "backup_$new_table");
+            $migration->renameTable("$new_table", "backup_$new_table");
         }
     }
     if ($backup_tables) {
@@ -73,14 +73,14 @@ function update0901to0905()
         );
     }
 
-   // fix https://github.com/glpi-project/glpi/issues/820
-   // remove empty suppliers in tickets
+    // fix https://github.com/glpi-project/glpi/issues/820
+    // remove empty suppliers in tickets
     $DB->deleteOrDie("glpi_suppliers_tickets", [
         'suppliers_id'       => 0,
-        'alternative_email'  => ""
+        'alternative_email'  => "",
     ]);
 
-   // ************ Keep it at the end **************
+    // ************ Keep it at the end **************
     $migration->executeMigration();
 
     return $updateresult;

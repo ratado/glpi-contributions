@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -47,7 +47,7 @@ class OLA extends LevelAgreement
 
     public static function getTypeName($nb = 0)
     {
-       // Acronymous, no plural
+        // Acronymous, no plural
         return __('OLA');
     }
 
@@ -63,7 +63,7 @@ class OLA extends LevelAgreement
     public function getAddConfirmation()
     {
         return [__("The assignment of an OLA to a ticket causes the recalculation of the date."),
-            __("Escalations defined in the OLA will be triggered under this new date.")
+            __("Escalations defined in the OLA will be triggered under this new date."),
         ];
     }
 }

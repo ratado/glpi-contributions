@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -74,26 +74,26 @@ if (isset($_POST['itemtype'])) {
                 }
             }
 
-           //Execute hook to unlock fields managed by a plugin, if needed
+            //Execute hook to unlock fields managed by a plugin, if needed
             Plugin::doHookFunction(Hooks::UNLOCK_FIELDS, $_POST);
-        } else if (isset($_POST["purge"])) {
+        } elseif (isset($_POST["purge"])) {
             foreach ($actions as $type) {
                 if (isset($_POST[$type]) && count($_POST[$type])) {
                     $item = new $type();
                     foreach (array_keys($_POST[$type]) as $key) {
                         if (!$item->can($key, PURGE)) {
-                             Session::addMessageAfterRedirect(
-                                 sprintf(
-                                     __('You do not have rights to delete %s item.'),
-                                     $type
-                                 ),
-                                 true,
-                                 ERROR
-                             );
-                               continue;
+                            Session::addMessageAfterRedirect(
+                                sprintf(
+                                    __('You do not have rights to delete %s item.'),
+                                    $type
+                                ),
+                                true,
+                                ERROR
+                            );
+                            continue;
                         }
 
-                      //Force unlock
+                        //Force unlock
                         $item->delete(['id' => $key], 1);
                     }
                 }

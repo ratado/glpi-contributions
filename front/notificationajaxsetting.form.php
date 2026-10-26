@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -43,7 +43,7 @@ $notificationajax = new NotificationAjaxSetting();
 if (!empty($_POST["test_ajax_send"])) {
     NotificationAjax::testNotification();
     Html::back();
-} else if (!empty($_POST["update"])) {
+} elseif (!empty($_POST["update"])) {
     $config = new Config();
     $config->update($_POST);
     Event::log(0, "system", 3, "setup", sprintf(

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -44,13 +44,13 @@ $translation = new ReminderTranslation();
 if (isset($_POST['add'])) {
     $translation->add($_POST);
     Html::back();
-} else if (isset($_POST['update'])) {
+} elseif (isset($_POST['update'])) {
     $translation->update($_POST);
     Html::back();
-} else if (isset($_POST["purge"])) {
+} elseif (isset($_POST["purge"])) {
     $translation->delete($_POST, true);
     Html::redirect(Reminder::getFormURLWithID($_POST['reminders_id']));
-} else if (isset($_GET["id"])) {
+} elseif (isset($_GET["id"])) {
     $menus = ["tools", "remindertranslation"];
     ReminderTranslation::displayFullPageForItem($_GET['id'], $menus);
 }

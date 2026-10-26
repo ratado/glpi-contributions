@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -53,7 +53,7 @@ if ($_POST['ipnetworks_id'] && $network->can($_POST['ipnetworks_id'], READ)) {
 
     $network->computeNetworkRange($start, $end);
 
-   //TRANS: %1$s is address, %2$s is netmask
+    //TRANS: %1$s is address, %2$s is netmask
     printf(__('IP network: %1$s/%2$s') . "<br>\n", $address, $netmask);
     printf(__('First/last addresses: %1$s/%2$s'), $start->getTextual(), $end->getTextual());
     if (!empty($gateway)) {

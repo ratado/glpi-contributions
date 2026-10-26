@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -125,12 +125,13 @@ class Inventory
         }
 
         $converter = new Converter();
+        $schema = $converter->getSchema();
         if (method_exists($this, 'getSchemaExtraProps')) {
-            $converter->setExtraProperties($this->getSchemaExtraProps());
+            $schema->setExtraProperties($this->getSchemaExtraProps());
         }
 
         if (method_exists($this, 'getSchemaExtraSubProps')) {
-            $converter->setExtraSubProperties($this->getSchemaExtraSubProps());
+            $schema->setExtraSubProperties($this->getSchemaExtraSubProps());
         }
 
         if (Request::XML_MODE === $format) {
@@ -145,7 +146,7 @@ class Inventory
         }
 
         try {
-            $converter->validate($data);
+            $schema->validate($data);
         } catch (\RuntimeException $e) {
             $this->errors[] = preg_replace(
                 '|\$ref\[file~2//.*/vendor/glpi-project/inventory_format/inventory.schema.json\]|',
@@ -263,9 +264,9 @@ class Inventory
             }
 
             $converter = new Converter();
-            $schema = $converter->buildSchema();
+            $schema = $converter->getSchema()->build();
 
-            $properties = array_keys((array)$schema->properties->content->properties);
+            $properties = array_keys((array) $schema->properties->content->properties);
             $properties = array_filter(
                 $properties,
                 function ($property_name) {
@@ -290,7 +291,9 @@ class Inventory
                 //if inventory is not partial, we consider following properties are empty if not present; so they'll be removed
                 $empty_props = [
                     'virtualmachines',
-                    'remote_mgmt'
+                    'remote_mgmt',
+                    'monitors',
+                    'antivirus',
                 ];
             }
 
@@ -300,7 +303,7 @@ class Inventory
             foreach ($properties as $property) {
                 if (property_exists($contents, $property)) {
                     $data[$property] = $contents->$property;
-                } else if (in_array($property, $empty_props)) {
+                } elseif (in_array($property, $empty_props)) {
                     $data[$property] = [];
                 }
             }
@@ -475,7 +478,7 @@ class Inventory
      */
     public function inError(): bool
     {
-        return (bool)count($this->errors);
+        return (bool) count($this->errors);
     }
 
     public static function getMenuContent()
@@ -488,7 +491,7 @@ class Inventory
             Agent::class,
             Lockedfield::class,
             RefusedEquipment::class,
-            SNMPCredential::class
+            SNMPCredential::class,
         ];
         $links = [];
         foreach ($classes as $class) {
@@ -505,6 +508,8 @@ class Inventory
             'links'   => $links,
         ];
 
+        $links['lists'] = ''; // Add `Lists` button for subitems
+
         if (Session::haveRight(Agent::$rightname, READ)) {
             $menu['options']['agent'] = [
                 'icon'  => Agent::getIcon(),
@@ -512,7 +517,8 @@ class Inventory
                 'page'  => Agent::getSearchURL(false),
                 'links' => [
                     'search' => '/front/agent.php',
-                ] + $links
+                ] + $links,
+                'lists_itemtype' => Agent::class,
             ];
         }
 
@@ -522,8 +528,9 @@ class Inventory
                 'title' => Lockedfield::getTypeName(Session::getPluralNumber()),
                 'page'  => Lockedfield::getSearchURL(false),
                 'links' => [
-                    "<i class=\"ti ti-plus\" title=\"" . __('Add global lock') . "\"></i><span class='d-none d-xxl-block'>" . __('Add global lock') . "</span>" => Lockedfield::getFormURL(false)
-                ] + $links
+                    "<i class=\"ti ti-plus\" title=\"" . __('Add global lock') . "\"></i><span class='d-none d-xxl-block'>" . __('Add global lock') . "</span>" => Lockedfield::getFormURL(false),
+                ] + $links,
+                'lists_itemtype' => Lockedfield::class,
             ];
         }
 
@@ -532,7 +539,8 @@ class Inventory
                 'icon'  => RefusedEquipment::getIcon(),
                 'title' => RefusedEquipment::getTypeName(Session::getPluralNumber()),
                 'page'  => RefusedEquipment::getSearchURL(false),
-                'links' => $links
+                'links' => $links,
+                'lists_itemtype' => RefusedEquipment::class,
             ];
         }
 
@@ -544,7 +552,8 @@ class Inventory
                 'links' => [
                     'add' => '/front/snmpcredential.form.php',
                     'search' => '/front/snmpcredential.php',
-                ] + $links
+                ] + $links,
+                'lists_itemtype' => SNMPCredential::class,
             ];
         }
 
@@ -573,7 +582,7 @@ class Inventory
      */
     final public function processInventoryData()
     {
-       //map existing keys in inventory format to their respective Inventory\Asset class if needed.
+        //map existing keys in inventory format to their respective Inventory\Asset class if needed.
         foreach ($this->data as $key => &$value) {
             $assettype = false;
 
@@ -685,15 +694,15 @@ class Inventory
                         $assettype = $this->processExtraInventoryData($key);
                     }
                     if ($assettype === false) {
-                     //unhandled
+                        //unhandled
                         throw new \RuntimeException("Unhandled schema entry $key");
                     }
                     break;
             }
 
             if ($assettype !== false) {
-               //handle if asset type has been found.
-                $asset = new $assettype($this->item, (array)$value);
+                //handle if asset type has been found.
+                $asset = new $assettype($this->item, (array) $value);
                 if ($asset->checkConf($this->conf)) {
                     $asset->setMainAsset($this->mainasset);
                     $asset->setAgent($this->getAgent());
@@ -716,14 +725,15 @@ class Inventory
      */
     public function handleItem()
     {
-       //inject converted assets
-        $this->mainasset->setExtraData($this->data);
-        $this->mainasset->setAssets($this->assets);
-        $this->mainasset->checkConf($this->conf);
-        $item_start = microtime(true);
-        $this->mainasset->handle();
-        $this->item = $this->mainasset->getItem();
-        $this->addBench($this->item->getType(), 'handle', $item_start);
+        if ($this->mainasset->checkConf($this->conf)) {
+            //inject converted assets
+            $this->mainasset->setExtraData($this->data);
+            $this->mainasset->setAssets($this->assets);
+            $item_start = microtime(true);
+            $this->mainasset->handle();
+            $this->item = $this->mainasset->getItem();
+            $this->addBench($this->item->getType(), 'handle', $item_start);
+        }
         return;
     }
 
@@ -755,7 +765,7 @@ class Inventory
             'mem'       => memory_get_usage(),
             'mem_real'  => memory_get_usage(true),
             'mem_peak'  => memory_get_peak_usage(),
-            'extra'     => $extra
+            'extra'     => $extra,
 
         ];
     }
@@ -782,10 +792,10 @@ class Inventory
                             $output .= "\t\tMemory usage:        ";
                             break;
                         case 'mem_real':
-                             $output .= "\t\tMemory usage (real): ";
+                            $output .= "\t\tMemory usage (real): ";
                             break;
                         case 'mem_peak':
-                             $output .= "\t\tMemory peak:         ";
+                            $output .= "\t\tMemory peak:         ";
                             break;
                     }
 
@@ -794,7 +804,7 @@ class Inventory
                             _n('%s second', '%s seconds', $value),
                             $value
                         );
-                    } else if ($key != 'extra') {
+                    } elseif ($key != 'extra') {
                         $output .= Toolbox::getSize($value);
                     }
                     $output .= "\n";
@@ -823,6 +833,11 @@ class Inventory
     public function getMetadata(): array
     {
         return $this->metadata;
+    }
+
+    public function getAssets()
+    {
+        return $this->assets;
     }
 
     public function getMainAsset(): MainAsset
@@ -861,10 +876,13 @@ class Inventory
         $conf = new Conf();
         $temp_files = glob(GLPI_INVENTORY_DIR . '/*.{' . implode(',', $conf->knownInventoryExtensions()) . '}', GLOB_BRACE);
 
+        // Files created by `tempnam()` while an inventory is being processed (see `Inventory::setData()`).
+        $temp_files = array_merge($temp_files, glob(GLPI_INVENTORY_DIR . '/{xml_,json_}*', GLOB_BRACE));
+
         $time_limit = 60 * 60 * 12;//12 hours
         foreach ($temp_files as $temp_file) {
-           //drop only inventory files that have been created more than 12 hours ago
-            if (time() - filemtime($temp_file) >= $time_limit) {
+            //drop only inventory files that have been created more than 12 hours ago
+            if (is_file($temp_file) && time() - filemtime($temp_file) >= $time_limit) {
                 unlink($temp_file);
                 $message = sprintf(__('File %1$s has been removed'), $temp_file);
                 if ($task) {
@@ -912,7 +930,7 @@ class Inventory
 
             $ids = [];
             foreach ($inventory_files as $inventory_file) {
-                 $ids[preg_replace("/\\.(" . implode('|', $conf->knownInventoryExtensions()) . ")\$/i", '', $inventory_file->getFileName())] = $inventory_file;
+                $ids[preg_replace("/\\.(" . implode('|', $conf->knownInventoryExtensions()) . ")\$/i", '', $inventory_file->getFileName())] = $inventory_file;
             }
 
             if (!count($ids)) {
@@ -923,12 +941,12 @@ class Inventory
             $iterator = $DB->request([
                 'SELECT'  => 'id',
                 'FROM'    => $itemtype::getTable(),
-                'WHERE'   => ['id' => array_keys($ids)]
+                'WHERE'   => ['id' => array_keys($ids)],
             ]);
 
             if (count($iterator) === count($ids)) {
-                 //all assets are still present, we're done
-                 return;
+                //all assets are still present, we're done
+                return;
             }
 
             //find missing assets

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -52,18 +52,17 @@ class Pdu_Plug extends CommonDBRelation
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         $nb = 0;
-        switch ($item->getType()) {
-            default:
-                $field = $item->getType() == PDU::getType() ? 'pdus_id' : 'plugs_id';
-                if ($_SESSION['glpishow_count_on_tabs']) {
-                    $nb = countElementsInTable(
-                        self::getTable(),
-                        [$field  => $item->getID()]
-                    );
-                }
-                return self::createTabEntry(self::getTypeName(Session::getPluralNumber()), $nb);
+        $field = get_class($item) == PDU::class ? 'pdus_id' : 'plugs_id';
+        if (
+            $_SESSION['glpishow_count_on_tabs']
+            && ($item instanceof CommonDBTM)
+        ) {
+            $nb = countElementsInTable(
+                self::getTable(),
+                [$field  => $item->getID()]
+            );
         }
-        return '';
+        return self::createTabEntry(self::getTypeName(Session::getPluralNumber()), $nb);
     }
 
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
@@ -98,8 +97,8 @@ class Pdu_Plug extends CommonDBRelation
         $items = $DB->request([
             'FROM'   => self::getTable(),
             'WHERE'  => [
-                'pdus_id' => $pdu->getID()
-            ]
+                'pdus_id' => $pdu->getID(),
+            ],
         ]);
         $link = new self();
 
@@ -121,12 +120,12 @@ class Pdu_Plug extends CommonDBRelation
             echo "\n<form id='form_device_add$rand' name='form_device_add$rand'
                action='" . Toolbox::getItemTypeFormURL(__CLASS__) . "' method='post'>\n";
             echo "\t<input type='hidden' name='pdus_id' value='$ID'>\n";
-           //echo "\t<input type='hidden' name='itemtype' value='".$item->getType()."'>\n";
+            //echo "\t<input type='hidden' name='itemtype' value='".$item->getType()."'>\n";
             echo "<table class='tab_cadre_fixe'><tr class='tab_bg_1'><td>";
             echo "<label for='dropdown_plugs_id$rand'>" . __('Add a new plug') . "</label></td><td>";
             Plug::dropdown([
                 'name'   => "plugs_id",
-                'rand'   => $rand
+                'rand'   => $rand,
             ]);
             echo "</td><td>";
             echo "<label for='number_plugs'>" . __('Number');
@@ -136,7 +135,7 @@ class Pdu_Plug extends CommonDBRelation
                 [
                     'id'     => 'number_plugs',
                     'type'   => 'number',
-                    'min'    => 1
+                    'min'    => 1,
                 ]
             );
             echo "</td><td>";
@@ -152,7 +151,7 @@ class Pdu_Plug extends CommonDBRelation
             if ($canedit) {
                 $massiveactionparams = [
                     'num_displayed'   => min($_SESSION['glpilist_limit'], count($items)),
-                    'container'       => 'mass' . __CLASS__ . $rand
+                    'container'       => 'mass' . __CLASS__ . $rand,
                 ];
                 Html::showMassiveActions($massiveactionparams);
             }

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -37,6 +37,70 @@
 /// since version 9.2
 class KnowbaseItem_Comment extends CommonDBTM
 {
+    public static function canCreate(): bool
+    {
+        return Session::haveRight(KnowbaseItem::$rightname, KnowbaseItem::COMMENTS);
+    }
+
+    public static function canView(): bool
+    {
+        return Session::haveRight(KnowbaseItem::$rightname, KnowbaseItem::COMMENTS);
+    }
+
+    public static function canUpdate(): bool
+    {
+        return Session::haveRight(KnowbaseItem::$rightname, KnowbaseItem::COMMENTS);
+    }
+
+    public static function canDelete(): bool
+    {
+        return Session::haveRight(KnowbaseItem::$rightname, KnowbaseItem::COMMENTS);
+    }
+
+    public static function canPurge(): bool
+    {
+        return self::canDelete();
+    }
+
+    public function canCreateItem(): bool
+    {
+        return $this->canComment();
+    }
+
+    public function canViewItem(): bool
+    {
+        return $this->canComment();
+    }
+
+    public function canUpdateItem(): bool
+    {
+        if (!$this->canComment()) {
+            return false;
+        }
+        // Users can edit their own comments and admins can edit all comments
+        return Session::getLoginUserID() === $this->fields['users_id']
+            || Session::haveRight(KnowbaseItem::$rightname, KnowbaseItem::KNOWBASEADMIN);
+    }
+
+    public function canDeleteItem(): bool
+    {
+        return $this->canUpdateItem();
+    }
+
+    public function canPurgeItem(): bool
+    {
+        return $this->canDeleteItem();
+    }
+
+    private function canComment(): bool
+    {
+        $kbitem = new KnowbaseItem();
+        if (!$kbitem->getFromDB($this->fields['knowbaseitems_id'])) {
+            return false;
+        }
+        return $kbitem->canComment();
+    }
+
     public static function getTypeName($nb = 0)
     {
         return _n('Comment', 'Comments', $nb);
@@ -54,12 +118,12 @@ class KnowbaseItem_Comment extends CommonDBTM
             if ($item->getType() == KnowbaseItem::getType()) {
                 $where = [
                     'knowbaseitems_id' => $item->getID(),
-                    'language'         => null
+                    'language'         => null,
                 ];
             } else {
                 $where = [
                     'knowbaseitems_id' => $item->fields['knowbaseitems_id'],
-                    'language'         => $item->fields['language']
+                    'language'         => $item->fields['language'],
                 ];
             }
 
@@ -88,16 +152,16 @@ class KnowbaseItem_Comment extends CommonDBTM
         /** @var array $CFG_GLPI */
         global $CFG_GLPI;
 
-       // Total Number of comments
+        // Total Number of comments
         if ($item->getType() == KnowbaseItem::getType()) {
             $where = [
                 'knowbaseitems_id' => $item->getID(),
-                'language'         => null
+                'language'         => null,
             ];
         } else {
             $where = [
                 'knowbaseitems_id' => $item->fields['knowbaseitems_id'],
-                'language'         => $item->fields['language']
+                'language'         => $item->fields['language'],
             ];
         }
 
@@ -123,7 +187,7 @@ class KnowbaseItem_Comment extends CommonDBTM
             echo "</div>";
         }
 
-       // No comments in database
+        // No comments in database
         if ($number < 1) {
             $no_txt = __('No comments');
             echo "<div class='center'>";
@@ -134,7 +198,7 @@ class KnowbaseItem_Comment extends CommonDBTM
             return;
         }
 
-       // Output events
+        // Output events
         echo "<div class='forcomments timeline_history'>";
         echo "<ul class='comments left'>";
         $comments = self::getCommentsForKbItem($where['knowbaseitems_id'], $where['language']);
@@ -168,7 +232,7 @@ class KnowbaseItem_Comment extends CommonDBTM
                     }
 
                     $.ajax({
-                       url: '{$CFG_GLPI["root_doc"]}/ajax/getKbComment.php',
+                       url: '{$CFG_GLPI['root_doc']}/ajax/getKbComment.php',
                        method: 'post',
                        cache: false,
                        data: _data,
@@ -199,7 +263,7 @@ class KnowbaseItem_Comment extends CommonDBTM
                     }
 
                     $.ajax({
-                       url: '{$CFG_GLPI["root_doc"]}/ajax/getKbComment.php',
+                       url: '{$CFG_GLPI['root_doc']}/ajax/getKbComment.php',
                        method: 'post',
                        cache: false,
                        data: _data,
@@ -221,7 +285,7 @@ class KnowbaseItem_Comment extends CommonDBTM
               });
             </script>";
 
-            echo "</div>";
+        echo "</div>";
     }
 
     /**
@@ -241,7 +305,7 @@ class KnowbaseItem_Comment extends CommonDBTM
         $where = [
             'knowbaseitems_id'  => $kbitem_id,
             'language'          => $lang,
-            'parent_comment_id' => $parent
+            'parent_comment_id' => $parent,
         ];
 
         $db_comments = $DB->request(

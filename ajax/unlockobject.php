@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -38,9 +38,11 @@
  */
 
 // here we are going to try to unlock the given object
-// url should be of the form: 'http://.../.../unlockobject.php?unlock=1[&force=1]&id=xxxxxx'
+// url should be of the form: 'http://.../.../unlockobject.php?unlock=1&id=xxxxxx'
 // or url should be of the form 'http://.../.../unlockobject.php?requestunlock=1&id=xxxxxx'
 // to send notification to locker of object
+
+use Glpi\Http\Response;
 
 $AJAX_INCLUDE = 1;
 include('../inc/includes.php');
@@ -50,13 +52,18 @@ Session::checkLoginUser();
 
 $ret = 0;
 if (isset($_POST['unlock']) && isset($_POST["id"])) {
-   // then we may have something to unlock
+    // then we may have something to unlock
     $ol = new ObjectLock();
-    if (
-        $ol->getFromDB($_POST["id"])
-        && $ol->deleteFromDB(1)
-    ) {
-        if (isset($_POST['force'])) {
+    if ($ol->getFromDB($_POST["id"])) {
+        $item = getItemForItemtype($ol->fields['itemtype']);
+
+        $can_unlock = $ol->fields['users_id'] === Session::getLoginUserID()
+            || (
+                $item instanceof CommonDBTM
+                && Session::haveRight($item::$rightname, UNLOCK)
+                && $item->can($ol->fields['items_id'], UPDATE)
+            );
+        if ($can_unlock && $ol->deleteFromDB(true)) {
             Log::history(
                 $ol->fields['items_id'],
                 $ol->fields['itemtype'],
@@ -64,20 +71,22 @@ if (isset($_POST['unlock']) && isset($_POST["id"])) {
                 0,
                 Log::HISTORY_UNLOCK_ITEM
             );
+            $ret = 1;
+        } else {
+            Response::sendError(400, 'Not allowed');
         }
-        $ret = 1;
     }
-} else if (
+} elseif (
     isset($_POST['requestunlock'])
            && isset($_POST["id"])
 ) {
-   // the we must ask for unlock
+    // the we must ask for unlock
     $ol = new ObjectLock();
     if ($ol->getFromDB($_POST["id"])) {
         NotificationEvent::raiseEvent('unlock', $ol);
         $ret = 1;
     }
-} else if (
+} elseif (
     isset($_GET['lockstatus'])
            && isset($_GET["id"])
 ) {

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @copyright 2010-2022 by the FusionInventory Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
@@ -36,11 +36,13 @@
 
 namespace Glpi\Inventory\Asset;
 
-use CommonDBTM;
 use Glpi\Inventory\Conf;
 
 class Drive extends Device
 {
+    /** @var Conf */
+    private Conf $conf;
+
     private $harddrives;
     private $prepared_harddrives = [];
 
@@ -72,10 +74,13 @@ class Drive extends Device
             }
         }
         if (count($hdd)) {
-            $this->harddrives = new HardDrive($this->item, $hdd);
-            $prep_hdds = $this->harddrives->prepare();
-            if (defined('TU_USER')) {
-                $this->prepared_harddrives = $prep_hdds;
+            $this->harddrives = new HardDrive($this->item);
+            if ($this->harddrives->checkConf($this->conf)) {
+                $this->harddrives->setData($hdd);
+                $prep_hdds = $this->harddrives->prepare();
+                if (defined('TU_USER')) {
+                    $this->prepared_harddrives = $prep_hdds;
+                }
             }
         }
 
@@ -96,7 +101,7 @@ class Drive extends Device
             'reader',
             'sd[\s-]*card',
             'micro[\s-]*sd',
-            'mmc'
+            'mmc',
         ];
 
         foreach ($drives_regex as $regex) {
@@ -124,6 +129,7 @@ class Drive extends Device
 
     public function checkConf(Conf $conf): bool
     {
+        $this->conf = $conf;
         return $conf->component_drive == 1;
     }
 

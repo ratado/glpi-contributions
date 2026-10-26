@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -67,7 +67,7 @@ if (isset($_POST['inquest_config']) && isset($_POST['entities_id'])) {
                 'max'   => 90,
                 'step'  => 1,
                 'toadd' => ['0' => __('As soon as possible')],
-                'unit'  => 'day'
+                'unit'  => 'day',
             ]
         );
         echo "</td></tr>";
@@ -80,7 +80,7 @@ if (isset($_POST['inquest_config']) && isset($_POST['entities_id'])) {
             'max'     => 100,
             'step'    => 10,
             'toadd'   => [0 => __('Disabled')],
-            'unit'    => '%'
+            'unit'    => '%',
         ]);
         echo "</td></tr>";
 
@@ -93,14 +93,14 @@ if (isset($_POST['inquest_config']) && isset($_POST['entities_id'])) {
                 'max'   => 180,
                 'step'  => 1,
                 'toadd' => ['0' => __('Unspecified')],
-                'unit'  => 'day'
+                'unit'  => 'day',
             ]
         );
         echo "</td></tr>";
 
         echo "<tr class='tab_bg_1'><td>" . __('For tickets closed after') . "</td><td>";
         Html::showDateTimeField("max_closedate", ['value'      => $max_closedate,
-            'timestep'   => 1
+            'timestep'   => 1,
         ]);
         echo "</td></tr>";
 
@@ -115,7 +115,10 @@ if (isset($_POST['inquest_config']) && isset($_POST['entities_id'])) {
 
             echo "<tr class='tab_bg_1'><td>" . __('URL') . "</td>";
             echo "<td>";
-            echo Html::input('inquest_URL', ['value' => $entity->fields['inquest_URL']]);
+            echo Html::input('inquest_URL', [
+                'value' => $entity->fields['inquest_URL'],
+                'maxlength' => 255,
+            ]);
             echo "</td></tr>";
         }
 

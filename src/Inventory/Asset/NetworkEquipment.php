@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @copyright 2010-2022 by the FusionInventory Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
@@ -49,7 +49,7 @@ class NetworkEquipment extends MainAsset
     protected $extra_data = [
         'network_device'                          => null,
         'network_components'                      => null,
-        '\Glpi\Inventory\Asset\NetworkPort'       => null
+        '\Glpi\Inventory\Asset\NetworkPort'       => null,
     ];
 
     protected function getModelsFieldName(): string
@@ -72,7 +72,7 @@ class NetworkEquipment extends MainAsset
         $blacklist = new Blacklist();
 
         if (isset($this->extra_data['network_device'])) {
-            $device = (object)$this->extra_data['network_device'];
+            $device = (object) $this->extra_data['network_device'];
 
             $dev_mapping = [
                 'description'  => 'sysdescr',
@@ -91,7 +91,7 @@ class NetworkEquipment extends MainAsset
             }
 
             if (!property_exists($device, 'name') && property_exists($device, 'description')) {
-               //take description if name is missing
+                //take description if name is missing
                 $device->name = $device->description;
             }
             $this->hardware = $device;
@@ -112,7 +112,7 @@ class NetworkEquipment extends MainAsset
                 $port->is_internal = true;
                 $port->ipaddress = [];
 
-               //add internal port(s)
+                //add internal port(s)
                 foreach ($device->ips as $ip) {
                     if (
                         !in_array($ip, $port->ipaddress)
@@ -127,7 +127,7 @@ class NetworkEquipment extends MainAsset
         }
 
         if ($this->isStackedSwitch()) {
-           //keep only stack parts, not main equipment
+            //keep only stack parts, not main equipment
             $this->data = [];
             $switches = $this->getStackedSwitches();
             foreach ($switches as $switch) {
@@ -138,11 +138,14 @@ class NetworkEquipment extends MainAsset
                 $stack->$model_field = $switch->model;
                 $stack->description = $stack->name . ' - ' . ($switch->name ?? $switch->description);
                 $stack->name = $stack->name . ' - ' . ($switch->name ?? $switch->description);
+                if (($switch->name ?? $switch->description) != $switch->stack_number ?? '') {
+                    $stack->name .= ' - ' . $switch->stack_number;
+                }
                 $stack->stack_number = $switch->stack_number ?? null;
                 $this->data[] = $stack;
             }
         } else {
-           //keep an entry for main equipment
+            //keep an entry for main equipment
             $this->data = [$val];
             if ($this->isWirelessController()) {
                 $aps = $this->getAccessPoints();
@@ -232,7 +235,7 @@ class NetworkEquipment extends MainAsset
         }
     }
 
-    public function handleLinks(array $data = null)
+    public function handleLinks(?array $data = null)
     {
         if ($this->current_key !== null) {
             $data = [$this->data[$this->current_key]];
@@ -248,20 +251,20 @@ class NetworkEquipment extends MainAsset
             return;
         }
 
-       // Get networkname
+        // Get networkname
         $netname = new NetworkName();
         if ($netname->getFromDBByCrit(['itemtype' => 'NetworkPort', 'items_id' => $netports_id])) {
             if ($netname->fields['name'] != $port->name) {
                 $netname->update(Sanitizer::sanitize([
                     'id'     => $netname->getID(),
-                    'name'   => $port->netname ?? $port->name
+                    'name'   => $port->netname ?? $port->name,
                 ]));
             }
         } else {
             $netname->add([
                 'itemtype'  => 'NetworkPort',
                 'items_id'  => $netports_id,
-                'name'      => addslashes($port->name)
+                'name'      => addslashes($port->name),
             ]);
         }
     }
@@ -292,6 +295,7 @@ class NetworkEquipment extends MainAsset
             return false;
         }
 
+        $stack_component = $this->getStackComponentName($components);
         $elt_count = 0;
         foreach ($components as $component) {
             if (!property_exists($component, 'type')) {
@@ -303,7 +307,7 @@ class NetworkEquipment extends MainAsset
                         $elt_count += $this->isStackedSwitch($component->index);
                     }
                     break;
-                case 'chassis':
+                case $stack_component:
                     if (property_exists($component, 'serial')) {
                         ++$elt_count;
                     }
@@ -315,7 +319,7 @@ class NetworkEquipment extends MainAsset
     }
 
     /**
-     * Get detected switches (osrted by their index)
+     * Get detected switches (sorted by their index)
      *
      * @return array
      */
@@ -326,17 +330,20 @@ class NetworkEquipment extends MainAsset
             return [];
         }
 
+        $stack_component = $this->getStackComponentName($components);
         $switches = [];
         $stack_number = 1;
         foreach ($components as $component) {
-            switch ($component->type) {
-                case 'chassis':
-                    if (property_exists($component, 'serial')) {
+            if ($component->type == $stack_component) {
+                if (property_exists($component, 'serial')) {
+                    if (property_exists($component, 'stack_number')) {
+                        $stack_number = $component->stack_number;
+                    } else {
                         $component->stack_number = $stack_number;
-                        $switches[$component->index] = $component;
                     }
-                    $stack_number++;
-                    break;
+                    $switches[$component->index] = $component;
+                }
+                $stack_number++;
             }
         }
 
@@ -345,14 +352,42 @@ class NetworkEquipment extends MainAsset
     }
 
     /**
+     * Get stack component name
+     *
+     * @param array $components Network components
+     *
+     * @return string
+     */
+    public function getStackComponentName(array $components): string
+    {
+        $name = null;
+        foreach ($components as $component) {
+            if (!property_exists($component, 'type')) {
+                continue;
+            }
+            switch ($component->type) {
+                case 'chassis':
+                    if (property_exists($component, 'serial')) {
+                        $name = 'chassis';
+                    }
+                    break;
+                case 'module':
+                    if (property_exists($component, 'serial') && $name === null) {
+                        $name = 'module';
+                    }
+                    break;
+            }
+        }
+        return $name ?? 'chassis';
+    }
+
+    /**
      * Is device a wireless controller
      * Relies on level/dependencies of network_components
      *
-     * @param integer $parent_index Parent index for recursive calls
-     *
      * @return boolean
      */
-    public function isWirelessController($parent_index = 0): bool
+    public function isWirelessController(): bool
     {
         $components = $this->extra_data['network_components'] ?? [];
         if (!count($components)) {
@@ -414,5 +449,36 @@ class NetworkEquipment extends MainAsset
     public function getItemtype(): string
     {
         return \NetworkEquipment::class;
+    }
+
+    /**
+     * Try to know if networkEquipement need to be updated from discovery
+     * Only if IP has changed
+     * @return boolean
+     */
+    public static function needToBeUpdatedFromDiscovery(\CommonDBTM $item, $val)
+    {
+        if (property_exists($val, 'ips')) {
+            foreach ($val->ips as $ip) {
+                $blacklist = new Blacklist();
+                //exclude IP if needed
+                if ('' != $blacklist->process(Blacklist::IP, $ip)) {
+                    //try to find IP (get from discovery) from known IP of item
+                    //if found refuse update
+                    //if no, item IP have changed so  we allow the update from discovery
+                    $ipaddress = new \IPAddress($ip);
+                    $criteria = [
+                        'mainitems_id' => $item->fields['id'],
+                        'mainitemtype' => $item::getType(),
+                        'is_dynamic' => 1,
+                        'name' => $ipaddress->getTextual(),
+                    ];
+                    if (countElementsInTable(\IPAddress::getTable(), Sanitizer::sanitize($criteria)) === 0) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }

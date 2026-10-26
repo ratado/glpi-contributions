@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -58,7 +58,7 @@ if (
         case 'Group':
         case 'Profile':
             $params = ['value' => $_SESSION['glpiactive_entity'],
-                'name'  => $prefix . 'entities_id' . $suffix
+                'name'  => $prefix . 'entities_id' . $suffix,
             ];
             if (Session::canViewAllEntities()) {
                 $params['toadd'] = [-1 => __('No restriction')];

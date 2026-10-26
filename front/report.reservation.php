@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -50,7 +50,7 @@ echo "<table class='tab_cadre' width='500'><tr class='tab_bg_2'>";
 echo "<td class='center' width='300'>";
 User::dropdown(['name'   => 'id',
     'value'  => $_GET["id"],
-    'right'  => 'reservation'
+    'right'  => 'reservation',
 ]);
 
 echo "</td>";

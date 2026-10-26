@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -42,7 +41,7 @@ $migration->addConfig(
     [
         'import_monitor' => 1,
         'import_printer' => 1,
-        'import_peripheral' => 1
+        'import_peripheral' => 1,
     ],
     'inventory'
 );

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -64,11 +64,11 @@ class NotificationMailing implements NotificationInterface
      **/
     public static function isUserAddressValid($address, $options = ['checkdns' => false])
     {
-       //drop sanitize...
+        //drop sanitize...
         $address = Toolbox::stripslashes_deep($address);
         $isValid = GLPIMailer::ValidateAddress($address);
 
-        $checkdns = (isset($options['checkdns']) ? $options['checkdns'] :  false);
+        $checkdns = ($options['checkdns'] ?? false);
         if ($checkdns) {
             $domain    = substr($address, strrpos($address, '@') + 1);
             if (
@@ -101,16 +101,17 @@ class NotificationMailing implements NotificationInterface
         $mmail = new GLPIMailer();
 
         $mmail->AddCustomHeader("Auto-Submitted: auto-generated");
-       // For exchange
+        // For exchange
         $mmail->AddCustomHeader("X-Auto-Response-Suppress: OOF, DR, NDR, RN, NRN");
         $mmail->SetFrom($sender['email'], Sanitizer::decodeHtmlSpecialChars($sender['name'] ?? ''), false);
 
-        $text = __('This is a test email.') . "\n-- \n" . Sanitizer::decodeHtmlSpecialChars($CFG_GLPI["mailing_signature"]);
+        $signature = trim(Sanitizer::decodeHtmlSpecialChars($CFG_GLPI["mailing_signature"]));
+        $text = __('This is a test email.') . (!empty($signature) ? "\n-- \n" . $signature : '');
         $recipient = $CFG_GLPI['admin_email'];
         if (defined('GLPI_FORCE_MAIL')) {
-           //force recipient to configured email address
+            //force recipient to configured email address
             $recipient = GLPI_FORCE_MAIL;
-           //add original email addess to message body
+            //add original email addess to message body
             $text .= "\n" . sprintf(__('Original email address was %1$s'), $CFG_GLPI['admin_email']);
         }
 
@@ -118,12 +119,25 @@ class NotificationMailing implements NotificationInterface
         $mmail->Subject = "[GLPI] " . __('Mail test');
         $mmail->Body    = $text;
 
-        if (!$mmail->Send()) {
-            Session::addMessageAfterRedirect(
-                __('Failed to send test email to administrator'),
-                false,
-                ERROR
-            );
+        $error = null;
+        try {
+            // Send() can throw on failures that PHPMailer itself does not catch,
+            // e.g. SMTP OAuth token refresh errors thrown by the OAuth provider.
+            $sent = $mmail->Send();
+            if (!$sent) {
+                $error = $mmail->ErrorInfo;
+            }
+        } catch (\Throwable $e) {
+            $sent = false;
+            $error = $e->getMessage();
+        }
+
+        if (!$sent) {
+            $message = __('Failed to send test email to administrator');
+            if (!empty($error)) {
+                $message .= "<br/>" . $error;
+            }
+            Session::addMessageAfterRedirect($message, false, ERROR);
             GLPINetwork::addErrorMessageAfterRedirect();
             return false;
         } else {
@@ -183,7 +197,7 @@ class NotificationMailing implements NotificationInterface
             Session::addMessageAfterRedirect(__('Error inserting email to queue'), true, ERROR);
             return false;
         } else {
-           //TRANS to be written in logs %1$s is the to email / %2$s is the subject of the mail
+            //TRANS to be written in logs %1$s is the to email / %2$s is the subject of the mail
             Toolbox::logInFile(
                 "mail",
                 sprintf(

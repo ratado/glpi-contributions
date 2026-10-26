@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -271,7 +271,7 @@ class DatabaseSchemaIntegrityChecker
             if (!$this->db->tableExists($table_name)) {
                 $result[$table_name] = [
                     'type' => self::RESULT_TYPE_MISSING_TABLE,
-                    'diff' => $this->diff($create_table_sql, '')
+                    'diff' => $this->diff($create_table_sql, ''),
                 ];
                 continue;
             }
@@ -280,7 +280,7 @@ class DatabaseSchemaIntegrityChecker
             if ($create_table_sql !== $effective_create_table_sql) {
                 $result[$table_name] = [
                     'type' => self::RESULT_TYPE_ALTERED_TABLE,
-                    'diff' => $this->diff($create_table_sql, $effective_create_table_sql)
+                    'diff' => $this->diff($create_table_sql, $effective_create_table_sql),
                 ];
             }
         }
@@ -289,20 +289,20 @@ class DatabaseSchemaIntegrityChecker
             $unknown_tables_criteria = [
                 [
                     'NOT' => [
-                        'table_name' => array_keys($schema)
-                    ]
+                        'table_name' => array_keys($schema),
+                    ],
                 ],
             ];
             $is_context_valid = true;
             if ($context === 'core') {
                 $unknown_tables_criteria[] = [
                     'NOT' => [
-                        'table_name' => ['LIKE', 'glpi\_plugin\_%']
-                    ]
+                        'table_name' => ['LIKE', 'glpi\_plugin\_%'],
+                    ],
                 ];
             } elseif (preg_match('/^plugin:\w+$/', $context) === 1) {
                 $unknown_tables_criteria[] = [
-                    'table_name' => ['LIKE', sprintf('glpi\_plugin\_%s_%%', str_replace('plugin:', '', $context))]
+                    'table_name' => ['LIKE', sprintf('glpi\_plugin\_%s_%%', str_replace('plugin:', '', $context))],
                 ];
             } else {
                 trigger_error(sprintf('Invalid context "%s".', $context));
@@ -314,7 +314,7 @@ class DatabaseSchemaIntegrityChecker
                 $effective_create_table_sql = $this->getNormalizedSql($this->getEffectiveCreateTableSql($table_name));
                 $result[$table_name] = [
                     'type' => self::RESULT_TYPE_UNKNOWN_TABLE,
-                    'diff' => $this->diff('', $effective_create_table_sql)
+                    'diff' => $this->diff('', $effective_create_table_sql),
                 ];
             }
         }
@@ -531,6 +531,9 @@ class DatabaseSchemaIntegrityChecker
             '/(UNIQUE|FULLTEXT)\s*(`|\()/' => '$1 KEY $2',
             // Always have a key identifier (except on PRIMARY key)
             '/(?<!PRIMARY )KEY\s*\((`\w+`)\)/' => 'KEY $1 ($1)',
+            // Ignore length on indexes when value is `250`
+            // MariaDB in some recent version (at least 10.11.7) seems to mention it on some indexes, but we do not know why.
+            '/(`\w+`)\(250\)/' => '$1',
         ];
         $indexes = preg_replace(array_keys($indexes_replacements), array_values($indexes_replacements), $indexes);
         if (!$this->strict) {
@@ -651,7 +654,7 @@ class DatabaseSchemaIntegrityChecker
                         // Opening backtick, ensure there is a space before
                         $sql = substr($sql, 0, $i) . ' ' . substr($sql, $i);
                         $i++;
-                    } else if ($is_protected && preg_match('/\s/', $sql[$i + 1]) !== 1) {
+                    } elseif ($is_protected && preg_match('/\s/', $sql[$i + 1]) !== 1) {
                         // Closing backtick, ensure there is a space before
                         $sql = substr($sql, 0, $i + 1) . ' ' . substr($sql, $i + 1);
                         $i++;
@@ -660,7 +663,7 @@ class DatabaseSchemaIntegrityChecker
 
                 $is_protected = !$is_protected;
                 continue;
-            } else if ($is_protected) {
+            } elseif ($is_protected) {
                 continue;
             }
 
@@ -668,14 +671,14 @@ class DatabaseSchemaIntegrityChecker
             if ($sql[$i] === '\'') {
                 $is_quoted = !$is_quoted;
                 continue;
-            } else if ($is_quoted) {
+            } elseif ($is_quoted) {
                 //exit();
                 continue;
             }
 
             if ($sql[$i] === '(') {
                 $parenthesis_level++;
-            } else if ($sql[$i] === ')') {
+            } elseif ($sql[$i] === ')') {
                 $parenthesis_level--;
             }
 
@@ -691,10 +694,10 @@ class DatabaseSchemaIntegrityChecker
             if ($parenthesis_level === 1 && $sql[$i] === '(') {
                 $sql = substr($sql, 0, $i + 1) . "\n" . substr($sql, $i + 1);
                 $i++;
-            } else if ($parenthesis_level === 0 && $sql[$i] === ')') {
+            } elseif ($parenthesis_level === 0 && $sql[$i] === ')') {
                 $sql = substr($sql, 0, $i) . "\n" . substr($sql, $i);
                 $i++;
-            } else if ($parenthesis_level === 1 && $sql[$i] === ',') {
+            } elseif ($parenthesis_level === 1 && $sql[$i] === ',') {
                 $sql = substr($sql, 0, $i + 1) . "\n" . substr($sql, $i + 1);
                 $i++;
             }
@@ -770,6 +773,29 @@ class DatabaseSchemaIntegrityChecker
     }
 
     /**
+     * Check if database contains at least one table for the given context.
+     *
+     * @param string $context Context used for tables detection (could be 'core' or 'plugin:plugin_key')
+     *
+     * @return bool
+     */
+    final public function hasTables(string $context = 'core'): bool
+    {
+        if (preg_match('/^plugin:(?<plugin_key>\w+)$/', $context, $plugin_matches) === 1) {
+            $tables_pattern = 'glpi\_plugin\_' . $plugin_matches['plugin_key'] . '\_%';
+            $condition      = [];
+        } else {
+            $tables_pattern = 'glpi\_%';
+            $condition = [
+                'NOT' => [
+                    'table_name' => ['LIKE', 'glpi\_plugin\_%'],
+                ],
+            ];
+        }
+        return $this->db->listTables($tables_pattern, $condition)->count() > 0;
+    }
+
+    /**
      * Check if schema integrity can be checked for given version/context.
      *
      * @param string|null $schema_version   Installed schema version
@@ -807,7 +833,7 @@ class DatabaseSchemaIntegrityChecker
                         'WHERE'  => [
                             'context' => 'core',
                             'name'    => 'dbversion',
-                        ]
+                        ],
                     ]
                 );
                 if ($dbversion_result->count() > 0) {
@@ -821,7 +847,7 @@ class DatabaseSchemaIntegrityChecker
                             'WHERE'  => [
                                 'context' => 'core',
                                 'name'    => 'version',
-                            ]
+                            ],
                         ]
                     );
                     $this->db_version = $dbversion_result->current()['value'] ?? null;

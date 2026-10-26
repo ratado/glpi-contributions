@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -66,7 +66,7 @@ if (isset($_POST["purge"])) {
     );
 
     Html::redirect($CFG_GLPI["root_doc"] . "/front/networkportmigration.php");
-} else if (isset($_POST["delete_several"])) {
+} elseif (isset($_POST["delete_several"])) {
     Session::checkRight("networking", UPDATE);
 
     if (isset($_POST["del_port"]) && count($_POST["del_port"])) {
@@ -86,7 +86,7 @@ if (isset($_POST["purge"])) {
     );
 
     Html::back();
-} else if (isset($_POST["update"])) {
+} elseif (isset($_POST["update"])) {
     $np->check($_POST['id'], PURGE);
 
     $networkport = new NetworkPort();

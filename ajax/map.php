@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -44,11 +44,11 @@ if (!isset($_POST['itemtype']) || !isset($_POST['params'])) {
     http_response_code(500);
     $result = [
         'success'   => false,
-        'message'   => __('Required argument missing!')
+        'message'   => __('Required argument missing!'),
     ];
 } else {
     $itemtype = $_POST['itemtype'];
-    $params   = $_POST['params'];
+    $params = $_POST['params'];
 
     $data = Search::prepareDatasForSearch($itemtype, $params);
     Search::constructSQL($data);
@@ -58,7 +58,7 @@ if (!isset($_POST['itemtype']) || !isset($_POST['params'])) {
         $lat_field = $itemtype . '_21';
         $lng_field = $itemtype . '_20';
         $name_field = $itemtype . '_1';
-    } else if ($itemtype == 'Entity') {
+    } elseif ($itemtype == 'Entity') {
         $lat_field = $itemtype . '_67';
         $lng_field = $itemtype . '_68';
         $name_field = $itemtype . '_1';
@@ -68,7 +68,7 @@ if (!isset($_POST['itemtype']) || !isset($_POST['params'])) {
         $name_field = $itemtype . '_3';
     }
     if ($itemtype == 'Ticket') {
-       //duplicate search options... again!
+        //duplicate search options... again!
         $name_field = $itemtype . '_83';
     }
 
@@ -84,7 +84,7 @@ if (!isset($_POST['itemtype']) || !isset($_POST['params'])) {
                     'lat'    => $row['raw']["ITEM_$lat_field"],
                     'lng'    => $row['raw']["ITEM_$lng_field"],
                     'title'  => $row['raw']["ITEM_$name_field"],
-                    'count'  => 1
+                    'count'  => 1,
                 ];
             } else {
                 $points[$idx] = [
@@ -92,7 +92,7 @@ if (!isset($_POST['itemtype']) || !isset($_POST['params'])) {
                     'lng'    => $row['raw']["ITEM_$lng_field"],
                     'title'  => $row['raw']["ITEM_$name_field"],
                     'loc_id' => $row['raw']['loc_id'],
-                    'count'  => 1
+                    'count'  => 1,
                 ];
             }
         }
@@ -105,7 +105,7 @@ if (!isset($_POST['itemtype']) || !isset($_POST['params'])) {
             } else {
                 $points[$idx]['types'][$curtype] = [
                     'name'   => strtolower($curtype::getTypeName(1)),
-                    'count'  => 1
+                    'count'  => 1,
                 ];
             }
         }

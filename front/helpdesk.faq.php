@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -48,11 +48,11 @@ if (isset($_GET["redirect"])) {
 if (Session::getLoginUserID()) {
     Html::helpHeader(__('FAQ'), 'faq');
 } else {
-    $_SESSION["glpilanguage"] = $_SESSION['glpilanguage'] ?? $CFG_GLPI['language'];
-   // Anonymous FAQ
+    $_SESSION["glpilanguage"] = $_SESSION['glpilanguage'] ?? Session::getPreferredLanguage();
+    // Anonymous FAQ
     Html::simpleHeader(__('FAQ'), [
         __('Authentication') => '/',
-        __('FAQ')            => '/front/helpdesk.faq.php'
+        __('FAQ')            => '/front/helpdesk.faq.php',
     ]);
 }
 
@@ -62,7 +62,7 @@ if (isset($_GET["id"])) {
         $kb->showFull();
     }
 } else {
-   // Manage forcetab : non standard system (file name <> class name)
+    // Manage forcetab : non standard system (file name <> class name)
     if (isset($_GET['forcetab'])) {
         Session::setActiveTab('Knowbase', $_GET['forcetab']);
         unset($_GET['forcetab']);

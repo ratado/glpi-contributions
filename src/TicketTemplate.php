@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -57,6 +57,17 @@ class TicketTemplate extends ITILTemplate
             TicketTemplateMandatoryField::class,
             TicketTemplatePredefinedField::class,
         ];
+    }
+
+    public function cleanDBonPurge()
+    {
+        $this->deleteChildrenAndRelationsFromDb(
+            [
+                TicketTemplateHiddenField::class,
+                TicketTemplateMandatoryField::class,
+                TicketTemplatePredefinedField::class,
+            ]
+        );
     }
 
     public static function getExtraAllowedFields($withtypeandcategory = false, $withitemtype = false)
@@ -159,7 +170,7 @@ class TicketTemplate extends ITILTemplate
             return false;
         }
         if ($tt->getFromDBWithData($tt->getID())) {
-            $ticket = new  Ticket();
+            $ticket = new Ticket();
             $ticket->showFormHelpdesk(Session::getLoginUserID(), $tt->getID());
         }
     }

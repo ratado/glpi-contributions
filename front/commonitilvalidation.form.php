@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -82,7 +82,7 @@ if (isset($_POST["add"])) {
         }
     }
     Html::back();
-} else if (isset($_POST["update"])) {
+} elseif (isset($_POST["update"])) {
     $validation->check($_POST['id'], UPDATE);
     $validation->update($_POST);
     Event::log(
@@ -94,7 +94,7 @@ if (isset($_POST["add"])) {
         sprintf(__('%s updates an approval'), $_SESSION["glpiname"])
     );
     Html::back();
-} else if (isset($_POST["purge"])) {
+} elseif (isset($_POST["purge"])) {
     $validation->check($_POST['id'], PURGE);
     $validation->delete($_POST, 1);
 
@@ -107,10 +107,10 @@ if (isset($_POST["add"])) {
         sprintf(__('%s purges an approval'), $_SESSION["glpiname"])
     );
     Html::back();
-} else if (isset($_POST['approval_action'])) {
+} elseif (isset($_POST['approval_action'])) {
     if ($_POST['users_id_validate'] == Session::getLoginUserID()) {
         $validation->update($_POST + [
-            'status' => ($_POST['approval_action'] === 'approve') ? CommonITILValidation::ACCEPTED : CommonITILValidation::REFUSED
+            'status' => ($_POST['approval_action'] === 'approve') ? CommonITILValidation::ACCEPTED : CommonITILValidation::REFUSED,
         ]);
         Html::back();
     }

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -53,31 +53,31 @@ class DeviceGraphicCard extends CommonDevice
                 [
                     'name'  => 'chipset',
                     'label' => __('Chipset'),
-                    'type'  => 'text'
+                    'type'  => 'text',
                 ],
                 [
                     'name'  => 'memory_default',
                     'label' => __('Memory by default'),
                     'type'  => 'integer',
                     'min'  => 0,
-                    'unit'  => __('Mio')
+                    'unit'  => __('Mio'),
                 ],
                 [
                     'name'  => 'interfacetypes_id',
                     'label' => __('Interface'),
-                    'type'  => 'dropdownValue'
+                    'type'  => 'dropdownValue',
                 ],
                 [
                     'name'  => 'none',
                     'label' => RegisteredID::getTypeName(Session::getPluralNumber())
                         . RegisteredID::showAddChildButtonForItemForm($this, '_registeredID', null, false),
-                    'type'  => 'registeredIDChooser'
+                    'type'  => 'registeredIDChooser',
                 ],
                 [
                     'name'  => 'devicegraphiccardmodels_id',
                     'label' => _n('Model', 'Models', 1),
-                    'type'  => 'dropdownValue'
-                ]
+                    'type'  => 'dropdownValue',
+                ],
             ]
         );
     }
@@ -108,7 +108,7 @@ class DeviceGraphicCard extends CommonDevice
             'table'              => 'glpi_interfacetypes',
             'field'              => 'name',
             'name'               => __('Interface'),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -116,7 +116,7 @@ class DeviceGraphicCard extends CommonDevice
             'table'              => 'glpi_devicegraphiccardmodels',
             'field'              => 'name',
             'name'               => _n('Model', 'Models', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         return $tab;
@@ -156,8 +156,8 @@ class DeviceGraphicCard extends CommonDevice
     public static function getHTMLTableHeader(
         $itemtype,
         HTMLTableBase $base,
-        HTMLTableSuperHeader $super = null,
-        HTMLTableHeader $father = null,
+        ?HTMLTableSuperHeader $super = null,
+        ?HTMLTableHeader $father = null,
         array $options = []
     ) {
 
@@ -178,9 +178,9 @@ class DeviceGraphicCard extends CommonDevice
 
 
     public function getHTMLTableCellForItem(
-        HTMLTableRow $row = null,
-        CommonDBTM $item = null,
-        HTMLTableCell $father = null,
+        ?HTMLTableRow $row = null,
+        ?CommonDBTM $item = null,
+        ?HTMLTableCell $father = null,
         array $options = []
     ) {
 
@@ -231,9 +231,9 @@ class DeviceGraphicCard extends CommonDevice
             'joinparams'         => [
                 'beforejoin'         => [
                     'table'              => 'glpi_items_devicegraphiccards',
-                    'joinparams'         => $main_joinparams
-                ]
-            ]
+                    'joinparams'         => $main_joinparams,
+                ],
+            ],
         ];
 
         return $tab;

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -80,7 +80,7 @@ class DeviceProcessor extends CommonDevice
                     'name'  => 'deviceprocessormodels_id',
                     'label' => _n('Model', 'Models', 1),
                     'type'  => 'dropdownValue',
-                ]
+                ],
             ]
         );
     }
@@ -111,7 +111,7 @@ class DeviceProcessor extends CommonDevice
             'table'              => $this->getTable(),
             'field'              => 'nbcores_default',
             'name'               => __('Number of cores'),
-            'datatype'           => 'integer'
+            'datatype'           => 'integer',
         ];
 
         $tab[] = [
@@ -119,7 +119,7 @@ class DeviceProcessor extends CommonDevice
             'table'              => $this->getTable(),
             'field'              => 'nbthreads_default',
             'name'               => __('Number of threads'),
-            'datatype'           => 'integer'
+            'datatype'           => 'integer',
         ];
 
         $tab[] = [
@@ -127,7 +127,7 @@ class DeviceProcessor extends CommonDevice
             'table'              => 'glpi_deviceprocessormodels',
             'field'              => 'name',
             'name'               => _n('Model', 'Models', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         return $tab;
@@ -145,7 +145,7 @@ class DeviceProcessor extends CommonDevice
 
         foreach (
             ['frequence', 'frequency_default', 'nbcores_default',
-                'nbthreads_default'
+                'nbthreads_default',
             ] as $field
         ) {
             if (isset($input[$field]) && !is_numeric($input[$field])) {
@@ -171,8 +171,8 @@ class DeviceProcessor extends CommonDevice
     public static function getHTMLTableHeader(
         $itemtype,
         HTMLTableBase $base,
-        HTMLTableSuperHeader $super = null,
-        HTMLTableHeader $father = null,
+        ?HTMLTableSuperHeader $super = null,
+        ?HTMLTableHeader $father = null,
         array $options = []
     ) {
 
@@ -191,9 +191,9 @@ class DeviceProcessor extends CommonDevice
 
 
     public function getHTMLTableCellForItem(
-        HTMLTableRow $row = null,
-        CommonDBTM $item = null,
-        HTMLTableCell $father = null,
+        ?HTMLTableRow $row = null,
+        ?CommonDBTM $item = null,
+        ?HTMLTableCell $father = null,
         array $options = []
     ) {
 
@@ -216,7 +216,7 @@ class DeviceProcessor extends CommonDevice
 
         return ['designation'          => 'equal',
             'manufacturers_id'     => 'equal',
-            'frequence'            => 'delta:10'
+            'frequence'            => 'delta:10',
         ];
     }
 
@@ -239,9 +239,9 @@ class DeviceProcessor extends CommonDevice
             'joinparams'         => [
                 'beforejoin'         => [
                     'table'              => 'glpi_items_deviceprocessors',
-                    'joinparams'         => $main_joinparams
-                ]
-            ]
+                    'joinparams'         => $main_joinparams,
+                ],
+            ],
         ];
 
         $tab[] = [
@@ -273,6 +273,20 @@ class DeviceProcessor extends CommonDevice
             'computation'        =>
             'SUM(' . $DB->quoteName('TABLE.nbthreads') . ') * COUNT(DISTINCT ' .
             $DB->quoteName('TABLE.id') . ') / COUNT(*)',
+            'nometa'             => true, // cannot GROUP_CONCAT a SUM
+        ];
+
+        $tab[] = [
+            'id'                 => '35',
+            'table'              => 'glpi_items_deviceprocessors',
+            'field'              => 'id',
+            'name'               => _x('quantity', 'Processors number'),
+            'forcegroupby'       => true,
+            'usehaving'          => true,
+            'datatype'           => 'number',
+            'massiveaction'      => false,
+            'joinparams'         => $main_joinparams,
+            'computation'        => 'COUNT(DISTINCT ' . $DB->quoteName('TABLE.id') . ')',
             'nometa'             => true, // cannot GROUP_CONCAT a SUM
         ];
 

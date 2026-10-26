@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -41,13 +41,13 @@ if (isset($_GET["itemtype"])) {
     $itemtype = $_GET['itemtype'];
     $link     = $itemtype::getFormURL();
 
-   // Get right sector
+    // Get right sector
     $sector   = 'assets';
 
-   //Get sectors from the menu
+    //Get sectors from the menu
     $menu     = Html::getMenuInfos();
 
-   //Try to find to which sector the itemtype belongs
+    //Try to find to which sector the itemtype belongs
     foreach ($menu as $menusector => $infos) {
         if (isset($infos['types']) && in_array($itemtype, $infos['types'])) {
             $sector = $menusector;

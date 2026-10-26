@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -72,27 +72,27 @@ class DocumentExtension extends AbstractExtension
 
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-        if (static::$extensionIcon === null) {
+        if (self::$extensionIcon === null) {
             $iterator = $DB->request([
                 'SELECT' => [
                     'ext',
-                    'icon'
+                    'icon',
                 ],
                 'FROM' => 'glpi_documenttypes',
                 'WHERE' => [
-                    'icon' => ['<>', '']
-                ]
+                    'icon' => ['<>', ''],
+                ],
             ]);
             foreach ($iterator as $result) {
-                static::$extensionIcon[$result['ext']] = $result['icon'];
+                self::$extensionIcon[$result['ext']] = $result['icon'];
             }
         }
 
         $defaultIcon = '/pics/timeline/file.png';
         $icon = $defaultIcon;
 
-        if (isset(static::$extensionIcon[$extension])) {
-            $icon = '/pics/icones/' . static::$extensionIcon[$extension];
+        if (isset(self::$extensionIcon[$extension])) {
+            $icon = '/pics/icones/' . self::$extensionIcon[$extension];
         }
 
         return $CFG_GLPI['root_doc'] . (file_exists(GLPI_ROOT . $icon) ? $icon : $defaultIcon);

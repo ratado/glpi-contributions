@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -51,10 +51,10 @@ Session::checkLoginUser();
 $itilfollowuptemplates_id = $_POST['itilfollowuptemplates_id'] ?? null;
 if ($itilfollowuptemplates_id === null) {
     Response::sendError(400, "Missing or invalid parameter: 'itilfollowuptemplates_id'");
-} else if ($itilfollowuptemplates_id == 0) {
-   // Reset form
+} elseif ($itilfollowuptemplates_id == 0) {
+    // Reset form
     echo json_encode([
-        'content' => ""
+        'content' => "",
     ]);
     die;
 }
@@ -81,6 +81,9 @@ if (!$template->getFromDB($itilfollowuptemplates_id)) {
 $parent = new $parents_itemtype();
 if (!$parent->getFromDB($parents_id)) {
     Response::sendError(400, "Unable to load parent item: $parents_itemtype $parents_id");
+}
+if (!$parent->can($parents_id, READ)) {
+    Response::sendError(403, 'Forbidden');
 }
 
 // Render template content using twig

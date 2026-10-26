@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -37,11 +37,11 @@ class Appliance_Item_Relation extends CommonDBRelation
 {
     public static $itemtype_1 = 'Appliance_Item';
     public static $items_id_1 = 'appliances_items_id';
-   //static public $take_entity_1 = false;
+    //static public $take_entity_1 = false;
 
     public static $itemtype_2 = 'itemtype';
     public static $items_id_2 = 'items_id';
-   //static public $take_entity_2 = true;
+    //static public $take_entity_2 = true;
 
     public static function getTypeName($nb = 0)
     {
@@ -109,7 +109,7 @@ class Appliance_Item_Relation extends CommonDBRelation
     {
         $error_detected = [];
 
-       //check for requirements
+        //check for requirements
         if (
             ($this->isNewItem() && (!isset($input['itemtype']) || empty($input['itemtype'])))
             || (isset($input['itemtype']) && empty($input['itemtype']))
@@ -183,8 +183,8 @@ class Appliance_Item_Relation extends CommonDBRelation
         $iterator = $DB->request([
             'FROM'   => self::getTable(),
             'WHERE'  => [
-                Appliance_Item::getForeignKeyField() => $appliances_items_id
-            ]
+                Appliance_Item::getForeignKeyField() => $appliances_items_id,
+            ],
         ]);
 
         $relations = [];
@@ -244,7 +244,7 @@ class Appliance_Item_Relation extends CommonDBRelation
      * @return string the javascript
      */
     public static function getListJSForApplianceItem(
-        CommonDBTM $item = null,
+        ?CommonDBTM $item = null,
         bool $canedit = true
     ) {
         if ($canedit) {

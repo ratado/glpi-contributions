@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -38,7 +38,6 @@ namespace Glpi\Dashboard;
 use Glpi\Plugin\Hooks;
 use Session;
 use Plugin;
-use Toolbox;
 use Glpi\Dashboard\Filters\{
     AbstractFilter,
     DatesFilter,
@@ -260,7 +259,7 @@ class Filter extends \CommonDBChild
             'placeholder'         => $label,
             'on_change'           => "on_change_{$rand}()",
             'allowClear'          => true,
-            'width'               => ''
+            'width'               => '',
         ] + $add_params);
 
         $js = <<<JAVASCRIPT
@@ -317,7 +316,7 @@ JAVASCRIPT;
             'WHERE' => [
                 'dashboards_dashboards_id' => $dashboards_id,
                 'users_id'                 => Session::getLoginUserID(),
-            ]
+            ],
         ]);
 
         $settings = $dr_iterator->count() === 1 ? $dr_iterator->current()['filter'] : null;
@@ -329,7 +328,7 @@ JAVASCRIPT;
      * Save filter in DB for the provided dashboard
      *
      * @param int $dashboards_id id (not key) of the dashboard
-     * @param array $settings contains a JSON representation of the filter data
+     * @param string $settings contains a JSON representation of the filter data
      *
      * @return void
      */

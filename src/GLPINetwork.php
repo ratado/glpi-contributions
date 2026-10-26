@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -46,8 +46,7 @@ class GLPINetwork extends CommonGLPI
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
         if ($item->getType() == 'Config') {
-            $glpiNetwork = new self();
-            $glpiNetwork->showForConfig();
+            self::showForConfig();
         }
         return true;
     }
@@ -58,9 +57,17 @@ class GLPINetwork extends CommonGLPI
             return;
         }
 
-        $registration_key = self::getRegistrationKey();
+        // warning and no form if can't read keyfile
+        $glpi_encryption_key = new GLPIKey();
+        if ($glpi_encryption_key->hasReadErrors()) {
+            $glpi_encryption_key->showReadErrors();
+
+            return;
+        }
 
         $canedit = Config::canUpdate();
+        $registration_key = self::getRegistrationKey();
+
         if ($canedit) {
             echo "<form name='form' action=\"" . Toolbox::getItemTypeFormURL(Config::class) . "\" method='post'>";
         }
@@ -144,8 +151,8 @@ class GLPINetwork extends CommonGLPI
         $version = VersionParser::getNormalizedVersion(GLPI_VERSION, false);
         $comments = sprintf('installation-mode:%s', GLPI_INSTALL_MODE);
         if (!empty(GLPI_USER_AGENT_EXTRA_COMMENTS)) {
-           // append extra comments (remove '(' and ')' chars to not break UA string)
-            $comments .= '; ' . preg_replace('/\(\)/', ' ', GLPI_USER_AGENT_EXTRA_COMMENTS);
+            // append extra comments (remove '(' and ')' chars to not break UA string)
+            $comments .= '; ' . (string) preg_replace('/\(\)/', ' ', GLPI_USER_AGENT_EXTRA_COMMENTS);
         }
         return sprintf('GLPI/%s (%s)', $version, $comments);
     }
@@ -210,7 +217,7 @@ class GLPINetwork extends CommonGLPI
             return $informations;
         }
 
-       // Verify registration from registration API
+        // Verify registration from registration API
         $error_message = null;
         $registration_response = Toolbox::callCurl(
             rtrim(GLPI_NETWORK_REGISTRATION_API_URL, '/') . '/info',
@@ -222,7 +229,7 @@ class GLPINetwork extends CommonGLPI
                     'User-Agent:' . self::getGlpiUserAgent(),
                     'X-Registration-Key:' . $registration_key,
                     'X-Glpi-Network-Uid:' . self::getGlpiNetworkUid(),
-                ]
+                ],
             ],
             $error_message
         );
@@ -255,9 +262,9 @@ class GLPINetwork extends CommonGLPI
         $informations['is_valid']           = $registration_data['is_valid'];
         if (array_key_exists('validation_message', $registration_data)) {
             $informations['validation_message'] = $registration_data['validation_message'];
-        } else if (!$registration_data['is_valid']) {
+        } elseif (!$registration_data['is_valid']) {
             $informations['validation_message'] = __('The registration key is invalid.');
-        } else if (!$registration_data['subscription']['is_running']) {
+        } elseif (!$registration_data['subscription']['is_running']) {
             $informations['validation_message'] = __('The registration key refers to a terminated subscription.');
         } else {
             $informations['validation_message'] = __('The registration key is valid.');
@@ -319,7 +326,7 @@ class GLPINetwork extends CommonGLPI
     public static function isServicesAvailable(&$curl_error = null)
     {
         $error_msg = null;
-        $content = \Toolbox::callCurl(GLPI_NETWORK_REGISTRATION_API_URL, [], $error_msg, $curl_error);
+        $content = \Toolbox::callCurl(rtrim(GLPI_NETWORK_API_URL, '/') . '/ping', [], $error_msg, $curl_error);
         return strlen($content) > 0;
     }
 
@@ -342,7 +349,7 @@ class GLPINetwork extends CommonGLPI
                 CURLOPT_HTTPHEADER => [
                     'Accept:application/json',
                     'Accept-Language: ' . $lang,
-                ]
+                ],
             ],
             $error_message
         );

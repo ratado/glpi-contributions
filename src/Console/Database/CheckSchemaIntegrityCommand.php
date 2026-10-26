@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -35,6 +35,7 @@
 
 namespace Glpi\Console\Database;
 
+use DBmysql;
 use Glpi\Console\AbstractCommand;
 use Glpi\System\Diagnostic\DatabaseSchemaIntegrityChecker;
 use Symfony\Component\Console\Input\InputInterface;
@@ -48,28 +49,45 @@ class CheckSchemaIntegrityCommand extends AbstractCommand
      *
      * @var integer
      */
-    const ERROR_UNABLE_TO_READ_EMPTYSQL = 1;
+    public const ERROR_UNABLE_TO_READ_EMPTYSQL = 1;
 
     /**
      * Error code returned when differences are found.
      *
      * @var integer
      */
-    const ERROR_FOUND_DIFFERENCES = 2;
+    public const ERROR_FOUND_DIFFERENCES = 2;
 
     /**
      * Error code returned when a DB update is necessary to be able to perform the check.
      *
      * @var integer
      */
-    const ERROR_REQUIRE_DB_UPDATE = 3;
+    public const ERROR_REQUIRE_DB_UPDATE = 3;
 
     /**
      * Error code returned when a DB version is not supported.
      *
      * @var integer
      */
-    const ERROR_UNSUPPORTED_VERSION = 4;
+    public const ERROR_UNSUPPORTED_VERSION = 4;
+
+    /**
+     * Error code returned when no database connection is available.
+     */
+    public const ERROR_NO_DB_CONNECTION = 5;
+
+    /**
+     * Error code returned when the GLPI version cannot be found.
+     */
+    public const ERROR_NO_VERSION_FOUND = 6;
+
+    /**
+     * Error code returned when no tables are found in the database.
+     */
+    public const ERROR_NO_TABLES_FOUND = 7;
+
+    protected $requires_db = false;
 
     protected $requires_db_up_to_date = false;
 
@@ -144,6 +162,21 @@ class CheckSchemaIntegrityCommand extends AbstractCommand
         );
     }
 
+    protected function initDbConnection()
+    {
+        /** @var \DBmysql $DB */
+        global $DB;
+
+        if (!($DB instanceof DBmysql) || !$DB->connected) {
+            throw new \Glpi\Console\Exception\EarlyExitException(
+                '<error>' . __('Unable to connect to database.') . '</error>',
+                self::ERROR_NO_DB_CONNECTION
+            );
+        }
+
+        parent::initDbConnection();
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         /** @var array $CFG_GLPI */
@@ -166,11 +199,28 @@ class CheckSchemaIntegrityCommand extends AbstractCommand
             $installed_version = null; // Cannot know installed schema of plugins
         } else {
             $context = 'core';
-            $installed_version = $CFG_GLPI['dbversion'] ?? $CFG_GLPI['version']; // `dbversion` has been added in GLPI 9.2
+            $installed_version = $CFG_GLPI['dbversion'] ?? $CFG_GLPI['version'] ?? null; // `dbversion` has been added in GLPI 9.2
+
+            if ($installed_version === null) {
+                throw new \Glpi\Console\Exception\EarlyExitException(
+                    '<error>' . __('Unable to fetch GLPI version.') . '</error>',
+                    self::ERROR_NO_VERSION_FOUND
+                );
+            }
 
             // Some versions were stored with unexpected whitespaces.
             // e.g. ` 0.80`, ` 0.80.1`, ...
             $installed_version = trim($installed_version);
+        }
+
+        if (!$checker->hasTables($context)) {
+            $message = $plugin_key === null
+                ? __('The database contains no GLPI tables.')
+                : sprintf(__('The database contains no tables of the plugin "%s".'), $plugin_key);
+            throw new \Glpi\Console\Exception\EarlyExitException(
+                '<error>' . $message . '</error>',
+                self::ERROR_NO_TABLES_FOUND
+            );
         }
 
         if (!$checker->canCheckIntegrity($installed_version, $context)) {

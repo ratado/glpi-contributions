@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -45,11 +45,13 @@ Html::header_nocache();
 
 Session::checkLoginUser();
 
+use Glpi\Application\View\TemplateRenderer;
+
 if (
     isset($_POST["itemtype"])
     && isset($_POST["value"])
 ) {
-   // Security
+    // Security
     if (!is_subclass_of($_POST["itemtype"], "CommonDBTM")) {
         exit();
     }
@@ -81,7 +83,7 @@ if (
                     }
                 }
             }
-            echo ($tmpname["comment"] ?? '');
+            echo($tmpname["comment"] ?? '');
 
             if (isset($_POST['withlink']) && isset($tmpname['link'])) {
                 echo "<script type='text/javascript' >\n";
@@ -90,12 +92,65 @@ if (
             }
             break;
 
+        case Group::getType():
+            $tmpname = [
+                'comment' => "",
+            ];
+            if ($_POST['value'] != 0) {
+                $group = new \Group();
+                if (!is_array($_POST["value"]) && $group->getFromDB($_POST['value']) && $group->canView()) {
+                    $group_params = [
+                        'id' => $group->getID(),
+                        'group_name' => $group->fields['completename'],
+                        'comment' => $group->fields['comment'],
+                    ];
+                    $comment = TemplateRenderer::getInstance()->render('components/group/info_card.html.twig', [
+                        'group' => $group_params,
+                    ]);
+                    $tmpname = [
+                        'comment' => $comment,
+                    ];
+                }
+            }
+            echo($tmpname["comment"]);
+            break;
+
+        case Supplier::getType():
+            $tmpname = [
+                'comment' => "",
+            ];
+            if ($_POST['value'] != 0) {
+                $supplier = new \Supplier();
+                if (!is_array($_POST["value"]) && $supplier->getFromDB($_POST['value']) && $supplier->canView()) {
+                    $supplier_params = [
+                        'id' => $supplier->getID(),
+                        'supplier_name' => $supplier->fields['name'],
+                        'comment' => $supplier->fields['comment'],
+                        'address' => $supplier->fields['address'],
+                        'postcode' => $supplier->fields['postcode'],
+                        'town' => $supplier->fields['town'],
+                        'email' => $supplier->fields['email'],
+                        'fax' => $supplier->fields['fax'],
+                        'registration_number' => $supplier->fields['registration_number'],
+                        'phonenumber' => $supplier->fields['phonenumber'],
+                    ];
+                    $comment = TemplateRenderer::getInstance()->render('components/supplier/info_card.html.twig', [
+                        'supplier' => $supplier_params,
+                    ]);
+                    $tmpname = [
+                        'comment' => $comment,
+                    ];
+                }
+            }
+            echo($tmpname["comment"]);
+            break;
+
         default:
             if ($_POST["value"] > 0) {
                 if (
                     !Session::validateIDOR([
                         'itemtype'    => $_POST['itemtype'],
-                        '_idor_token' => $_POST['_idor_token'] ?? ""
+                        '_idor_token' => $_POST['_idor_token'] ?? "",
                     ])
                 ) {
                     exit();
@@ -120,15 +175,18 @@ if (
                 }
 
                 if (isset($_POST['with_dc_position'])) {
-                    $item = new $_POST['itemtype']();
+                    $item = getItemForItemtype($_POST['itemtype']);
                     echo "<script type='text/javascript' >\n";
 
-                   //if item have a DC position (reload url to it's rack)
-                    if ($rack = $item->isRackPart($_POST['itemtype'], $_POST["value"], true)) {
+                    //if item have a DC position (reload url to it's rack)
+                    if (
+                        method_exists($item, 'isRackPart')
+                        && ($rack = $item->isRackPart($_POST['itemtype'], $_POST["value"], true))
+                    ) {
                         echo Html::jsGetElementbyID($_POST['with_dc_position']) . ".
                   html(\"&nbsp;<a class='fas fa-crosshairs' href='" . $rack->getLinkURL() . "'></a>\");";
                     } else {
-                       //remove old dc position
+                        //remove old dc position
                         echo Html::jsGetElementbyID($_POST['with_dc_position']) . ".empty();";
                     }
                     echo "</script>\n";

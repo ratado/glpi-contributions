@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -76,7 +76,7 @@ if (isset($_POST['type']) && isset($_POST['end'])) {
         case 'month':
             echo "<tr><td colspan='2'>";
             $values = ['date' => __('Each month, same date'),
-                'day'  => __('Each month, same day of week')
+                'day'  => __('Each month, same day of week'),
             ];
             Dropdown::showFromArray('periodicity[subtype]', $values);
             echo "</td></tr>";

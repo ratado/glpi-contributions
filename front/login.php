@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -59,7 +59,6 @@ if (!isset($_SESSION["glpicookietest"]) || ($_SESSION["glpicookietest"] != 'test
 $_POST = array_map('stripslashes', $_POST);
 
 //Do login and checks
-//$user_present = 1;
 if (isset($_SESSION['namfield']) && isset($_POST[$_SESSION['namfield']])) {
     $login = $_POST[$_SESSION['namfield']];
 } else {
@@ -83,7 +82,7 @@ $remember = isset($_SESSION['rmbfield']) && isset($_POST[$_SESSION['rmbfield']])
 $REDIRECT = "";
 if (isset($_POST['redirect']) && (strlen($_POST['redirect']) > 0)) {
     $REDIRECT = "?redirect=" . rawurlencode($_POST['redirect']);
-} else if (isset($_GET['redirect']) && strlen($_GET['redirect']) > 0) {
+} elseif (isset($_GET['redirect']) && strlen($_GET['redirect']) > 0) {
     $REDIRECT = "?redirect=" . rawurlencode($_GET['redirect']);
 }
 
@@ -91,7 +90,7 @@ $auth = new Auth();
 
 
 // now we can continue with the process...
-if ($auth->login($login, $password, (isset($_REQUEST["noAUTO"]) ? $_REQUEST["noAUTO"] : false), $remember, $login_auth)) {
+if ($auth->login($login, $password, ($_REQUEST["noAUTO"] ?? false), $remember, $login_auth)) {
     Auth::redirectIfAuthenticated();
 } else {
     http_response_code(401);

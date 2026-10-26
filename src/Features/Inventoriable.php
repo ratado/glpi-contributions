@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -36,7 +36,6 @@
 namespace Glpi\Features;
 
 use Agent;
-use AutoUpdateSystem;
 use CommonDBTM;
 use Computer;
 use Computer_Item;
@@ -56,7 +55,7 @@ trait Inventoriable
     {
         $file_name = $this->getInventoryFileName();
         if ($file_name === null) {
-           //file does not exists
+            //file does not exists
             return true;
         }
 
@@ -69,22 +68,12 @@ trait Inventoriable
      *
      * @param bool $prepend_dir_path Indicated wether the GLPI_INVENTORY_DIR have to be prepend to returned value.
      *
-     * @return void|string
+     * @return string|null
      */
     public function getInventoryFileName(bool $prepend_dir_path = true): ?string
     {
-
-        if ($this->isField('autoupdatesystems_id')) {
-            $source = new \AutoUpdateSystem();
-            $source->getFromDBByCrit(['name' => AutoUpdateSystem::NATIVE_INVENTORY]);
-
-            if (
-                !$this->isDynamic()
-                || !isset($source->fields['id'])
-                || $this->fields['autoupdatesystems_id'] != $source->fields['id']
-            ) {
-                return null;
-            }
+        if (!$this->isDynamic()) {
+            return null;
         }
 
         $inventory_dir_path = GLPI_INVENTORY_DIR . '/';
@@ -134,7 +123,7 @@ trait Inventoriable
                 $download_file
             );
             $title = sprintf(
-             //TRANS: parameter is the name of the asset
+                //TRANS: parameter is the name of the asset
                 __('Download "%1$s" inventory file'),
                 $this->getName()
             );
@@ -170,7 +159,7 @@ trait Inventoriable
             $this->displayAgentInformation();
         }
 
-       // Display auto inventory information
+        // Display auto inventory information
         if (
             !empty($this->fields['id'])
             && $this->maybeDynamic() && $this->fields["is_dynamic"]
@@ -209,7 +198,7 @@ trait Inventoriable
         echo "<i id='update-status' class='fas fa-sync' style='float: right;cursor: pointer;' title='" . __s('Ask agent about its current status') . "'></i>";
         echo '</td>';
         echo '<td id="agent_status">' . __('Unknown') . '</td>';
-        echo '<td>' .  __('Request inventory');
+        echo '<td>' . __('Request inventory');
         echo "<i id='update-inventory' class='fas fa-sync' style='float: right;cursor: pointer;' title='" . __s('Request agent to proceed an new inventory') . "'></i>";
         echo '</td>';
         echo '<td id="inventory_status">' . __('None') . '</td>';
@@ -277,8 +266,8 @@ JAVASCRIPT;
                     'SELECT' => ['itemtype', 'items_id'],
                     'FROM'   => Computer_Item::getTable(),
                     'WHERE'  => [
-                        'computers_id' => $this->getID()
-                    ]
+                        'computers_id' => $this->getID(),
+                    ],
                 ]
             );
             if (count($relations_iterator) > 0) {
@@ -294,7 +283,7 @@ JAVASCRIPT;
                     if (count($ids) > 0) {
                         $conditions['OR'][] = [
                             'itemtype' => $itemtype,
-                            'items_id' => $ids
+                            'items_id' => $ids,
                         ];
                     }
                 }
@@ -324,7 +313,7 @@ JAVASCRIPT;
             'FROM'      => Agent::getTable(),
             'WHERE'     => $conditions,
             'ORDERBY'   => ['last_contact DESC'],
-            'LIMIT'     => 1
+            'LIMIT'     => 1,
         ]);
         if (count($iterator) === 0) {
             return null;

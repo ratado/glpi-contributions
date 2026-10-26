@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -56,13 +56,9 @@ if (isset($_POST["add"])) {
             "inventory",
             sprintf(__('%1$s adds global lock on %2$s'), $_SESSION["glpiname"], $_POST["item"])
         );
-
-        if ($_SESSION['glpibackcreated']) {
-            Html::redirect($lockedfield->getLinkURL());
-        }
     }
-    Html::back();
-} else if (isset($_POST["purge"])) {
+    $lockedfield->redirectToList();
+} elseif (isset($_POST["purge"])) {
     $lockedfield->check($_POST['id'], UPDATE);
     if ($lockedfield->delete($_POST, 1)) {
         Event::log(
@@ -75,23 +71,9 @@ if (isset($_POST["add"])) {
         );
     }
     $lockedfield->redirectToList();
-
-   //update a locked field
-} else if (isset($_POST["update"])) {
-    $lockedfield->check($_POST['id'], UPDATE);
-    $lockedfield->update($_POST);
-    Event::log(
-        $_POST["id"],
-        "lockedfield",
-        4,
-        "inventory",
-        //TRANS: %s is the user login
-        sprintf(__('%s updates an item'), $_SESSION["glpiname"])
-    );
-    Html::back();
 } else {//print locked field information
     $menus = ["admin", "glpi\inventory\inventory", "lockedfield"];
     $lockedfield->displayFullPageForItem($_GET['id'], $menus, [
-        'formoptions'  => "data-track-changes=true"
+        'formoptions'  => "data-track-changes=true",
     ]);
 }

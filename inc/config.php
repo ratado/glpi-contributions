@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -88,6 +88,7 @@ if ($missing_db_config) {
 
     if (!isCommandLine()) {
         // Prevent inclusion of debug informations in footer, as they are based on vars that are not initialized here.
+        $debug_mode = $_SESSION['glpi_use_mode'];
         $_SESSION['glpi_use_mode'] = Session::NORMAL_MODE;
 
         Html::nullHeader('Missing configuration', $CFG_GLPI["root_doc"]);
@@ -109,6 +110,7 @@ if ($missing_db_config) {
         echo '</div>';
         echo '</div>';
         Html::nullFooter();
+        $_SESSION['glpi_use_mode'] = $debug_mode;
     } else {
         echo $title_text . "\n";
         echo $missing_conf_text . "\n";
@@ -116,20 +118,20 @@ if ($missing_db_config) {
     }
     die(1);
 } else {
-   // *************************** Statics config options **********************
-   // ********************options d'installation statiques*********************
-   // *************************************************************************
+    // *************************** Statics config options **********************
+    // ********************options d'installation statiques*********************
+    // *************************************************************************
 
     if (!isset($skip_db_check)) {
         include_once(GLPI_CONFIG_DIR . "/config_db.php");
 
-       //Database connection
+        //Database connection
         DBConnection::establishDBConnection(
-            (isset($USEDBREPLICATE) ? $USEDBREPLICATE : 0),
-            (isset($DBCONNECTION_REQUIRED) ? $DBCONNECTION_REQUIRED : 0)
+            ($USEDBREPLICATE ?? 0),
+            ($DBCONNECTION_REQUIRED ?? 0)
         );
 
-       //Options from DB, do not touch this part.
+        //Options from DB, do not touch this part.
         if (!Config::loadLegacyConfiguration()) {
             echo "Error accessing config table";
             exit();
@@ -165,14 +167,14 @@ if ($missing_db_config) {
         $_SESSION["glpilanguage"] = Session::getPreferredLanguage();
     }
 
-   // Override cfg_features by session value
+    // Override cfg_features by session value
     foreach ($CFG_GLPI['user_pref_field'] as $field) {
         if (!isset($_SESSION["glpi$field"]) && isset($CFG_GLPI[$field])) {
             $_SESSION["glpi$field"] = $CFG_GLPI[$field];
         }
     }
 
-   // Check maintenance mode
+    // Check maintenance mode
     if (
         isset($CFG_GLPI["maintenance_mode"])
         && $CFG_GLPI["maintenance_mode"]
@@ -199,6 +201,7 @@ if ($missing_db_config) {
     // Check version
     if (!isset($_GET["donotcheckversion"]) && !Update::isDbUpToDate()) {
         // Prevent debug bar to be displayed when an admin user was connected with debug mode when codebase was updated.
+        $debug_mode = $_SESSION['glpi_use_mode'];
         Toolbox::setDebugMode(Session::NORMAL_MODE);
 
         Session::loadLanguage('', false);
@@ -242,6 +245,7 @@ if ($missing_db_config) {
                 );
 
                 if ($outdated !== true) {
+                    $_SESSION['can_process_update'] = true;
                     echo "<form method='post' action='" . $CFG_GLPI["root_doc"] . "/install/update.php'>";
                     if (!VersionParser::isStableRelease(GLPI_VERSION)) {
                         echo Config::agreeUnstableMessage(VersionParser::isDevVersion(GLPI_VERSION));
@@ -265,8 +269,10 @@ if ($missing_db_config) {
             echo "</div>";
             echo "</div>";
             Html::nullFooter();
+            $_SESSION['glpi_use_mode'] = $debug_mode;
             exit();
         }
+        $_SESSION['glpi_use_mode'] = $debug_mode;
     }
 }
 

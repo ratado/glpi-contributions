@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -33,19 +33,18 @@
  * ---------------------------------------------------------------------
  */
 
-use Glpi\Toolbox\Sanitizer;
 
 class RuleTicket extends Rule
 {
-   // From Rule
+    // From Rule
     public static $rightname = 'rule_ticket';
     public $can_sort  = true;
 
-    const PARENT  = 1024;
+    public const PARENT  = 1024;
 
 
-    const ONADD    = 1;
-    const ONUPDATE = 2;
+    public const ONADD    = 1;
+    public const ONUPDATE = 2;
 
     public function getTitle()
     {
@@ -83,7 +82,7 @@ class RuleTicket extends Rule
                 __('%1$s / %2$s'),
                 __('Add'),
                 __('Update')
-            )
+            ),
         ];
     }
 
@@ -167,7 +166,7 @@ class RuleTicket extends Rule
 
                     case "add_validation":
                         if (isset($output['_add_validation']) && !is_array($output['_add_validation'])) {
-                             $output['_add_validation'] = [$output['_add_validation']];
+                            $output['_add_validation'] = [$output['_add_validation']];
                         }
                         switch ($action->fields['field']) {
                             case 'users_id_validate_requester_supervisor':
@@ -200,18 +199,24 @@ class RuleTicket extends Rule
                         }
                         break;
 
+                    case "delete":
+                        if ($action->fields["field"]) {
+                            $output[$action->fields["field"]] = null;
+                        }
+                        break;
+
                     case "assign":
                         $output[$action->fields["field"]] = $action->fields["value"];
 
-                     // Special case of status
+                        // Special case of status
                         if ($action->fields["field"] === 'status') {
-                           // Add a flag to remember that status was forced by rule
+                            // Add a flag to remember that status was forced by rule
                             $output['_do_not_compute_status'] = true;
                         }
 
-                     // Special case of users_id_requester
+                        // Special case of users_id_requester
                         if ($action->fields["field"] === '_users_id_requester') {
-                           // Add groups of requester
+                            // Add groups of requester
                             if (!isset($output['_groups_id_of_requester'])) {
                                 $output['_groups_id_of_requester'] = [];
                             }
@@ -220,18 +225,18 @@ class RuleTicket extends Rule
                             }
                         }
 
-                     // Special case for _users_id_requester, _users_id_observer and _users_id_assign
+                        // Special case for _users_id_requester, _users_id_observer and _users_id_assign
                         if (
                             in_array(
                                 $action->fields["field"],
                                 ['_users_id_requester', '_users_id_observer', '_users_id_assign']
                             )
                         ) {
-                           // must reset alternative_email field to prevent mix of user/email
+                            // must reset alternative_email field to prevent mix of user/email
                             unset($output[$action->fields["field"] . '_notif']);
                         }
 
-                     // Special case of slas_id_ttr & slas_id_tto & olas_id_ttr & olas_id_tto
+                        // Special case of slas_id_ttr & slas_id_tto & olas_id_ttr & olas_id_tto
                         if (
                             $action->fields["field"] === 'slas_id_ttr'
                             || $action->fields["field"] === 'slas_id_tto'
@@ -241,7 +246,7 @@ class RuleTicket extends Rule
                             $output['_' . $action->fields["field"]] = $action->fields["value"];
                         }
 
-                     // special case of itil solution template
+                        // special case of itil solution template
                         if ($action->fields["field"] == 'solution_template') {
                             $output['_solutiontemplates_id'] = $action->fields["value"];
                         }
@@ -270,9 +275,9 @@ class RuleTicket extends Rule
                             $output["_contracts_id"] = $action->fields["value"];
                         }
 
-                     // Remove values that may have been added by any "append" rule action on same actor field.
-                     // Appended actors are stored on `_additional_*` keys.
-                        $actions = $this->getActions();
+                        // Remove values that may have been added by any "append" rule action on same actor field.
+                        // Appended actors are stored on `_additional_*` keys.
+                        $actions = $this->getAllActions();
                         $append_key = $actions[$action->fields["field"]]["appendto"] ?? null;
                         if (
                             $append_key !== null
@@ -285,7 +290,7 @@ class RuleTicket extends Rule
                         break;
 
                     case "append":
-                        $actions = $this->getActions();
+                        $actions = $this->getAllActions();
                         $value   = $action->fields["value"];
                         if (
                             isset($actions[$action->fields["field"]]["appendtoarray"])
@@ -302,7 +307,7 @@ class RuleTicket extends Rule
                                 $output["items_id"] = [];
                             }
                             $output["items_id"][Appliance::getType()][] = $value;
-                        } else if ($action->fields["field"] === "assign_project") {
+                        } elseif ($action->fields["field"] === "assign_project") {
                             if (!array_key_exists("_projects_id", $output)) {
                                 $output["_projects_id"] = [];
                             }
@@ -313,7 +318,7 @@ class RuleTicket extends Rule
 
                         // Special case of users_id_requester
                         if ($action->fields["field"] === '_users_id_requester') {
-                         // Add groups of requester
+                            // Add groups of requester
                             if (!isset($output['_groups_id_of_requester'])) {
                                 $output['_groups_id_of_requester'] = [];
                             }
@@ -334,10 +339,22 @@ class RuleTicket extends Rule
 
                     case 'defaultfromuser':
                         if (
-                            ( $action->fields['field'] == '_groups_id_requester')
+                            ($action->fields['field'] == '_groups_id_requester')
                             &&  isset($output['users_default_groups'])
                         ) {
-                               $output['_groups_id_requester'] = $output['users_default_groups'];
+                            $output['_groups_id_requester'] = $output['users_default_groups'];
+                        }
+                        if (
+                            ($action->fields['field'] == '_groups_id_observer')
+                            && isset($output['users_default_groups'])
+                        ) {
+                            $output['_groups_id_observer'] = $output['users_default_groups'];
+                        }
+                        if (
+                            ($action->fields['field'] == '_groups_id_assign')
+                            && isset($output['users_default_groups'])
+                        ) {
+                            $output['_groups_id_assign'] = $output['users_default_groups'];
                         }
                         break;
 
@@ -351,12 +368,24 @@ class RuleTicket extends Rule
                         ) {
                             $output['_groups_id_requester'] = $output['_groups_id_of_item'];
                         }
+                        if (
+                            $action->fields['field'] == '_groups_id_observer'
+                            && isset($output['_groups_id_of_item'])
+                        ) {
+                            $output['_groups_id_observer'] = $output['_groups_id_of_item'];
+                        }
+                        if (
+                            $action->fields['field'] == '_groups_id_assign'
+                            && isset($output['_groups_id_of_item'])
+                        ) {
+                            $output['_groups_id_assign'] = $output['_groups_id_of_item'];
+                        }
                         break;
 
                     case 'compute':
                         // Value could be not set (from test)
-                        $urgency = (isset($output['urgency']) ? $output['urgency'] : 3);
-                        $impact  = (isset($output['impact']) ? $output['impact'] : 3);
+                        $urgency = (int) ($output['urgency'] ?? 3);
+                        $impact  = (int) ($output['impact'] ?? 3);
                         // Apply priority_matrix from config
                         $output['priority'] = Ticket::computePriority($urgency, $impact);
                         break;
@@ -374,13 +403,13 @@ class RuleTicket extends Rule
                     case "affectbyfqdn":
                     case "affectbymac":
                         if (!isset($output["entities_id"])) {
-                              $output["entities_id"] = $params["entities_id"];
+                            $output["entities_id"] = $params["entities_id"];
                         }
                         if (isset($this->regex_results[0])) {
-                             $regexvalue = RuleAction::getRegexResultById(
-                                 $action->fields["value"],
-                                 $this->regex_results[0]
-                             );
+                            $regexvalue = RuleAction::getRegexResultById(
+                                $action->fields["value"],
+                                $this->regex_results[0]
+                            );
                         } else {
                             $regexvalue = $action->fields["value"];
                         }
@@ -433,7 +462,7 @@ class RuleTicket extends Rule
                                     $output["itilcategories_id"] = $target_itilcategory;
                                 }
                             }
-                        } else if ($action->fields["field"] == "_groups_id_requester") {
+                        } elseif ($action->fields["field"] == "_groups_id_requester") {
                             foreach ($this->regex_results as $regex_result) {
                                 $regexvalue          = RuleAction::getRegexResultById(
                                     $action->fields["value"],
@@ -442,22 +471,52 @@ class RuleTicket extends Rule
                                 $group = new Group();
                                 if (
                                     $group->getFromDBByCrit(["name" => $regexvalue,
-                                        "is_requester" => true
+                                        "is_requester" => true,
                                     ])
                                 ) {
-                                     $output['_additional_groups_requesters'][$group->getID()] = $group->getID();
+                                    $output['_additional_groups_requesters'][$group->getID()] = $group->getID();
+                                }
+                            }
+                        } elseif ($action->fields["field"] == "_groups_id_observer") {
+                            foreach ($this->regex_results as $regex_result) {
+                                $regexvalue          = RuleAction::getRegexResultById(
+                                    $action->fields["value"],
+                                    $regex_result
+                                );
+                                $group = new Group();
+                                if (
+                                    $group->getFromDBByCrit(["name" => $regexvalue,
+                                        "is_watcher" => true,
+                                    ])
+                                ) {
+                                    $output['_additional_groups_observers'][$group->getID()] = $group->getID();
+                                }
+                            }
+                        } elseif ($action->fields["field"] == "_groups_id_assign") {
+                            foreach ($this->regex_results as $regex_result) {
+                                $regexvalue          = RuleAction::getRegexResultById(
+                                    $action->fields["value"],
+                                    $regex_result
+                                );
+                                $group = new Group();
+                                if (
+                                    $group->getFromDBByCrit(["name" => $regexvalue,
+                                        "is_assign" => true,
+                                    ])
+                                ) {
+                                    $output['_additional_groups_assigns'][$group->getID()] = $group->getID();
                                 }
                             }
                         }
 
                         if ($action->fields["field"] == "assign_appliance") {
                             if (isset($this->regex_results[0])) {
-                                 $regexvalue = RuleAction::getRegexResultById(
-                                     $action->fields["value"],
-                                     $this->regex_results[0]
-                                 );
+                                $regexvalue = RuleAction::getRegexResultById(
+                                    $action->fields["value"],
+                                    $this->regex_results[0]
+                                );
                             } else {
-                                  $regexvalue = $action->fields["value"];
+                                $regexvalue = $action->fields["value"];
                             }
 
                             if (!is_null($regexvalue)) {
@@ -476,12 +535,12 @@ class RuleTicket extends Rule
 
                         if ($action->fields["field"] == "assign_project") {
                             if (isset($this->regex_results[0])) {
-                                 $regexvalue = RuleAction::getRegexResultById(
-                                     $action->fields["value"],
-                                     $this->regex_results[0]
-                                 );
+                                $regexvalue = RuleAction::getRegexResultById(
+                                    $action->fields["value"],
+                                    $this->regex_results[0]
+                                );
                             } else {
-                                  $regexvalue = $action->fields["value"];
+                                $regexvalue = $action->fields["value"];
                             }
 
                             if (!is_null($regexvalue)) {
@@ -579,11 +638,11 @@ class RuleTicket extends Rule
         $criterias['type']['linkfield']                       = 'type';
         $criterias['type']['type']                            = 'dropdown_tickettype';
 
-        $criterias['_users_id_recipient']['table']            = 'glpi_users';
-        $criterias['_users_id_recipient']['field']            = 'name';
-        $criterias['_users_id_recipient']['name']             = __('Writer');
-        $criterias['_users_id_recipient']['linkfield']        = '_users_id_recipient';
-        $criterias['_users_id_recipient']['type']             = 'dropdown_users';
+        $criterias['users_id_recipient']['table']             = 'glpi_users';
+        $criterias['users_id_recipient']['field']             = 'name';
+        $criterias['users_id_recipient']['name']              = __('Writer');
+        $criterias['users_id_recipient']['linkfield']         = 'users_id_recipient';
+        $criterias['users_id_recipient']['type']              = 'dropdown_users';
 
         $criterias['_users_id_requester']['table']            = 'glpi_users';
         $criterias['_users_id_requester']['field']            = 'name';
@@ -840,7 +899,7 @@ class RuleTicket extends Rule
         $actions['_groups_id_assign']['name']                 = __('Technician group');
         $actions['_groups_id_assign']['type']                 = 'dropdown';
         $actions['_groups_id_assign']['condition']            = ['is_assign' => 1];
-        $actions['_groups_id_assign']['force_actions']        = ['assign', 'append'];
+        $actions['_groups_id_assign']['force_actions']        = ['assign', 'append', 'fromitem', 'defaultfromuser','regex_result'];
         $actions['_groups_id_assign']['permitseveral']        = ['append'];
         $actions['_groups_id_assign']['appendto']             = '_additional_groups_assigns';
 
@@ -865,7 +924,7 @@ class RuleTicket extends Rule
         $actions['_groups_id_observer']['name']               = _n('Watcher group', 'Watcher groups', 1);
         $actions['_groups_id_observer']['type']               = 'dropdown';
         $actions['_groups_id_observer']['condition']          = ['is_watcher' => 1];
-        $actions['_groups_id_observer']['force_actions']      = ['assign', 'append'];
+        $actions['_groups_id_observer']['force_actions']      = ['assign', 'append', 'fromitem', 'defaultfromuser','regex_result'];
         $actions['_groups_id_observer']['permitseveral']      = ['append'];
         $actions['_groups_id_observer']['appendto']           = '_additional_groups_observers';
 
@@ -885,7 +944,7 @@ class RuleTicket extends Rule
         $actions['affectobject']['name']                      = _n('Associated element', 'Associated elements', Session::getPluralNumber());
         $actions['affectobject']['type']                      = 'text';
         $actions['affectobject']['force_actions']             = ['affectbyip', 'affectbyfqdn',
-            'affectbymac'
+            'affectbymac',
         ];
 
         $actions['assign_appliance']['name']                  = _n('Associated element', 'Associated elements', Session::getPluralNumber()) . " : " . Appliance::getTypeName(1);
@@ -914,6 +973,10 @@ class RuleTicket extends Rule
         $actions['slas_id_ttr']['type']                       = 'dropdown';
         $actions['slas_id_ttr']['condition']                  = ['glpi_slas.type' => SLM::TTR];
 
+        $actions['time_to_resolve']['name']                   = __('Time to resolve');
+        $actions['time_to_resolve']['type']                   = 'yesno';
+        $actions['time_to_resolve']['force_actions']          = ['delete'];
+
         $actions['slas_id_tto']['table']                      = 'glpi_slas';
         $actions['slas_id_tto']['field']                      = 'name';
         $actions['slas_id_tto']['name']                       = sprintf(
@@ -924,6 +987,10 @@ class RuleTicket extends Rule
         $actions['slas_id_tto']['linkfield']                  = 'slas_id_tto';
         $actions['slas_id_tto']['type']                       = 'dropdown';
         $actions['slas_id_tto']['condition']                  = ['glpi_slas.type' => SLM::TTO];
+
+        $actions['time_to_own']['name']                       = __('Time to own');
+        $actions['time_to_own']['type']                       = 'yesno';
+        $actions['time_to_own']['force_actions']              = ['delete'];
 
         $actions['olas_id_ttr']['table']                      = 'glpi_olas';
         $actions['olas_id_ttr']['field']                      = 'name';
@@ -936,6 +1003,10 @@ class RuleTicket extends Rule
         $actions['olas_id_ttr']['type']                       = 'dropdown';
         $actions['olas_id_ttr']['condition']                  = ['glpi_olas.type' => SLM::TTR];
 
+        $actions['internal_time_to_resolve']['name']          = __('Internal time to resolve');
+        $actions['internal_time_to_resolve']['type']          = 'yesno';
+        $actions['internal_time_to_resolve']['force_actions'] = ['delete'];
+
         $actions['olas_id_tto']['table']                      = 'glpi_olas';
         $actions['olas_id_tto']['field']                      = 'name';
         $actions['olas_id_tto']['name']                       = sprintf(
@@ -946,6 +1017,10 @@ class RuleTicket extends Rule
         $actions['olas_id_tto']['linkfield']                  = 'olas_id_tto';
         $actions['olas_id_tto']['type']                       = 'dropdown';
         $actions['olas_id_tto']['condition']                  = ['glpi_olas.type' => SLM::TTO];
+
+        $actions['internal_time_to_own']['name']              = __('Internal Time to own');
+        $actions['internal_time_to_own']['type']              = 'yesno';
+        $actions['internal_time_to_own']['force_actions']     = ['delete'];
 
         $actions['users_id_validate']['name']                 = sprintf(
             __('%1$s - %2$s'),
@@ -1046,7 +1121,7 @@ class RuleTicket extends Rule
 
         $values = parent::getRights();
         $values[self::PARENT] = ['short' => __('Parent business'),
-            'long'  => __('Business rules (entity parent)')
+            'long'  => __('Business rules (entity parent)'),
         ];
 
         return $values;

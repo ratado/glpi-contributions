@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -33,6 +33,7 @@
  * ---------------------------------------------------------------------
  */
 
+use Glpi\RichText\RichText;
 use Glpi\Toolbox\Sanitizer;
 
 /** QueuedNotification class
@@ -49,11 +50,25 @@ class QueuedNotification extends CommonDBTM
         return __('Notification queue');
     }
 
-
-    public static function canCreate()
+    public static function unsetUndisclosedFields(&$fields)
     {
-       // Everybody can create : human and cron
-        return Session::getLoginUserID(false);
+        parent::unsetUndisclosedFields($fields);
+
+        if (
+            !array_key_exists('event', $fields)
+            || !array_key_exists('itemtype', $fields)
+        ) {
+            return;
+        }
+
+        $target = NotificationTarget::getInstanceByType((string) $fields['itemtype']);
+        if (
+            $target instanceof NotificationTarget
+            && !$target->canNotificationContentBeDisclosed((string) $fields['event'])
+        ) {
+            $fields['body_html'] = '********';
+            $fields['body_text'] = '********';
+        }
     }
 
 
@@ -99,9 +114,6 @@ class QueuedNotification extends CommonDBTM
     }
 
 
-    /**
-     * @see CommonDBTM::processMassiveActionsForOneItemtype()
-     **/
     public static function processMassiveActionsForOneItemtype(
         MassiveAction $ma,
         CommonDBTM $item,
@@ -113,7 +125,10 @@ class QueuedNotification extends CommonDBTM
                     if ($item->canEdit($id)) {
                         if ($item->fields['mode'] === Notification_NotificationTemplate::MODE_AJAX) {
                             $ma->itemDone($item->getType(), $id, MassiveAction::NO_ACTION);
-                        } elseif ($item->sendById($id)) {
+                        } elseif (
+                            ($item instanceof QueuedNotification)
+                            && $item->sendById($id)
+                        ) {
                             $ma->itemDone($item->getType(), $id, MassiveAction::ACTION_OK);
                         } else {
                             $ma->itemDone($item->getType(), $id, MassiveAction::ACTION_KO);
@@ -164,12 +179,12 @@ class QueuedNotification extends CommonDBTM
             $input['documents'] = '';
         }
 
-       // Force items_id to integer
+        // Force items_id to integer
         if (!isset($input['items_id']) || empty($input['items_id'])) {
             $input['items_id'] = 0;
         }
 
-       // Drop existing mails in queue for the same event and item  and recipient
+        // Drop existing mails in queue for the same event and item  and recipient
         $item = isset($input['itemtype']) ? getItemForItemtype($input['itemtype']) : false;
         if (
             $item instanceof CommonDBTM && $item->deduplicate_queued_notifications
@@ -186,9 +201,9 @@ class QueuedNotification extends CommonDBTM
                     'items_id'     => $input['items_id'],
                     'entities_id'  => $input['entities_id'],
                     'notificationtemplates_id' => $input['notificationtemplates_id'],
-                    'recipient'                => $input['recipient']
+                    'recipient'                => $input['recipient'],
 
-                ]
+                ],
             ];
             $iterator = $DB->request($criteria);
             foreach ($iterator as $data) {
@@ -206,7 +221,7 @@ class QueuedNotification extends CommonDBTM
 
         $tab[] = [
             'id'                 => 'common',
-            'name'               => __('Characteristics')
+            'name'               => __('Characteristics'),
         ];
 
         $tab[] = [
@@ -215,7 +230,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'name',
             'name'               => __('Subject'),
             'datatype'           => 'itemlink',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -224,7 +239,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'id',
             'name'               => __('ID'),
             'massiveaction'      => false,
-            'datatype'           => 'number'
+            'datatype'           => 'number',
         ];
 
         $tab[] = [
@@ -233,7 +248,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'create_time',
             'name'               => __('Creation date'),
             'datatype'           => 'datetime',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -242,7 +257,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'send_time',
             'name'               => __('Expected send date'),
             'datatype'           => 'datetime',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -251,7 +266,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'sent_time',
             'name'               => __('Send date'),
             'datatype'           => 'datetime',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -260,7 +275,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'sender',
             'name'               => __('Sender email'),
             'datatype'           => 'text',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -269,7 +284,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'sendername',
             'name'               => __('Sender name'),
             'datatype'           => 'string',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -278,7 +293,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'recipient',
             'name'               => __('Recipient email'),
             'datatype'           => 'string',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -287,7 +302,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'recipientname',
             'name'               => __('Recipient name'),
             'datatype'           => 'string',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -296,7 +311,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'replyto',
             'name'               => __('Reply-To email'),
             'datatype'           => 'string',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -305,7 +320,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'replytoname',
             'name'               => __('Reply-To name'),
             'datatype'           => 'string',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -314,7 +329,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'headers',
             'name'               => __('Additional headers'),
             'datatype'           => 'specific',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -322,9 +337,10 @@ class QueuedNotification extends CommonDBTM
             'table'              => $this->getTable(),
             'field'              => 'body_html',
             'name'               => __('Email HTML body'),
-            'datatype'           => 'text',
+            'datatype'           => 'specific',
+            'nosearch'           => true, // can contain sensitive data, fine-grain filtering would be too complex
+            'additionalfields'   => ['itemtype', 'event'],
             'massiveaction'      => false,
-            'htmltext'           => true
         ];
 
         $tab[] = [
@@ -332,8 +348,10 @@ class QueuedNotification extends CommonDBTM
             'table'              => $this->getTable(),
             'field'              => 'body_text',
             'name'               => __('Email text body'),
-            'datatype'           => 'text',
-            'massiveaction'      => false
+            'datatype'           => 'specific',
+            'nosearch'           => true, // can contain sensitive data, fine-grain filtering would be too complex
+            'additionalfields'   => ['itemtype', 'event'],
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -342,7 +360,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'messageid',
             'name'               => __('Message ID'),
             'datatype'           => 'string',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -351,7 +369,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'sent_try',
             'name'               => __('Number of tries of sent'),
             'datatype'           => 'integer',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -360,7 +378,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'itemtype',
             'name'               => _n('Type', 'Types', 1),
             'datatype'           => 'itemtypename',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -369,7 +387,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'items_id',
             'name'               => __('Associated item ID'),
             'massiveaction'      => false,
-            'datatype'           => 'integer'
+            'datatype'           => 'integer',
         ];
 
         $tab[] = [
@@ -378,7 +396,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'name',
             'name'               => _n('Notification template', 'Notification templates', 1),
             'massiveaction'      => false,
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -390,8 +408,8 @@ class QueuedNotification extends CommonDBTM
             'datatype'           => 'specific',
             'searchtype'         => [
                 0 => 'equals',
-                1 => 'notequals'
-            ]
+                1 => 'notequals',
+            ],
         ];
 
         $tab[] = [
@@ -400,7 +418,7 @@ class QueuedNotification extends CommonDBTM
             'field'              => 'completename',
             'name'               => Entity::getTypeName(1),
             'massiveaction'      => false,
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         return $tab;
@@ -414,11 +432,59 @@ class QueuedNotification extends CommonDBTM
      **/
     public static function getSpecificValueToDisplay($field, $values, array $options = [])
     {
+        /**
+         * @var array $CFG_GLPI
+         */
+        global $CFG_GLPI;
 
         if (!is_array($values)) {
             $values = [$field => $values];
         }
         switch ($field) {
+            case 'body_html':
+            case 'body_text':
+                if (
+                    array_key_exists('event', $values)
+                    && array_key_exists('itemtype', $values)
+                ) {
+                    $target = NotificationTarget::getInstanceByType((string) $values['itemtype']);
+                    if (
+                        $target instanceof NotificationTarget
+                        && !$target->canNotificationContentBeDisclosed((string) $values['event'])
+                    ) {
+                        return __s('The content of the notification contains sensitive information and therefore cannot be displayed.');
+                    }
+                }
+
+                // Rendering simitar to the `text` datatype
+                $value     = $values[$field];
+                $plaintext = '';
+                if ($field === 'body_html') {
+                    $plaintext = RichText::getTextFromHtml($value, false, true, true);
+                } else {
+                    $plaintext = nl2br($value);
+                }
+
+                if (Toolbox::strlen($plaintext) > $CFG_GLPI['cut']) {
+                    $rand = mt_rand();
+                    $popup_params = [
+                        'display'       => false,
+                        'awesome-class' => 'fa-comments',
+                        'autoclose'     => false,
+                        'onclick'       => true,
+                    ];
+                    $out = sprintf(
+                        __('%1$s %2$s'),
+                        "<span id='text$rand'>" . Html::resume_text($plaintext, $CFG_GLPI['cut']) . '</span>',
+                        Html::showToolTip(
+                            '<div class="fup-popup">' . RichText::getEnhancedHtml($value) . '</div>',
+                            $popup_params
+                        )
+                    );
+                } else {
+                    $out = $plaintext;
+                }
+                return $out;
             case 'headers':
                 $values[$field] = importArrayFromDB($values[$field]);
                 $out = '';
@@ -428,11 +494,11 @@ class QueuedNotification extends CommonDBTM
                     }
                 }
                 return $out;
-            break;
+                break;
             case 'mode':
                 $out = Notification_NotificationTemplate::getMode($values[$field])['label'];
                 return $out;
-            break;
+                break;
         }
         return parent::getSpecificValueToDisplay($field, $values, $options);
     }
@@ -494,12 +560,12 @@ class QueuedNotification extends CommonDBTM
         switch ($name) {
             case 'queuednotification':
                 return ['description' => __('Send mails in queue'),
-                    'parameter'   => __('Maximum emails to send at once')
+                    'parameter'   => __('Maximum emails to send at once'),
                 ];
 
             case 'queuednotificationclean':
                 return ['description' => __('Clean notification queue'),
-                    'parameter'   => __('Days to keep sent emails')
+                    'parameter'   => __('Days to keep sent emails'),
                 ];
         }
         return [];
@@ -537,7 +603,7 @@ class QueuedNotification extends CommonDBTM
             ] +  $extra_where,
             'ORDER'  => 'send_time ASC',
             'START'  => 0,
-            'LIMIT'  => $limit
+            'LIMIT'  => $limit,
         ];
 
         $pendings = [];
@@ -553,7 +619,7 @@ class QueuedNotification extends CommonDBTM
                 || !$CFG_GLPI['notifications_' . $mode]
                 || !$eventclass::canCron()
             ) {
-               //mode is not in limits, is disabled, or cannot be called from cron, passing
+                //mode is not in limits, is disabled, or cannot be called from cron, passing
                 continue;
             }
 
@@ -576,7 +642,7 @@ class QueuedNotification extends CommonDBTM
     /**
      * Cron action on notification queue: send notifications in queue
      *
-     * @param CommonDBTM $task for log (default NULL)
+     * @param CronTask $task for log (default NULL)
      *
      * @return integer either 0 or 1
      **/
@@ -587,7 +653,12 @@ class QueuedNotification extends CommonDBTM
         }
         $cron_status = 0;
 
-       // Send notifications at least 1 minute after adding in queue to be sure that process on it is finished
+        $memory_limit       = (int) Toolbox::getMemoryLimit();
+        if ($memory_limit > 0 && $memory_limit < (512 * 1024 * 1024)) {
+            ini_set('memory_limit', '512M');
+        }
+
+        // Send notifications at least 1 minute after adding in queue to be sure that process on it is finished
         $send_time = date("Y-m-d H:i:s", strtotime("+1 minutes"));
 
         $pendings = self::getPendings(
@@ -620,7 +691,7 @@ class QueuedNotification extends CommonDBTM
     /**
      * Cron action on queued notification: clean notification queue
      *
-     * @param CommonDBTM $task for log (default NULL)
+     * @param CronTask $task for log (default NULL)
      *
      * @return integer either 0 or 1
      **/
@@ -631,7 +702,7 @@ class QueuedNotification extends CommonDBTM
 
         $vol = 0;
 
-       // Expire mails in queue
+        // Expire mails in queue
         if ($task->fields['param'] > 0) {
             $secs      = $task->fields['param'] * DAY_TIMESTAMP;
             $send_time = date("U") - $secs;
@@ -639,7 +710,7 @@ class QueuedNotification extends CommonDBTM
                 self::getTable(),
                 [
                     'is_deleted'   => 1,
-                    new \QueryExpression('(UNIX_TIMESTAMP(' . $DB->quoteName('send_time') . ') < ' . $DB->quoteValue($send_time) . ')')
+                    new \QueryExpression('(UNIX_TIMESTAMP(' . $DB->quoteName('send_time') . ') < ' . $DB->quoteValue($send_time) . ')'),
                 ]
             );
             $vol = $DB->affectedRows();
@@ -670,7 +741,7 @@ class QueuedNotification extends CommonDBTM
                 null,
                 [
                     'itemtype'  => $itemtype,
-                    'items_id'  => $items_id
+                    'items_id'  => $items_id,
                 ]
             );
 
@@ -712,7 +783,7 @@ class QueuedNotification extends CommonDBTM
             echo "<td>" . _n('Item', 'Items', 1) . "</td>";
             echo "<td>";
             echo NOT_AVAILABLE;
-        } else if ($item instanceof CommonDBTM) {
+        } elseif ($item instanceof CommonDBTM) {
             echo $item->getType();
             $item->getFromDB($this->fields['items_id']);
             echo "</td>";
@@ -790,11 +861,23 @@ class QueuedNotification extends CommonDBTM
         echo "<th colspan='2'>" . __('Email text body') . "</th>";
         echo "</tr>";
 
+        $target = NotificationTarget::getInstanceByType((string) $this->fields['itemtype']);
+        if (
+            $target instanceof NotificationTarget
+            && !$target->canNotificationContentBeDisclosed((string) $this->fields['event'])
+        ) {
+            $body_html = __s('The content of the notification contains sensitive information and therefore cannot be displayed.');
+            $body_text = $body_html;
+        } else {
+            $body_html = self::cleanHtml(Sanitizer::unsanitize($this->fields['body_html'] ?? ''));
+            $body_text = nl2br($this->fields['body_text'], false);
+        }
+
         echo "<tr class='tab_bg_1 top' >";
         echo "<td colspan='2' class='queuemail_preview'>";
-        echo self::cleanHtml(Sanitizer::unsanitize($this->fields['body_html'] ?? ''));
+        echo $body_html;
         echo "</td>";
-        echo "<td colspan='2'>" . nl2br($this->fields['body_text'], false) . "</td>";
+        echo "<td colspan='2'>" . $body_text . "</td>";
         echo "</tr>";
 
         $this->showFormButtons($options);
@@ -818,7 +901,7 @@ class QueuedNotification extends CommonDBTM
         $content         = explode("\n", $string);
         $newstring       = '';
         foreach ($content as $ID => $val) {
-           // Get last tag for end
+            // Get last tag for end
             if ($begin_strip >= 0) {
                 if (preg_match($end_match, $val)) {
                     $end_strip = $ID;
@@ -828,7 +911,7 @@ class QueuedNotification extends CommonDBTM
             if (($begin_strip >= 0) && ($end_strip < 0)) {
                 $newstring .= $val;
             }
-           // Get first tag for begin
+            // Get first tag for begin
             if ($begin_strip < 0) {
                 if (preg_match($begin_match, $val)) {
                     $begin_strip = $ID;

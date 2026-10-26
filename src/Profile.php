@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -34,15 +34,16 @@
  */
 
 use Glpi\Event;
+use Glpi\Toolbox\ArrayNormalizer;
 
 /**
  * Profile class
  **/
 class Profile extends CommonDBTM
 {
-   // Specific ones
+    // Specific ones
 
-   /// Helpdesk fields of helpdesk profiles
+    /// Helpdesk fields of helpdesk profiles
     public static $helpdesk_rights = [
         'create_ticket_on_login',
         'changetemplates_id',
@@ -66,7 +67,7 @@ class Profile extends CommonDBTM
     ];
 
 
-   /// Common fields used for all profiles type
+    /// Common fields used for all profiles type
     public static $common_fields  = ['id', 'interface', 'is_default', 'name'];
 
     public $dohistory             = true;
@@ -149,7 +150,7 @@ class Profile extends CommonDBTM
     {
 
         if (!$withtemplate) {
-            switch ($item->getType()) {
+            switch (get_class($item)) {
                 case __CLASS__:
                     if ($item->fields['interface'] == 'helpdesk') {
                         $ong[3] = __('Assistance'); // Helpdesk
@@ -175,7 +176,7 @@ class Profile extends CommonDBTM
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
 
-        if ($item->getType() == __CLASS__) {
+        if (get_class($item) == __CLASS__) {
             $item->cleanProfile();
             switch ($tabnum) {
                 case 2:
@@ -241,15 +242,15 @@ class Profile extends CommonDBTM
             $DB->update(
                 $this->getTable(),
                 [
-                    'is_default' => 0
+                    'is_default' => 0,
                 ],
                 [
-                    'id' => ['<>', $this->input['id']]
+                    'id' => ['<>', $this->input['id']],
                 ]
             );
         }
 
-       // To avoid log out and login when rights change (very useful in debug mode)
+        // To avoid log out and login when rights change (very useful in debug mode)
         if (
             isset($_SESSION['glpiactiveprofile']['id'])
             && $_SESSION['glpiactiveprofile']['id'] == $this->input['id']
@@ -262,7 +263,7 @@ class Profile extends CommonDBTM
                 $_SESSION['glpiactiveprofile']['managed_domainrecordtypes'] = importArrayFromDB($this->input['managed_domainrecordtypes']);
             }
 
-           ///TODO other needed fields
+            ///TODO other needed fields
         }
     }
 
@@ -280,10 +281,10 @@ class Profile extends CommonDBTM
             $DB->update(
                 $this->getTable(),
                 [
-                    'is_default' => 0
+                    'is_default' => 0,
                 ],
                 [
-                    'id' => ['<>', $this->fields['id']]
+                    'id' => ['<>', $this->fields['id']],
                 ]
             );
         }
@@ -304,7 +305,7 @@ class Profile extends CommonDBTM
         );
 
         Rule::cleanForItemAction($this);
-       // PROFILES and UNIQUE_PROFILE in RuleMailcollector
+        // PROFILES and UNIQUE_PROFILE in RuleMailcollector
         Rule::cleanForItemCriteria($this, 'PROFILES');
         Rule::cleanForItemCriteria($this, 'UNIQUE_PROFILE');
     }
@@ -312,13 +313,16 @@ class Profile extends CommonDBTM
 
     public function prepareInputForUpdate($input)
     {
+        /** @var array $CFG_GLPI */
+        global $CFG_GLPI;
 
         if (isset($input["_helpdesk_item_types"])) {
             if ((!isset($input["helpdesk_item_type"])) || (!is_array($input["helpdesk_item_type"]))) {
                 $input["helpdesk_item_type"] = [];
             }
-           // Linear_HIT: $input["helpdesk_item_type"] = array_keys($input["helpdesk_item_type"]
-            $input["helpdesk_item_type"] = exportArrayToDB($input["helpdesk_item_type"]);
+            $input["helpdesk_item_type"] = exportArrayToDB(
+                ArrayNormalizer::normalizeValues($input["helpdesk_item_type"], 'strval')
+            );
         }
 
         if (isset($input["_managed_domainrecordtypes"])) {
@@ -326,10 +330,12 @@ class Profile extends CommonDBTM
                 $input["managed_domainrecordtypes"] = [];
             }
             if (in_array(-1, $input['managed_domainrecordtypes'])) {
-               //when all selected, keep only all
+                //when all selected, keep only all
                 $input['managed_domainrecordtypes'] = [-1];
             }
-            $input["managed_domainrecordtypes"] = exportArrayToDB($input["managed_domainrecordtypes"]);
+            $input["managed_domainrecordtypes"] = exportArrayToDB(
+                ArrayNormalizer::normalizeValues($input["managed_domainrecordtypes"], 'intval')
+            );
         }
 
         if (isset($input['helpdesk_hardware']) && is_array($input['helpdesk_hardware'])) {
@@ -391,7 +397,7 @@ class Profile extends CommonDBTM
             $input["change_status"] = exportArrayToDB($cycle);
         }
 
-       // keep only unnecessary rights when switching from standard to self-service interface
+        // keep only unnecessary rights when switching from standard to self-service interface
         if (!isset($input["_ticket"]) && isset($input['interface']) && $input['interface'] == "helpdesk") {
             $ticket = new Ticket();
             $ss_rights = $ticket->getRights("helpdesk");
@@ -430,6 +436,21 @@ class Profile extends CommonDBTM
             unset($input['interface']);
         }
 
+        // If the profile is used as the "Profile to be used when locking items",
+        // it can't be set to the "helpdesk" interface.
+        if (
+            isset($input['interface'])
+            && $input['interface'] === "helpdesk"
+            && $this->fields['id'] === (int) $CFG_GLPI['lock_lockprofile_id']
+        ) {
+            Session::addMessageAfterRedirect(
+                __("This profile can't be moved to the simplified interface as it is used for locking items."),
+                false,
+                ERROR
+            );
+            unset($input['interface']);
+        }
+
         // KEEP AT THE END
         $this->profileRight = [];
         foreach (array_keys(ProfileRight::getAllPossibleRights()) as $right) {
@@ -446,7 +467,7 @@ class Profile extends CommonDBTM
                         $newvalue += $value;
                     }
                 }
-               // Update rights only if changed
+                // Update rights only if changed
                 if (!isset($this->fields[$right]) || ($this->fields[$right] != $newvalue)) {
                     $this->profileRight[$right] = $newvalue;
                 }
@@ -489,11 +510,15 @@ class Profile extends CommonDBTM
     {
 
         if (isset($input["helpdesk_item_type"])) {
-            $input["helpdesk_item_type"] = exportArrayToDB($input["helpdesk_item_type"]);
+            $input["helpdesk_item_type"] = exportArrayToDB(
+                ArrayNormalizer::normalizeValues($input["helpdesk_item_type"], 'strval')
+            );
         }
 
         if (isset($input["managed_domainrecordtypes"])) {
-            $input["managed_domainrecordtypes"] = exportArrayToDB($input["managed_domainrecordtypes"]);
+            $input["managed_domainrecordtypes"] = exportArrayToDB(
+                ArrayNormalizer::normalizeValues($input["managed_domainrecordtypes"], 'intval')
+            );
         }
 
         $this->profileRight = [];
@@ -504,8 +529,8 @@ class Profile extends CommonDBTM
             }
         }
 
-       // Set default values, only needed for helpdesk
-        $interface = isset($input['interface']) ? $input['interface'] : "";
+        // Set default values, only needed for helpdesk
+        $interface = $input['interface'] ?? "";
         if ($interface == "helpdesk" && !isset($input["_cycle_ticket"])) {
             $tab   = array_keys(Ticket::getAllStatusArray());
             $cycle = [];
@@ -540,7 +565,7 @@ class Profile extends CommonDBTM
             }
         }
 
-       // decode array
+        // decode array
         if (
             isset($this->fields["helpdesk_item_type"])
             && !is_array($this->fields["helpdesk_item_type"])
@@ -548,7 +573,7 @@ class Profile extends CommonDBTM
             $this->fields["helpdesk_item_type"] = importArrayFromDB($this->fields["helpdesk_item_type"]);
         }
 
-       // Empty/NULL case
+        // Empty/NULL case
         if (
             !isset($this->fields["helpdesk_item_type"])
             || !is_array($this->fields["helpdesk_item_type"])
@@ -556,7 +581,7 @@ class Profile extends CommonDBTM
             $this->fields["helpdesk_item_type"] = [];
         }
 
-       // decode array
+        // decode array
         if (
             isset($this->fields["managed_domainrecordtypes"])
             && !is_array($this->fields["managed_domainrecordtypes"])
@@ -564,7 +589,7 @@ class Profile extends CommonDBTM
             $this->fields["managed_domainrecordtypes"] = importArrayFromDB($this->fields["managed_domainrecordtypes"]);
         }
 
-       // Empty/NULL case
+        // Empty/NULL case
         if (
             !isset($this->fields["managed_domainrecordtypes"])
             || !is_array($this->fields["managed_domainrecordtypes"])
@@ -572,12 +597,12 @@ class Profile extends CommonDBTM
             $this->fields["managed_domainrecordtypes"] = [];
         }
 
-       // Decode status array
+        // Decode status array
         $fields_to_decode = ['ticket_status', 'problem_status', 'change_status'];
         foreach ($fields_to_decode as $val) {
             if (isset($this->fields[$val]) && !is_array($this->fields[$val])) {
                 $this->fields[$val] = importArrayFromDB($this->fields[$val]);
-               // Need to be an array not a null value
+                // Need to be an array not a null value
                 if (is_null($this->fields[$val])) {
                     $this->fields[$val] = [];
                 }
@@ -596,22 +621,22 @@ class Profile extends CommonDBTM
     public static function getUnderActiveProfileRestrictCriteria()
     {
 
-       // Not logged -> no profile to see
+        // Not logged -> no profile to see
         if (!isset($_SESSION['glpiactiveprofile'])) {
             return [0];
         }
 
-       // Profile right : may modify profile so can attach all profile
+        // Profile right : may modify profile so can attach all profile
         if (Profile::canCreate()) {
             return [1];
         }
 
         $criteria = ['glpi_profiles.interface' => Session::getCurrentInterface()];
 
-       // First, get all possible rights
+        // First, get all possible rights
         $right_subqueries = [];
         foreach (ProfileRight::getAllPossibleRights() as $key => $default) {
-            $val = isset($_SESSION['glpiactiveprofile'][$key]) ? $_SESSION['glpiactiveprofile'][$key] : 0;
+            $val = $_SESSION['glpiactiveprofile'][$key] ?? 0;
 
             if (
                 !is_array($val) // Do not include entities field added by login
@@ -621,8 +646,8 @@ class Profile extends CommonDBTM
                 $right_subqueries[] = [
                     'glpi_profilerights.name'     => $key,
                     'RAW'                         => [
-                        '(' . DBmysql::quoteName('glpi_profilerights.rights') . ' | ' . DBmysql::quoteValue($val) . ')' => $val
-                    ]
+                        '(' . DBmysql::quoteName('glpi_profilerights.rights') . ' | ' . DBmysql::quoteValue($val) . ')' => $val,
+                    ],
                 ];
             }
         }
@@ -632,8 +657,8 @@ class Profile extends CommonDBTM
             'COUNT'  => 'cpt',
             'WHERE'  => [
                 'glpi_profilerights.profiles_id' => new \QueryExpression(\DBmysql::quoteName('glpi_profiles.id')),
-                'OR'                             => $right_subqueries
-            ]
+                'OR'                             => $right_subqueries,
+            ],
         ]);
         $criteria[] = new \QueryExpression(count($right_subqueries) . " = " . $sub_query->getQuery());
 
@@ -641,8 +666,8 @@ class Profile extends CommonDBTM
             return [
                 'OR'  => [
                     'glpi_profiles.interface' => 'helpdesk',
-                    $criteria
-                ]
+                    $criteria,
+                ],
             ];
         }
 
@@ -666,7 +691,7 @@ class Profile extends CommonDBTM
             return true;
         }
         if (count($IDs) == 0) {
-           // Check all profiles (means more right than all possible profiles)
+            // Check all profiles (means more right than all possible profiles)
             return (countElementsInTable('glpi_profiles')
                      == countElementsInTable(
                          'glpi_profiles',
@@ -677,7 +702,7 @@ class Profile extends CommonDBTM
 
         $iterator = $DB->request([
             'FROM'   => self::getTable(),
-            'WHERE'  => self::getUnderActiveProfileRestrictCriteria()
+            'WHERE'  => self::getUnderActiveProfileRestrictCriteria(),
         ]);
 
         foreach ($iterator as $data) {
@@ -743,7 +768,7 @@ class Profile extends CommonDBTM
             $rowspan++;
             $this->check($ID, READ);
         } else {
-           // Create item
+            // Create item
             $this->check(-1, CREATE);
             $onfocus = "onfocus=\"if (this.value=='" . $this->fields["name"] . "') this.value='';\"";
             $new     = true;
@@ -762,7 +787,7 @@ class Profile extends CommonDBTM
 
         echo "<tr class='tab_bg_1'><td>" . __('Default profile') . "</td><td>";
         Html::showCheckbox(['name'    => 'is_default',
-            'checked' => $this->fields['is_default']
+            'checked' => $this->fields['is_default'],
         ]);
         echo "</td></tr>\n";
 
@@ -773,20 +798,20 @@ class Profile extends CommonDBTM
             self::getInterfaces(),
             [
                 'value' => $this->fields["interface"],
-                'readonly' => $this->isLastSuperAdminProfile() && $this->fields['interface'] == 'central'
+                'readonly' => $this->isLastSuperAdminProfile() && $this->fields['interface'] == 'central',
             ]
         );
         echo "</td></tr>\n";
 
         echo "<tr class='tab_bg_1'><td>" . __('Update own password') . "</td><td>";
         Html::showCheckbox(['name'    => '_password_update',
-            'checked' => $this->fields['password_update']
+            'checked' => $this->fields['password_update'],
         ]);
         echo "</td></tr>\n";
 
         echo "<tr class='tab_bg_1'><td>" . __('Ticket creation form on login') . "</td><td>";
         Html::showCheckbox(['name'    => 'create_ticket_on_login',
-            'checked' => $this->fields['create_ticket_on_login']
+            'checked' => $this->fields['create_ticket_on_login'],
         ]);
         echo "</td></tr>\n";
 
@@ -803,7 +828,7 @@ class Profile extends CommonDBTM
      * @param string $form The tab/form name
      * @phpstan-param non-empty-string $form
      * @param string $interface The interface name
-     * @phpstan-param 'central'|'helpdesk' $interface
+     * @phpstan-param 'all'|'central'|'helpdesk' $interface
      * @return array
      * @phpstan-type RightDefinition = array{rights: array{}, label: string, field: string, scope: string}
      * @phpstan-return $interface == 'all' ? array<string, array<string, array<string, RightDefinition[]>>> : ($form == 'all' ? array<string, array<string, RightDefinition[]>> : ($group == 'all' ? array<string, RightDefinition[]> : RightDefinition[]))
@@ -823,14 +848,14 @@ class Profile extends CommonDBTM
                 'field' => null,
                 'label' => null,
                 'rights' => null,
-                'scope' => 'entity'
+                'scope' => 'entity',
             ], $options);
 
             return [
                 'rights' => $options['rights'] ?? Profile::getRightsFor($itemtype, $interface),
                 'label'  => $options['label'] ?? $itemtype::getTypeName(Session::getPluralNumber()),
                 'field'  => $options['field'] ?? $itemtype::$rightname,
-                'scope' => $options['scope']
+                'scope' => $options['scope'],
             ];
         };
 
@@ -846,7 +871,7 @@ class Profile extends CommonDBTM
                     'tracking' => [
                         'itilobjects' => [
                             $fn_get_rights(TicketTemplate::class, 'central', [
-                                'label' => _n('Template', 'Templates', Session::getPluralNumber())
+                                'label' => _n('Template', 'Templates', Session::getPluralNumber()),
                             ]),
                             $fn_get_rights(PendingReason::class, 'central'),
                         ],
@@ -881,13 +906,13 @@ class Profile extends CommonDBTM
                     'tools' => [
                         'general' => [
                             $fn_get_rights(Reminder::class, 'central', [
-                                'label' => _n('Public reminder', 'Public reminders', Session::getPluralNumber())
+                                'label' => _n('Public reminder', 'Public reminders', Session::getPluralNumber()),
                             ]),
                             $fn_get_rights(RSSFeed::class, 'central', [
-                                'label' => _n('Public RSS feed', 'Public RSS feeds', Session::getPluralNumber())
+                                'label' => _n('Public RSS feed', 'Public RSS feeds', Session::getPluralNumber()),
                             ]),
                             $fn_get_rights(SavedSearch::class, 'central', [
-                                'label' => _n('Public saved search', 'Public saved searches', Session::getPluralNumber())
+                                'label' => _n('Public saved search', 'Public saved searches', Session::getPluralNumber()),
                             ]),
                             $fn_get_rights(Report::class, 'central'),
                             $fn_get_rights(KnowbaseItem::class, 'central'),
@@ -896,7 +921,7 @@ class Profile extends CommonDBTM
                         'projects' => [
                             $fn_get_rights(Project::class, 'central'),
                             $fn_get_rights(ProjectTask::class, 'central'),
-                        ]
+                        ],
                     ],
                     'assets' => [
                         'general' => [
@@ -910,11 +935,15 @@ class Profile extends CommonDBTM
                             $fn_get_rights(Phone::class, 'central'),
                             $fn_get_rights(Peripheral::class, 'central'),
                             $fn_get_rights(NetworkName::class, 'central', [
-                                'label' => __('Internet')
+                                'label' => __('Internet'),
                             ]),
                             $fn_get_rights(DeviceSimcard::class, 'central', [
                                 'label' => __('Simcard PIN/PUK'),
-                                'field' => 'devicesimcard_pinpuk'
+                                'field' => 'devicesimcard_pinpuk',
+                                'rights'    => [
+                                    READ    => __('Read'),
+                                    UPDATE  => __('Update'),
+                                ],
                             ]),
                         ],
                     ],
@@ -923,7 +952,7 @@ class Profile extends CommonDBTM
                             $fn_get_rights(SoftwareLicense::class, 'central'),
                             $fn_get_rights(Contact::class, 'central', [
                                 'label' => _n('Contact', 'Contacts', Session::getPluralNumber()) . " / " .
-                                    _n('Supplier', 'Suppliers', Session::getPluralNumber())
+                                    _n('Supplier', 'Suppliers', Session::getPluralNumber()),
                             ]),
                             $fn_get_rights(Document::class, 'central'),
                             $fn_get_rights(Contract::class, 'central'),
@@ -949,21 +978,21 @@ class Profile extends CommonDBTM
                             $fn_get_rights(Log::class, 'central', ['scope' => 'global']),
                             $fn_get_rights(Event::class, 'central', [
                                 'scope' => 'global',
-                                'label' => __('System logs')
+                                'label' => __('System logs'),
                             ]),
                         ],
                         'inventory' => [
                             $fn_get_rights(\Glpi\Inventory\Conf::class, 'central', [
                                 'label' => __('Inventory'),
                                 'field' => 'inventory',
-                                'scope' => 'global'
+                                'scope' => 'global',
                             ]),
                             $fn_get_rights(Lockedfield::class, 'central', [
                                 'rights' => [
                                     CREATE => __('Create'), // For READ / CREATE
                                     UPDATE => __('Update'), //for CREATE / PURGE global lock
                                 ],
-                                'scope' => 'global'
+                                'scope' => 'global',
                             ]),
                             $fn_get_rights(SNMPCredential::class, 'central', ['scope' => 'global']),
                             $fn_get_rights(RefusedEquipment::class, 'central', [
@@ -972,10 +1001,10 @@ class Profile extends CommonDBTM
                                     UPDATE  => __('Update'),
                                     PURGE   => [
                                         'short' => __('Purge'),
-                                        'long'  => _x('button', 'Delete permanently')
-                                    ]
+                                        'long'  => _x('button', 'Delete permanently'),
+                                    ],
                                 ],
-                                'scope' => 'global'
+                                'scope' => 'global',
                             ]),
                             $fn_get_rights(Unmanaged::class, 'central', [
                                 'rights' => [
@@ -983,14 +1012,14 @@ class Profile extends CommonDBTM
                                     UPDATE  => __('Update'),
                                     DELETE => [
                                         'short' => __('Delete'),
-                                        'long'  => _x('button', 'Put in trashbin')
+                                        'long'  => _x('button', 'Put in trashbin'),
                                     ],
                                     PURGE   => [
                                         'short' => __('Purge'),
-                                        'long'  => _x('button', 'Delete permanently')
-                                    ]
+                                        'long'  => _x('button', 'Delete permanently'),
+                                    ],
                                 ],
-                                'scope' => 'global'
+                                'scope' => 'global',
                             ]),
                             $fn_get_rights(Agent::class, 'central', [
                                 'rights' => [
@@ -998,32 +1027,32 @@ class Profile extends CommonDBTM
                                     UPDATE  => __('Update'),
                                     PURGE   => [
                                         'short' => __('Purge'),
-                                        'long'  => _x('button', 'Delete permanently')
-                                    ]
+                                        'long'  => _x('button', 'Delete permanently'),
+                                    ],
                                 ],
-                                'scope' => 'global'
+                                'scope' => 'global',
                             ]),
                         ],
                         'rules' => [
                             $fn_get_rights(RuleRight::class, 'central', [
                                 'label'     => __('Authorizations assignment rules'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(RuleImportAsset::class, 'central', [
                                 'label'     => __('Rules for assigning a computer to an entity'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(RuleLocation::class, 'central', [
                                 'label'     => __('Rules for assigning a computer to a location'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(RuleMailCollector::class, 'central', [
                                 'label'     => __('Rules for assigning a ticket created through a mails receiver'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(RuleSoftwareCategory::class, 'central', [
                                 'label'     => __('Rules for assigning a category to a software'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(RuleTicket::class, 'central', [
                                 'label'     => __('Business rules for tickets (entity)'),
@@ -1033,23 +1062,23 @@ class Profile extends CommonDBTM
                             ]),
                             $fn_get_rights(Transfer::class, 'central', [
                                 'label'     => __('Transfer'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                         ],
                         'dictionaries' => [
                             $fn_get_rights(RuleDictionnaryDropdown::class, 'central', [
                                 'label'     => __('Dropdowns dictionary'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(RuleDictionnarySoftware::class, 'central', [
                                 'label'     => __('Software dictionary'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(RuleDictionnaryPrinter::class, 'central', [
                                 'label'     => __('Printers dictionary'),
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
-                        ]
+                        ],
                     ],
                     'setup' => [
                         'general' => [
@@ -1057,16 +1086,16 @@ class Profile extends CommonDBTM
                             $fn_get_rights(null, 'central', [
                                 'rights'  => [
                                     READ    => __('Read'),
-                                    UPDATE  => __('Update')
+                                    UPDATE  => __('Update'),
                                 ],
                                 'label'  => __('Personalization'),
                                 'field'  => 'personalization',
-                                'scope'     => 'entity'
+                                'scope'     => 'entity',
                             ]),
                             $fn_get_rights(\Glpi\Dashboard\Grid::class, 'central', [
                                 'label'     => __('All dashboards'),
                                 'field'     => 'dashboard',
-                                'scope'     => 'entity'
+                                'scope'     => 'entity',
                             ]),
                             $fn_get_rights(DisplayPreference::class, 'central', ['scope' => 'entity']),
                             $fn_get_rights(Item_Devices::class, 'central', [
@@ -1077,7 +1106,7 @@ class Profile extends CommonDBTM
                                 'rights'    => $dropdown_rights,
                                 'label'     => _n('Global dropdown', 'Global dropdowns', Session::getPluralNumber()),
                                 'field'     => 'dropdown',
-                                'scope'     => 'global'
+                                'scope'     => 'global',
                             ]),
                             $fn_get_rights(Location::class, 'central'),
                             $fn_get_rights(ITILCategory::class, 'central'),
@@ -1093,7 +1122,7 @@ class Profile extends CommonDBTM
                             $fn_get_rights(SLM::class, 'central', ['label' => __('SLM')]),
                             $fn_get_rights(LineOperator::class, 'central'),
                         ],
-                    ]
+                    ],
                 ],
                 'helpdesk' => [
                     'tracking' => [
@@ -1117,14 +1146,14 @@ class Profile extends CommonDBTM
                             $fn_get_rights(null, 'helpdesk', [
                                 'rights'  => [
                                     READ    => __('Read'),
-                                    UPDATE  => __('Update')
+                                    UPDATE  => __('Update'),
                                 ],
                                 'label'  => __('Personalization'),
                                 'field'  => 'personalization',
                             ]),
                         ],
-                    ]
-                ]
+                    ],
+                ],
             ];
         }
 
@@ -1158,7 +1187,7 @@ class Profile extends CommonDBTM
         }
 
         $matrix_options = ['canedit'       => $canedit,
-            'default_class' => 'tab_bg_2'
+            'default_class' => 'tab_bg_2',
         ];
 
         $matrix_options['title'] = __('Assistance');
@@ -1175,7 +1204,7 @@ class Profile extends CommonDBTM
         echo "<td>";
         Html::showCheckbox([
             'name'    => '_show_group_hardware',
-            'checked' => $this->fields['show_group_hardware']
+            'checked' => $this->fields['show_group_hardware'],
         ]);
         echo "</td>";
         echo "</tr>";
@@ -1186,7 +1215,7 @@ class Profile extends CommonDBTM
         self::getLinearRightChoice(
             self::getHelpdeskHardwareTypes(true),
             ['field' => 'helpdesk_hardware',
-                'value' => $this->fields['helpdesk_hardware']
+                'value' => $this->fields['helpdesk_hardware'],
             ]
         );
         echo "</td>";
@@ -1203,14 +1232,14 @@ class Profile extends CommonDBTM
         echo "<tr>";
         echo "<td>" . __('Default ticket template') . "</td>";
         echo "<td>";
-       // Only root entity ones and recursive
+        // Only root entity ones and recursive
         $options = ['value'     => $this->fields["tickettemplates_id"],
-            'entity'    => 0
+            'condition' => ['entities_id' => 0],
         ];
         if (Session::isMultiEntitiesMode()) {
             $options['condition'] = ['is_recursive' => 1];
         }
-       // Only add profile if on root entity
+        // Only add profile if on root entity
         if (!isset($_SESSION['glpiactiveentities'][0])) {
             $options['addicon'] = false;
         }
@@ -1221,14 +1250,14 @@ class Profile extends CommonDBTM
         echo "<tr>";
         echo "<td>" . __('Default change template') . "</td>";
         echo "<td>";
-       // Only root entity ones and recursive
+        // Only root entity ones and recursive
         $options = ['value'     => $this->fields["changetemplates_id"],
-            'entity'    => 0
+            'condition' => ['entities_id' => 0],
         ];
         if (Session::isMultiEntitiesMode()) {
             $options['condition'] = ['is_recursive' => 1];
         }
-       // Only add profile if on root entity
+        // Only add profile if on root entity
         if (!isset($_SESSION['glpiactiveentities'][0])) {
             $options['addicon'] = false;
         }
@@ -1239,14 +1268,14 @@ class Profile extends CommonDBTM
         echo "<tr>";
         echo "<td>" . __('Default problem template') . "</td>";
         echo "<td>";
-       // Only root entity ones and recursive
+        // Only root entity ones and recursive
         $options = ['value'     => $this->fields["problemtemplates_id"],
-            'entity'    => 0
+            'condition' => ['entities_id' => 0],
         ];
         if (Session::isMultiEntitiesMode()) {
             $options['condition'] = ['is_recursive' => 1];
         }
-       // Only add profile if on root entity
+        // Only add profile if on root entity
         if (!isset($_SESSION['glpiactiveentities'][0])) {
             $options['addicon'] = false;
         }
@@ -1260,7 +1289,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</td></tr>";
             echo "</table>";
@@ -1290,7 +1319,7 @@ class Profile extends CommonDBTM
         }
 
         $matrix_options = ['canedit'       => $canedit,
-            'default_class' => 'tab_bg_2'
+            'default_class' => 'tab_bg_2',
         ];
 
         $matrix_options['title'] = __('Tools');
@@ -1301,7 +1330,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1338,7 +1367,7 @@ class Profile extends CommonDBTM
         $this->displayRightsChoiceMatrix(self::getRightsForForm('central', 'assets', 'general'), [
             'canedit'       => $canedit,
             'default_class' => 'tab_bg_2',
-            'title'         => _n('Asset', 'Assets', Session::getPluralNumber())
+            'title'         => _n('Asset', 'Assets', Session::getPluralNumber()),
         ]);
 
         if (
@@ -1349,7 +1378,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>\n";
             Html::closeForm();
@@ -1384,7 +1413,7 @@ class Profile extends CommonDBTM
         }
 
         $matrix_options = ['canedit'       => $canedit,
-            'default_class' => 'tab_bg_2'
+            'default_class' => 'tab_bg_2',
         ];
 
         $matrix_options['title'] = __('Management');
@@ -1404,7 +1433,7 @@ class Profile extends CommonDBTM
                 'multiple'  => true,
                 'size'      => 3,
                 'rand'      => $rand,
-                'values'    => $this->fields['managed_domainrecordtypes']
+                'values'    => $this->fields['managed_domainrecordtypes'],
             ]
         );
         echo "</div>";
@@ -1417,7 +1446,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1451,7 +1480,7 @@ class Profile extends CommonDBTM
         }
 
         $matrix_options = ['canedit'       => $canedit,
-            'default_class' => 'tab_bg_2'
+            'default_class' => 'tab_bg_2',
         ];
 
         $matrix_options['title'] = __('Tools');
@@ -1468,7 +1497,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1499,7 +1528,7 @@ class Profile extends CommonDBTM
 
         echo "<div class='mt-n2 mx-n2 mb-4'>";
         echo "<table class='table table-hover card-table'>";
-       // Assistance / Tracking-helpdesk
+        // Assistance / Tracking-helpdesk
         echo "<thead>";
         echo "<tr><th colspan='2'><h4>" . __('ITIL Templates') . "<h4></th></tr>";
         echo "</thead>";
@@ -1509,15 +1538,15 @@ class Profile extends CommonDBTM
             $object = new $itiltype();
             echo "<tr>";
             echo "<td>" . sprintf(__('Default %1$s template'), $object->getTypeName()) . "</td><td>";
-           // Only root entity ones and recursive
+            // Only root entity ones and recursive
             $options = [
                 'value'     => $this->fields[strtolower($itiltype) . "templates_id"],
-                'entity'    => 0
+                'condition' => ['entities_id' => 0],
             ];
             if (Session::isMultiEntitiesMode()) {
-                $options['condition'] = ['is_recursive' => 1];
+                $options['condition']['is_recursive'] = 1;
             }
-           // Only add profile if on root entity
+            // Only add profile if on root entity
             if (!isset($_SESSION['glpiactiveentities'][0])) {
                 $options['addicon'] = false;
             }
@@ -1532,7 +1561,7 @@ class Profile extends CommonDBTM
         echo "</div>";
 
         $matrix_options = ['canedit'       => $canedit,
-            'default_class' => 'tab_bg_2'
+            'default_class' => 'tab_bg_2',
         ];
 
         $matrix_options['title'] = _n('ITIL object', 'ITIL objects', Session::getPluralNumber());
@@ -1558,7 +1587,7 @@ class Profile extends CommonDBTM
         echo "<td>" . __('See hardware of my groups') . "</td>";
         echo "<td>";
         Html::showCheckbox(['name'    => '_show_group_hardware',
-            'checked' => $this->fields['show_group_hardware']
+            'checked' => $this->fields['show_group_hardware'],
         ]);
         echo "</td></tr>";
 
@@ -1568,7 +1597,7 @@ class Profile extends CommonDBTM
         self::getLinearRightChoice(
             self::getHelpdeskHardwareTypes(true),
             ['field' => 'helpdesk_hardware',
-                'value' => $this->fields['helpdesk_hardware']
+                'value' => $this->fields['helpdesk_hardware'],
             ]
         );
         echo "</td></tr>";
@@ -1602,7 +1631,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>\n";
             Html::closeForm();
@@ -1633,7 +1662,7 @@ class Profile extends CommonDBTM
         foreach ($statuses as $index_1 => $status_1) {
             $columns[$index_1] = $status_1;
             $row               = ['label'      => $status_1,
-                'columns'    => []
+                'columns'    => [],
             ];
 
             foreach ($statuses as $index_2 => $status_2) {
@@ -1654,7 +1683,7 @@ class Profile extends CommonDBTM
             ['title'         => $title,
                 'row_check_all' => true,
                 'col_check_all' => true,
-                'first_cell'    => '<b>' . __("From \ To") . '</b>'
+                'first_cell'    => '<b>' . __("From \ To") . '</b>',
             ]
         );
     }
@@ -1714,7 +1743,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1747,18 +1776,18 @@ class Profile extends CommonDBTM
         }
         $alwaysok     = [Ticket::INCOMING => [],
             Ticket::SOLVED   => [Ticket::INCOMING],
-            Ticket::CLOSED   => []
+            Ticket::CLOSED   => [],
         ];
 
         $allowactions = [Ticket::INCOMING => [],
             Ticket::SOLVED   => [Ticket::CLOSED],
-            Ticket::CLOSED   => [Ticket::INCOMING]
+            Ticket::CLOSED   => [Ticket::INCOMING],
         ];
 
         foreach ($statuses as $index_1 => $status_1) {
             $columns[$index_1] = $status_1;
             $row               = ['label'      => $status_1,
-                'columns'    => []
+                'columns'    => [],
             ];
 
             foreach ($statuses as $index_2 => $status_2) {
@@ -1786,7 +1815,7 @@ class Profile extends CommonDBTM
             $columns,
             $rows,
             ['title'         => $title,
-                'first_cell'    => '<b>' . __("From \ To") . '</b>'
+                'first_cell'    => '<b>' . __("From \ To") . '</b>',
             ]
         );
     }
@@ -1831,7 +1860,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1885,7 +1914,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1918,7 +1947,7 @@ class Profile extends CommonDBTM
 
         $this->displayRightsChoiceMatrix(self::getRightsForForm('central', 'setup', 'general'), [
             'canedit'       => $canedit,
-            'title'         => __('Setup')
+            'title'         => __('Setup'),
         ]);
 
         if (
@@ -1929,7 +1958,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1968,7 +1997,7 @@ class Profile extends CommonDBTM
 
         $this->displayRightsChoiceMatrix(self::getRightsForForm('helpdesk', 'setup', 'general'), [
             'canedit'       => $canedit,
-            'title'         => __('Setup')
+            'title'         => __('Setup'),
         ]);
 
         if (
@@ -1979,7 +2008,7 @@ class Profile extends CommonDBTM
             echo "<input type='hidden' name='id' value='" . $this->fields['id'] . "'>";
             echo Html::submit("<i class='fas fa-save'></i><span>" . _sx('button', 'Save') . "</span>", [
                 'class' => 'btn btn-primary mt-2',
-                'name'  => 'update'
+                'name'  => 'update',
             ]);
             echo "</div>";
             Html::closeForm();
@@ -1996,7 +2025,7 @@ class Profile extends CommonDBTM
 
         $tab[] = [
             'id'                 => 'common',
-            'name'               => __('Characteristics')
+            'name'               => __('Characteristics'),
         ];
 
         $tab[] = [
@@ -2005,7 +2034,7 @@ class Profile extends CommonDBTM
             'field'              => 'name',
             'name'               => __('Name'),
             'datatype'           => 'itemlink',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -2014,7 +2043,7 @@ class Profile extends CommonDBTM
             'field'              => 'id',
             'name'               => __('ID'),
             'massiveaction'      => false,
-            'datatype'           => 'number'
+            'datatype'           => 'number',
         ];
 
         $tab[] = [
@@ -2023,7 +2052,7 @@ class Profile extends CommonDBTM
             'field'              => 'date_mod',
             'name'               => __('Last update'),
             'datatype'           => 'datetime',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -2032,7 +2061,7 @@ class Profile extends CommonDBTM
             'field'              => 'date_creation',
             'name'               => __('Creation date'),
             'datatype'           => 'datetime',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -2042,7 +2071,7 @@ class Profile extends CommonDBTM
             'name'               => __("Profile's interface"),
             'massiveaction'      => false,
             'datatype'           => 'specific',
-            'searchtype'         => ['equals', 'notequals']
+            'searchtype'         => ['equals', 'notequals'],
         ];
 
         $tab[] = [
@@ -2051,7 +2080,7 @@ class Profile extends CommonDBTM
             'field'              => 'is_default',
             'name'               => __('Default profile'),
             'datatype'           => 'bool',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -2059,7 +2088,7 @@ class Profile extends CommonDBTM
             'table'              => $this->getTable(),
             'field'              => 'create_ticket_on_login',
             'name'               => __('Ticket creation form on login'),
-            'datatype'           => 'bool'
+            'datatype'           => 'bool',
         ];
 
         $tab[] = [
@@ -2067,15 +2096,15 @@ class Profile extends CommonDBTM
             'table'              => $this->getTable(),
             'field'              => 'comment',
             'name'               => __('Comments'),
-            'datatype'           => 'text'
+            'datatype'           => 'text',
         ];
 
-       // add objectlock search options
+        // add objectlock search options
         $tab = array_merge($tab, ObjectLock::rawSearchOptionsToAdd(get_class($this)));
 
         $tab[] = [
             'id'                 => 'inventory',
-            'name'               => _n('Asset', 'Assets', Session::getPluralNumber())
+            'name'               => _n('Asset', 'Assets', Session::getPluralNumber()),
         ];
 
         $tab[] = [
@@ -2088,8 +2117,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'computer',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'computer']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'computer'],
+            ],
         ];
 
         $tab[] = [
@@ -2102,8 +2131,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'monitor',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'monitor']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'monitor'],
+            ],
         ];
 
         $tab[] = [
@@ -2116,8 +2145,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'software',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'software']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'software'],
+            ],
         ];
 
         $tab[] = [
@@ -2130,8 +2159,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'networking',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'networking']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'networking'],
+            ],
         ];
 
         $tab[] = [
@@ -2144,8 +2173,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'printer',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'printer']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'printer'],
+            ],
         ];
 
         $tab[] = [
@@ -2158,8 +2187,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'peripheral',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'peripheral']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'peripheral'],
+            ],
         ];
 
         $tab[] = [
@@ -2172,8 +2201,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'cartridge',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'cartridge']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'cartridge'],
+            ],
         ];
 
         $tab[] = [
@@ -2186,8 +2215,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'consumable',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'consumable']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'consumable'],
+            ],
         ];
 
         $tab[] = [
@@ -2200,8 +2229,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'phone',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'phone']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'phone'],
+            ],
         ];
 
         $tab[] = [
@@ -2214,8 +2243,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'internet',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'internet']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'internet'],
+            ],
         ];
 
         $tab[] = [
@@ -2228,13 +2257,13 @@ class Profile extends CommonDBTM
             'rightname'          => 'devicesimcard_pinpuk',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'devicesimcard_pinpuk']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'devicesimcard_pinpuk'],
+            ],
         ];
 
         $tab[] = [
             'id'                 => 'management',
-            'name'               => __('Management')
+            'name'               => __('Management'),
         ];
 
         $tab[] = [
@@ -2247,8 +2276,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'contact_entreprise',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'contact_enterprise']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'contact_enterprise'],
+            ],
         ];
 
         $tab[] = [
@@ -2261,8 +2290,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'document',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'document']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'document'],
+            ],
         ];
 
         $tab[] = [
@@ -2275,8 +2304,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'contract',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'contract']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'contract'],
+            ],
         ];
 
         $tab[] = [
@@ -2289,8 +2318,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'infocom',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'infocom']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'infocom'],
+            ],
         ];
 
         $tab[] = [
@@ -2303,8 +2332,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'budget',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'budget']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'budget'],
+            ],
         ];
 
         $tab[] = [
@@ -2317,8 +2346,8 @@ class Profile extends CommonDBTM
             'rightname'          => SoftwareLicense::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => SoftwareLicense::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => SoftwareLicense::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2332,8 +2361,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'contact_enterprise',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'contact_enterprise']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'contact_enterprise'],
+            ],
         ];
 
         $tab[] = [
@@ -2346,8 +2375,8 @@ class Profile extends CommonDBTM
             'rightname'          => Line::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Line::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Line::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2360,8 +2389,8 @@ class Profile extends CommonDBTM
             'rightname'          => Certificate::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Certificate::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Certificate::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2374,8 +2403,8 @@ class Profile extends CommonDBTM
             'rightname'          => Datacenter::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Datacenter::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Datacenter::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2388,8 +2417,8 @@ class Profile extends CommonDBTM
             'rightname'          => Cluster::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Cluster::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Cluster::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2402,8 +2431,8 @@ class Profile extends CommonDBTM
             'rightname'          => Domain::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Domain::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Domain::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2416,8 +2445,8 @@ class Profile extends CommonDBTM
             'rightname'          => Appliance::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Appliance::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Appliance::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2430,8 +2459,8 @@ class Profile extends CommonDBTM
             'rightname'          => DatabaseInstance::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => DatabaseInstance::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => DatabaseInstance::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2444,13 +2473,13 @@ class Profile extends CommonDBTM
             'rightname'          => Cable::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Cable::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Cable::$rightname],
+            ],
         ];
 
         $tab[] = [
             'id'                 => 'tools',
-            'name'               => __('Tools')
+            'name'               => __('Tools'),
         ];
 
         $tab[] = [
@@ -2463,8 +2492,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'knowbase',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'knowbase']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'knowbase'],
+            ],
         ];
 
         $tab[] = [
@@ -2477,8 +2506,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'reservation',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'reservation']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'reservation'],
+            ],
         ];
 
         $tab[] = [
@@ -2492,8 +2521,8 @@ class Profile extends CommonDBTM
             'nowrite'            => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'reports']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'reports'],
+            ],
         ];
 
         $tab[] = [
@@ -2506,8 +2535,8 @@ class Profile extends CommonDBTM
             'rightname'          => Project::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Project::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Project::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2520,13 +2549,13 @@ class Profile extends CommonDBTM
             'rightname'          => ProjectTask::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => ProjectTask::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => ProjectTask::$rightname],
+            ],
         ];
 
         $tab[] = [
             'id'                 => 'config',
-            'name'               => __('Setup')
+            'name'               => __('Setup'),
         ];
 
         $tab[] = [
@@ -2539,8 +2568,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'dropdown',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'dropdown']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'dropdown'],
+            ],
         ];
 
         $tab[] = [
@@ -2554,8 +2583,8 @@ class Profile extends CommonDBTM
             'noread'             => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'device']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'device'],
+            ],
         ];
 
         $tab[] = [
@@ -2568,8 +2597,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'notification',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'notification']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'notification'],
+            ],
         ];
 
         $tab[] = [
@@ -2582,8 +2611,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'typedoc',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'typedoc']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'typedoc'],
+            ],
         ];
 
         $tab[] = [
@@ -2596,8 +2625,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'link',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'link']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'link'],
+            ],
         ];
 
         $tab[] = [
@@ -2611,8 +2640,8 @@ class Profile extends CommonDBTM
             'noread'             => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'config']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'config'],
+            ],
         ];
 
         $tab[] = [
@@ -2626,8 +2655,8 @@ class Profile extends CommonDBTM
             'noread'             => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'personalization']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'personalization'],
+            ],
         ];
 
         $tab[] = [
@@ -2641,8 +2670,8 @@ class Profile extends CommonDBTM
             'noread'             => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'search_config']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'search_config'],
+            ],
         ];
 
         $tab[] = [
@@ -2655,8 +2684,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'calendar',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'calendar']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'calendar'],
+            ],
         ];
 
         $tab[] = [
@@ -2669,8 +2698,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'dashboard',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'dashboard']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'dashboard'],
+            ],
         ];
 
         $tab[] = [
@@ -2683,8 +2712,8 @@ class Profile extends CommonDBTM
             'rightname'          => Location::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Location::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Location::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2697,8 +2726,8 @@ class Profile extends CommonDBTM
             'rightname'          => ITILCategory::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => ITILCategory::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => ITILCategory::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2711,8 +2740,8 @@ class Profile extends CommonDBTM
             'rightname'          => KnowbaseItemCategory::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => KnowbaseItemCategory::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => KnowbaseItemCategory::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2725,8 +2754,8 @@ class Profile extends CommonDBTM
             'rightname'          => TaskCategory::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => TaskCategory::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => TaskCategory::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2739,8 +2768,8 @@ class Profile extends CommonDBTM
             'rightname'          => State::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => State::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => State::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2753,8 +2782,8 @@ class Profile extends CommonDBTM
             'rightname'          => ITILFollowupTemplate::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => ITILFollowupTemplate::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => ITILFollowupTemplate::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2767,8 +2796,8 @@ class Profile extends CommonDBTM
             'rightname'          => SolutionTemplate::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => SolutionTemplate::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => SolutionTemplate::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2781,8 +2810,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'slm',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'slm']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'slm'],
+            ],
         ];
 
         $tab[] = [
@@ -2795,13 +2824,13 @@ class Profile extends CommonDBTM
             'rightname'          => LineOperator::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => LineOperator::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => LineOperator::$rightname],
+            ],
         ];
 
         $tab[] = [
             'id'                 => 'admin',
-            'name'               => __('Administration')
+            'name'               => __('Administration'),
         ];
 
         $tab[] = [
@@ -2815,8 +2844,8 @@ class Profile extends CommonDBTM
             'nowrite'            => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rule_ticket']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rule_ticket'],
+            ],
         ];
 
         $tab[] = [
@@ -2829,8 +2858,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'rule_mailcollector',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rule_mailcollector']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rule_mailcollector'],
+            ],
         ];
 
         $tab[] = [
@@ -2843,8 +2872,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'rule_import',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rule_import']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rule_import'],
+            ],
         ];
 
         $tab[] = [
@@ -2857,8 +2886,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'rule_ldap',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rule_ldap']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rule_ldap'],
+            ],
         ];
 
         $tab[] = [
@@ -2871,8 +2900,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'rule_softwarecategories',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rule_softwarecategories']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rule_softwarecategories'],
+            ],
         ];
 
         $tab[] = [
@@ -2885,8 +2914,8 @@ class Profile extends CommonDBTM
             'rightname'          => RuleLocation::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => RuleLocation::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => RuleLocation::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2899,8 +2928,8 @@ class Profile extends CommonDBTM
             'rightname'          => RuleAsset::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => RuleAsset::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => RuleAsset::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2913,8 +2942,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'rule_dictionnary_software',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rule_dictionnary_software']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rule_dictionnary_software'],
+            ],
         ];
 
         $tab[] = [
@@ -2927,8 +2956,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'rule_dictionnary_dropdown',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rule_dictionnary_dropdown']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rule_dictionnary_dropdown'],
+            ],
         ];
 
         $tab[] = [
@@ -2941,8 +2970,8 @@ class Profile extends CommonDBTM
             'rightname'          => RuleDictionnaryPrinter::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => RuleDictionnaryPrinter::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => RuleDictionnaryPrinter::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -2955,8 +2984,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'profile',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'profile']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'profile'],
+            ],
         ];
 
         $tab[] = [
@@ -2969,8 +2998,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'user',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'user']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'user'],
+            ],
         ];
 
         $tab[] = [
@@ -2983,8 +3012,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'group',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'group']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'group'],
+            ],
         ];
 
         $tab[] = [
@@ -2997,8 +3026,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'entity',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'entity']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'entity'],
+            ],
         ];
 
         $tab[] = [
@@ -3011,8 +3040,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'transfer',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'transfer']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'transfer'],
+            ],
         ];
 
         $tab[] = [
@@ -3026,8 +3055,8 @@ class Profile extends CommonDBTM
             'nowrite'            => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Log::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Log::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3041,8 +3070,8 @@ class Profile extends CommonDBTM
             'nowrite'            => true,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Event::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Event::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3055,8 +3084,8 @@ class Profile extends CommonDBTM
             'rightname'          => QueuedNotification::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => QueuedNotification::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => QueuedNotification::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3069,8 +3098,8 @@ class Profile extends CommonDBTM
             'rightname'          => \Glpi\Inventory\Conf::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => \Glpi\Inventory\Conf::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => \Glpi\Inventory\Conf::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3083,8 +3112,8 @@ class Profile extends CommonDBTM
             'rightname'          => Lockedfield::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Lockedfield::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Lockedfield::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3097,8 +3126,8 @@ class Profile extends CommonDBTM
             'rightname'          => SNMPCredential::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => SNMPCredential::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => SNMPCredential::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3111,8 +3140,8 @@ class Profile extends CommonDBTM
             'rightname'          => RefusedEquipment::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => RefusedEquipment::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => RefusedEquipment::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3125,8 +3154,8 @@ class Profile extends CommonDBTM
             'rightname'          => Unmanaged::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Unmanaged::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Unmanaged::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3139,13 +3168,13 @@ class Profile extends CommonDBTM
             'rightname'          => Agent::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => Agent::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => Agent::$rightname],
+            ],
         ];
 
         $tab[] = [
             'id'                 => 'ticket',
-            'name'               => __('Assistance')
+            'name'               => __('Assistance'),
         ];
 
         $tab[] = [
@@ -3158,8 +3187,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'ticket',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'ticket']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'ticket'],
+            ],
         ];
 
         $newtab = [
@@ -3186,8 +3215,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'tickettemplate',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'tickettemplate']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'tickettemplate'],
+            ],
         ];
 
         $tab[] = [
@@ -3200,8 +3229,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'planning',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'planning']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'planning'],
+            ],
         ];
 
         $tab[] = [
@@ -3214,8 +3243,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'statistic',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'statistic']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'statistic'],
+            ],
         ];
 
         $tab[] = [
@@ -3228,8 +3257,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'ticketcost',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'ticketcost']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'ticketcost'],
+            ],
         ];
 
         $tab[] = [
@@ -3238,7 +3267,7 @@ class Profile extends CommonDBTM
             'field'              => 'helpdesk_hardware',
             'name'               => __('Link with items for the creation of tickets'),
             'massiveaction'      => false,
-            'datatype'           => 'specific'
+            'datatype'           => 'specific',
         ];
 
         $tab[] = [
@@ -3247,7 +3276,7 @@ class Profile extends CommonDBTM
             'field'              => 'helpdesk_item_type',
             'name'               => __('Associable items to tickets, changes and problems'),
             'massiveaction'      => false,
-            'datatype'           => 'specific'
+            'datatype'           => 'specific',
         ];
 
         $tab[] = [
@@ -3256,7 +3285,7 @@ class Profile extends CommonDBTM
             'field'              => 'managed_domainrecordtypes',
             'name'               => __('Managed domain records types'),
             'massiveaction'      => false,
-            'datatype'           => 'specific'
+            'datatype'           => 'specific',
         ];
 
         $tab[] = [
@@ -3267,8 +3296,8 @@ class Profile extends CommonDBTM
             'datatype'           => 'bool',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'show_group_hardware']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'show_group_hardware'],
+            ],
         ];
 
         $tab[] = [
@@ -3278,7 +3307,7 @@ class Profile extends CommonDBTM
             'name'               => __('Life cycle of tickets'),
             'nosearch'           => true,
             'datatype'           => 'text',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -3288,7 +3317,7 @@ class Profile extends CommonDBTM
             'name'               => __('Life cycle of problems'),
             'nosearch'           => true,
             'datatype'           => 'text',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -3301,8 +3330,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'problem',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'problem']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'problem'],
+            ],
         ];
 
         $tab[] = [
@@ -3312,7 +3341,7 @@ class Profile extends CommonDBTM
             'name'               => __('Life cycle of changes'),
             'nosearch'           => true,
             'datatype'           => 'text',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -3325,8 +3354,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'change',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'change']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'change'],
+            ],
         ];
 
         $tab[] = [
@@ -3339,8 +3368,8 @@ class Profile extends CommonDBTM
             'rightname'          => ITILFollowup::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => ITILFollowup::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => ITILFollowup::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3353,8 +3382,8 @@ class Profile extends CommonDBTM
             'rightname'          => TicketTask::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => TicketTask::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => TicketTask::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3367,8 +3396,8 @@ class Profile extends CommonDBTM
             'rightname'          => TicketValidation::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => TicketValidation::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => TicketValidation::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3381,8 +3410,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'itiltemplate',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'itiltemplate']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'itiltemplate'],
+            ],
         ];
 
         $tab[] = [
@@ -3395,8 +3424,8 @@ class Profile extends CommonDBTM
             'rightname'          => PendingReason::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => PendingReason::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => PendingReason::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3409,8 +3438,8 @@ class Profile extends CommonDBTM
             'rightname'          => TicketRecurrent::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => TicketRecurrent::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => TicketRecurrent::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3423,8 +3452,8 @@ class Profile extends CommonDBTM
             'rightname'          => PlanningExternalEvent::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => PlanningExternalEvent::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => PlanningExternalEvent::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3437,8 +3466,8 @@ class Profile extends CommonDBTM
             'rightname'          => ChangeValidation::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => ChangeValidation::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => ChangeValidation::$rightname],
+            ],
         ];
 
         $tab[] = [
@@ -3451,13 +3480,13 @@ class Profile extends CommonDBTM
             'rightname'          => RecurrentChange::$rightname,
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => RecurrentChange::$rightname]
-            ]
+                'condition'          => ['NEWTABLE.name' => RecurrentChange::$rightname],
+            ],
         ];
 
         $tab[] = [
             'id'                 => 'other',
-            'name'               => __('Other')
+            'name'               => __('Other'),
         ];
 
         $tab[] = [
@@ -3468,8 +3497,8 @@ class Profile extends CommonDBTM
             'datatype'           => 'bool',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'password_update']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'password_update'],
+            ],
         ];
 
         $tab[] = [
@@ -3482,8 +3511,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'reminder_public',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'reminder_public']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'reminder_public'],
+            ],
         ];
 
         $tab[] = [
@@ -3496,8 +3525,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'bookmark_public',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'bookmark_public']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'bookmark_public'],
+            ],
         ];
 
         $tab[] = [
@@ -3510,8 +3539,8 @@ class Profile extends CommonDBTM
             'rightname'          => 'rssfeed_public',
             'joinparams'         => [
                 'jointype'           => 'child',
-                'condition'          => ['NEWTABLE.name' => 'rssfeed_public']
-            ]
+                'condition'          => ['NEWTABLE.name' => 'rssfeed_public'],
+            ],
         ];
 
         return $tab;
@@ -3621,9 +3650,9 @@ class Profile extends CommonDBTM
             }
         }
 
-       // To allow dropdown with no value to be in prepareInputForUpdate
-       // without this, you can't have an empty dropdown
-       // done to avoid define NORIGHT value
+        // To allow dropdown with no value to be in prepareInputForUpdate
+        // without this, you can't have an empty dropdown
+        // done to avoid define NORIGHT value
         if ($param['multiple']) {
             echo "<input type='hidden' name='" . $name . "[]' value='0'>";
         }
@@ -3681,7 +3710,7 @@ class Profile extends CommonDBTM
             $values,
             ['value'   => $param['value'],
                 'rand'    => $param['rand'],
-                'display' => $param['display']
+                'display' => $param['display'],
             ]
         );
     }
@@ -3713,7 +3742,7 @@ class Profile extends CommonDBTM
         $iterator = $DB->request([
             'FROM'   => self::getTable(),
             'WHERE'  => self::getUnderActiveProfileRestrictCriteria(),
-            'ORDER'  => 'name'
+            'ORDER'  => 'name',
         ]);
 
         // New rule -> get the next free ranking
@@ -3726,7 +3755,7 @@ class Profile extends CommonDBTM
             $profiles,
             ['value'               => $p['value'],
                 'rand'                => $p['rand'],
-                'display_emptychoice' => true
+                'display_emptychoice' => true,
             ]
         );
     }
@@ -3742,7 +3771,7 @@ class Profile extends CommonDBTM
         /** @var \DBmysql $DB */
         global $DB;
 
-        foreach ($DB->request('glpi_profiles', ['is_default' => 1]) as $data) {
+        foreach ($DB->request(self::getTable(), ['is_default' => 1]) as $data) {
             return $data['id'];
         }
         return 0;
@@ -3756,7 +3785,7 @@ class Profile extends CommonDBTM
     {
 
         return ['central'  => __('Standard interface'),
-            'helpdesk' => __('Simplified interface')
+            'helpdesk' => __('Simplified interface'),
         ];
     }
 
@@ -3785,7 +3814,7 @@ class Profile extends CommonDBTM
 
         if ($rights) {
             return [pow(2, Ticket::HELPDESK_MY_HARDWARE)     => __('My devices'),
-                pow(2, Ticket::HELPDESK_ALL_HARDWARE)    => __('All items')
+                pow(2, Ticket::HELPDESK_ALL_HARDWARE)    => __('All items'),
             ];
         }
 
@@ -3793,7 +3822,7 @@ class Profile extends CommonDBTM
             pow(2, Ticket::HELPDESK_MY_HARDWARE)     => __('My devices'),
             pow(2, Ticket::HELPDESK_ALL_HARDWARE)    => __('All items'),
             pow(2, Ticket::HELPDESK_MY_HARDWARE)
-                    + pow(2, Ticket::HELPDESK_ALL_HARDWARE) => __('My devices and all items')
+                    + pow(2, Ticket::HELPDESK_ALL_HARDWARE) => __('My devices and all items'),
         ];
     }
 
@@ -3910,7 +3939,7 @@ class Profile extends CommonDBTM
                         'FKEY' => [
                             'glpi_profilerights' => 'profiles_id',
                             'glpi_profiles'      => 'id',
-                        ]
+                        ],
                     ],
                     'glpi_profiles_users' => [
                         'FKEY' => [
@@ -3919,7 +3948,7 @@ class Profile extends CommonDBTM
                             [
                                 'AND' => ['glpi_profiles_users.users_id' => $user_id],
                             ],
-                        ]
+                        ],
                     ],
                 ],
                 'WHERE'      => [
@@ -3991,7 +4020,7 @@ class Profile extends CommonDBTM
             }
         }
 
-       // To be completed before display to avoid non available rights in DB
+        // To be completed before display to avoid non available rights in DB
         $availablerights = ProfileRight::getAllPossibleRights();
 
         $column_labels = [];
@@ -4009,17 +4038,17 @@ class Profile extends CommonDBTM
                 && (!empty($info['label']))
                 && (!empty($info['field']))
             ) {
-               // Add right if it does not exists : security for update
+                // Add right if it does not exists : security for update
                 if (!isset($availablerights[$info['field']])) {
                     ProfileRight::addProfileRights([$info['field']]);
                 }
 
                 $row = ['label'   => $info['label'],
-                    'columns' => []
+                    'columns' => [],
                 ];
                 if (!empty($info['row_class'])) {
                     $row['class'] = $info['row_class'];
-                } else if (isset($info['scope'])) {
+                } elseif (isset($info['scope'])) {
                     $default_scope_class = !empty($param['default_class']) ? $param['default_class'] : 'tab_bg_2';
                     $row['class'] = $info['scope'] === 'global' ? 'tab_bg_4' : $default_scope_class;
                 } else {
@@ -4070,7 +4099,7 @@ class Profile extends CommonDBTM
             $a = explode('_', $a);
             $b = explode('_', $b);
 
-          // For standard rights sort by right
+            // For standard rights sort by right
             if (($a[0] < 1024) || ($b[0] < 1024)) {
                 if ($a[0] > $b[0]) {
                     return 1;
@@ -4080,9 +4109,9 @@ class Profile extends CommonDBTM
                 }
             }
 
-          // For extra right sort by type
+            // For extra right sort by type
             if ($a[1] > $b[1]) {
-                 return 1;
+                return 1;
             }
             if ($a[1] < $b[1]) {
                 return -1;
@@ -4095,7 +4124,7 @@ class Profile extends CommonDBTM
             $rows,
             ['title'                => $param['title'],
                 'row_check_all'        => count($columns) > 1,
-                'col_check_all'        => count($rows) > 1
+                'col_check_all'        => count($rows) > 1,
             ]
         );
     }
@@ -4191,7 +4220,7 @@ class Profile extends CommonDBTM
 
         if ($param['check_all']) {
             $cb_options = ['criterion' => ['tag_for_massive' => $massive_tag],
-                'id'        => Html::cleanId('checkbox_linear_' . $param['rand'])
+                'id'        => Html::cleanId('checkbox_linear_' . $param['rand']),
             ];
             if ($nb_checked > (count($elements) / 2)) {
                 $cb_options['checked'] = true;
@@ -4227,7 +4256,7 @@ class Profile extends CommonDBTM
                 'WHERE'  => [
                     'name'   => static::$rightname,
                     'rights' => ["&", UPDATE],
-                ]
+                ],
             ]),
             'interface' => 'central',
         ]);

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -97,8 +97,8 @@ class HTMLTableRow extends HTMLTableEntity
     public function addCell(
         HTMLTableHeader $header,
         $content,
-        HTMLTableCell $father = null,
-        CommonDBTM $item = null
+        ?HTMLTableCell $father = null,
+        ?CommonDBTM $item = null
     ) {
 
         if (!$this->group->haveHeader($header)) {
@@ -124,7 +124,7 @@ class HTMLTableRow extends HTMLTableEntity
             return false;
         }
 
-       // First, compute the total nomber of rows ...
+        // First, compute the total nomber of rows ...
         $this->numberOfSubRows = 0;
         foreach ($this->cells as $cellsOfHeader) {
             if (isset($cellsOfHeader[0])) {
@@ -142,12 +142,12 @@ class HTMLTableRow extends HTMLTableEntity
             }
         }
 
-       // Then notify each cell and compute its starting row
+        // Then notify each cell and compute its starting row
         foreach ($this->cells as $cellsOfHeader) {
             if (isset($cellsOfHeader[0])) {
                 $header = $cellsOfHeader[0]->getHeader();
 
-               // Only do this for cells that don't have father: they will propagate this to there sons
+                // Only do this for cells that don't have father: they will propagate this to there sons
                 if (is_null($header->getFather())) {
                     HTMLTableCell::updateCellSteps($cellsOfHeader, $this->numberOfSubRows);
 

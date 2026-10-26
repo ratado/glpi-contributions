@@ -26,25 +26,25 @@
         "ext-session": "*",
         "ext-simplexml": "*",
         "ext-zlib": "*",
+        "benmorel/weakmap-polyfill": "^0.5.0",
         "donatj/phpuseragentparser": "^1.7",
         "elvanto/litemoji": "^4.1",
-        "glpi-project/inventory_format": "^1.1",
-        "guzzlehttp/guzzle": "^7.5",
-        "guzzlehttp/psr7": "^2.4",
+        "glpi-project/inventory_format": "^1.2",
+        "guzzlehttp/guzzle": "^7.15",
+        "guzzlehttp/psr7": "^2.13",
         "html2text/html2text": "^4.3",
-        "htmlawed/htmlawed": "^1.2",
         "iamcal/lib_autolink": "^1.7",
         "laminas/laminas-i18n": "^2.12",
         "laminas/laminas-mail": "^2.15",
         "laminas/laminas-mime": "^2.9",
         "laminas/laminas-servicemanager": "~3.10.0",
         "league/csv": "^9.7",
-        "league/oauth2-client": "^2.6",
+        "league/oauth2-client": "^2.8",
         "league/oauth2-google": "^4.0",
         "mexitek/phpcolors": "^1.0",
         "michelf/php-markdown": "^1.9",
         "monolog/monolog": "^2.8",
-        "paragonie/sodium_compat": "^1.17",
+        "paragonie/sodium_compat": "^1.24",
         "phpmailer/phpmailer": "^6.8",
         "psr/cache": "^1.0",
         "psr/log": "^1.1",
@@ -68,7 +68,7 @@
         "symfony/polyfill-php80": "^1.26",
         "symfony/polyfill-php81": "^1.26",
         "symfony/polyfill-php82": "^1.26",
-        "tecnickcom/tcpdf": "^6.6",
+        "tecnickcom/tcpdf": "^6.8",
         "thenetworg/oauth2-azure": "^2.1",
         "true/punycode": "^2.1",
         "twig/string-extra": "^3.3",
@@ -79,15 +79,15 @@
         "ext-xml": "*",
         "atoum/atoum": "^4.1",
         "atoum/stubs": "^2.6",
+        "friendsofphp/php-cs-fixer": "^3.94",
         "friendsoftwig/twigcs": "^6.1",
-        "glpi-project/tools": "^0.7",
+        "glpi-project/tools": "^0.8",
         "maglnet/composer-require-checker": "^3.5",
         "mikey179/vfsstream": "^1.6",
-        "php-parallel-lint/php-parallel-lint": "^1.3",
-        "phpstan/extension-installer": "^1.3",
-        "phpstan/phpstan": "^1.10",
-        "phpstan/phpstan-deprecation-rules": "^1.1",
-        "squizlabs/php_codesniffer": "^3.8",
+        "php-parallel-lint/php-parallel-lint": "^1.4",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpunit/phpunit": "^9.6",
         "symfony/browser-kit": "^5.4",
         "symfony/http-client": "^5.4",
         "symfony/mime": "^5.4"
@@ -111,14 +111,40 @@
             "php": "7.4.0"
         },
         "sort-packages": true,
-        "allow-plugins": {
-            "phpstan/extension-installer": true
-        },
         "audit": {
-            "abandoned": "report"
+            "block-abandoned": false,
+            "block-insecure": false,
+            "ignore-abandoned": {
+                "container-interop/container-interop": "Used by `laminas/laminas-mail`",
+                "laminas/laminas-loader": "Used by `laminas/laminas-mail`",
+                "laminas/laminas-mail": "No replacement package found yet",
+                "laminas/laminas-mime": "Used by `laminas/laminas-mail`",
+                "true/punycode": "Replacement done in GLPI 11.0"
+            },
+            "ignore": {
+                "CVE-2025-45769": "Patch has been applied manually.",
+                "CVE-2026-24425": "Patch has been applied manually.",
+                "CVE-2026-46627": "Patch has been applied manually.",
+                "CVE-2026-46628": "Patch has been applied manually.",
+                "CVE-2026-46633": "Patch has been applied manually.",
+                "CVE-2026-46634": "Patch has been applied manually.",
+                "CVE-2026-46635": "Patch has been applied manually.",
+                "CVE-2026-46636": "Patch has been applied manually.",
+                "CVE-2026-46638": "Patch has been applied manually.",
+                "CVE-2026-47730": "Patch has been applied manually.",
+                "CVE-2026-47732": "Patch has been applied manually.",
+                "CVE-2026-48805": "Patch has been applied manually.",
+                "CVE-2026-48806": "Patch has been applied manually.",
+                "CVE-2026-48807": "Patch has been applied manually.",
+                "CVE-2026-48808": "Patch has been applied manually.",
+                "CVE-2026-49981": "Patch has been applied manually."
+            }
         }
     },
     "autoload": {
+        "files": [
+            "lib/htmLawed.php"
+        ],
         "psr-4": {
             "Glpi\\": "src/"
         }
@@ -127,42 +153,44 @@
         "psr-4": {
             "Glpi\\Tools\\": "tools/src/",
             "Glpi\\Tests\\": "tests/src/"
-        }
+        },
+        "files": ["tests/src/autoload/functions.php"]
     },
     "scripts": {
         "testdb": "atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/database",
         "testfunc": "atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/functional/",
-        "testunits": "atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --bootstrap-file tests/bootstrap.php --no-code-coverage -d tests/units",
         "testweb": "atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/web",
         "testldap": "atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/LDAP",
         "testimap": "atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/imap",
-        "csp": "phpcs --parallel=500 --cache -p --extensions=php --ignore=\"/.git/,^$(pwd)/(config|files|lib|marketplace|node_modules|plugins|tests/config|vendor)/\" ./",
-        "cs": "phpcs -d memory_limit=512M --cache -p --extensions=php --ignore=\"/.git/,^$(pwd)/(config|files|lib|marketplace|node_modules|plugins|tests/config|vendor)/\" ./",
         "lint": "parallel-lint  --exclude files --exclude marketplace --exclude plugins --exclude vendor --exclude tools/vendor .",
         "post-install-cmd": [
             "@php -r \"file_put_contents('.composer.hash', sha1_file('composer.lock'));\"",
-            "@php -f vendor/bin/build_hw_jsons",
-            "patch -f -p1 -d vendor/laminas/laminas-mail/ < tools/patches/laminas-mail-invalid-header-ignore.patch || true",
-            "patch -f -p1 -d vendor/laminas/laminas-mail/ < tools/patches/laminas-mail-address-no-length-check.patch || true",
-            "patch -f -p1 -d vendor/atoum/atoum/ < tools/patches/atoum-4.1.0...4.2.0.patch || true",
-            "patch -f -p1 -d vendor/michelf/php-markdown/ < tools/patches/php-markdown-php8-compat.patch || true"
+            "@patch",
+            "@php -f vendor/bin/build_hw_jsons"
         ],
         "post-update-cmd": [
             "@php -r \"file_put_contents('.composer.hash', sha1_file('composer.lock'));\"",
-            "@php -f vendor/bin/build_hw_jsons",
-            "patch -f -p1 -d vendor/laminas/laminas-mail/ < tools/patches/laminas-mail-invalid-header-ignore.patch || true",
-            "patch -f -p1 -d vendor/laminas/laminas-mail/ < tools/patches/laminas-mail-address-no-length-check.patch || true",
-            "patch -f -p1 -d vendor/atoum/atoum/ < tools/patches/atoum-4.1.0...4.2.0.patch || true",
-            "patch -f -p1 -d vendor/michelf/php-markdown/ < tools/patches/php-markdown-php8-compat.patch || true"
+            "@patch",
+            "@php -f vendor/bin/build_hw_jsons"
         ],
         "build": [
-            "bin/console dependencies install && bin/console locales:compile"
+            "bin/console dependencies install"
+        ],
+        "patch": [
+            "VENDOR_DIR='vendor/atoum/atoum/' PATCH_FILE='tools/patches/atoum-atoum-4.1.0...4.2.0-php8.4-php8.5.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/atoum/stubs/' PATCH_FILE='tools/patches/atoum-stubs-php8.4-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/firebase/php-jwt/' PATCH_FILE='tools/patches/firebase-php-jwt-v6.10.0-to-v7.0.2.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/friendsoftwig/twigcs/' PATCH_FILE='tools/patches/friendsoftwig-twigcs-php8.4-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/guzzlehttp/guzzle/' PATCH_FILE='tools/patches/guzzlehttp-guzzle-restrict-http-methods.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/laminas/laminas-mail/' PATCH_FILE='tools/patches/laminas-laminas-mail-invalid-header-ignore-php8.4.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/laminas/laminas-servicemanager/' PATCH_FILE='tools/patches/laminas-laminas-servicemanager-php8.4-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/league/csv/' PATCH_FILE='tools/patches/league-csv-php8.4-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/michelf/php-markdown/' PATCH_FILE='tools/patches/michelf-php-markdown-php8-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/psr/http-factory/' PATCH_FILE='tools/patches/psr-http-factory-php8.4-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/scssphp/scssphp/' PATCH_FILE='tools/patches/scssphp-scssphp-php8.4-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/symfony/string/' PATCH_FILE='tools/patches/symfony-string-php8.5-compat.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/twig/twig/' PATCH_FILE='tools/patches/twig-twig-v3.11.3...v3.27.0-php7.4.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'",
+            "VENDOR_DIR='vendor/wapmorgan/unified-archive/' PATCH_FILE='tools/patches/wapmorgan-unified-archive-php8.4-php8.5.patch' bash -c 'patch --dry-run -R --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE &>/dev/null || patch --fuzz=0 -f -p1 -d $VENDOR_DIR < $PATCH_FILE'"
         ]
-    },
-    "repositories": {
-        "htmlawed": {
-            "type": "composer",
-            "url": "https://www.bioinformatics.org/phplabware/downloads/"
-        }
     }
 }

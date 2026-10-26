@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -102,7 +102,7 @@ class AuthLdapReplicate extends CommonDBTM
             'min'    => 1,
             'max'    => 30,
             'step'   => 1,
-            'toadd'  => [0 => __('No timeout')]
+            'toadd'  => [0 => __('No timeout')],
         ]);
         echo "</td>";
         echo "<td class='center'><input type='hidden' name='next' value='extauth_ldap'>";

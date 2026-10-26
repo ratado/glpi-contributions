@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -64,7 +64,7 @@ class DeviceCamera extends CommonDevice
                 [
                     'name'  => 'devicecameramodels_id',
                     'label' => _n('Model', 'Models', 1),
-                    'type'  => 'dropdownValue'
+                    'type'  => 'dropdownValue',
                 ],
                 [
                     'name'   => 'flashunit',
@@ -95,7 +95,7 @@ class DeviceCamera extends CommonDevice
                     'name'   => 'support',
                     'label'  => __('Support'),
                     'type'   => 'text',
-                ]
+                ],
             ]
         );
     }
@@ -109,7 +109,7 @@ class DeviceCamera extends CommonDevice
             'table'              => 'glpi_devicecameramodels',
             'field'              => 'name',
             'name'               => _n('Model', 'Models', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -166,8 +166,8 @@ class DeviceCamera extends CommonDevice
     public static function getHTMLTableHeader(
         $itemtype,
         HTMLTableBase $base,
-        HTMLTableSuperHeader $super = null,
-        HTMLTableHeader $father = null,
+        ?HTMLTableSuperHeader $super = null,
+        ?HTMLTableHeader $father = null,
         array $options = []
     ) {
 
@@ -188,9 +188,9 @@ class DeviceCamera extends CommonDevice
     }
 
     public function getHTMLTableCellForItem(
-        HTMLTableRow $row = null,
-        CommonDBTM $item = null,
-        HTMLTableCell $father = null,
+        ?HTMLTableRow $row = null,
+        ?CommonDBTM $item = null,
+        ?HTMLTableCell $father = null,
         array $options = []
     ) {
 
@@ -232,7 +232,7 @@ class DeviceCamera extends CommonDevice
         return [
             'designation'           => 'equal',
             'devicecameramodels_id' => 'equal',
-            'manufacturers_id'      => 'equal'
+            'manufacturers_id'      => 'equal',
         ];
     }
 

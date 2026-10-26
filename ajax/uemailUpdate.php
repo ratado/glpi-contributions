@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -54,14 +54,36 @@ if (
     $emails        = [];
     if (isset($_POST['typefield']) && ($_POST['typefield'] == 'supplier')) {
         $supplier = new Supplier();
+        if (!$supplier->can($_POST["value"], READ)) {
+            throw new \RuntimeException('Not allowed');
+        }
         if ($supplier->getFromDB($_POST["value"])) {
             $default_email = $supplier->fields['email'];
         }
     } else {
         $user          = new User();
-        if ($user->getFromDB($_POST["value"])) {
-            $default_email = $user->getDefaultEmail();
-            $emails        = $user->getAllEmails();
+
+        if ((int) $_POST["value"] !== 0) {
+            // Make sure to not expose others users emails unless the current user
+            // is allowed to see them.
+            $can_view_user_emails =
+                // User can always see their own emails
+                $_POST["value"] === Session::getLoginUserID()
+
+                // Users that are allowed to see the specified user can also see his emails
+                || $user->can($_POST["value"], READ)
+
+                // Delegates of the current users should be allowed to see his emails
+                || Ticket::canDelegateeCreateTicket($_POST["value"])
+            ;
+            if (!$can_view_user_emails) {
+                throw new \RuntimeException('Not allowed');
+            }
+
+            if ($user->getFromDB($_POST["value"])) {
+                $default_email = $user->getDefaultEmail();
+                $emails        = $user->getAllEmails();
+            }
         }
     }
 
@@ -70,8 +92,7 @@ if (
     $default_notif = $_POST['use_notification'][$user_index] ?? true;
 
     if (
-        isset($_POST['alternative_email'][$user_index])
-        && !empty($_POST['alternative_email'][$user_index])
+        !empty($_POST['alternative_email'][$user_index])
         && empty($default_email)
     ) {
         if (NotificationMailing::isUserAddressValid($_POST['alternative_email'][$user_index])) {
@@ -93,18 +114,18 @@ if (
       </div>";
 
     $email_string = '';
-   // Only one email
+    // Only one email
     if (
         (count($emails) == 1)
         && !empty($default_email)
         && NotificationMailing::isUserAddressValid($default_email[$user_index])
     ) {
         $email_string =  $default_email[$user_index];
-       // Clean alternative email
+        // Clean alternative email
         echo "<input type='hidden' size='25' name='" . $_POST['field'] . "[alternative_email][]'
              value=''>";
-    } else if (count($emails) > 1) {
-       // Several emails : select in the list
+    } elseif (count($emails) > 1) {
+        // Several emails: select in the list
         $emailtab = [];
         foreach ($emails as $new_email) {
             if ($new_email != $default_email) {
@@ -118,7 +139,7 @@ if (
             $emailtab,
             [
                 'value'   => '',
-                'display' => false
+                'display' => false,
             ]
         );
     } else {

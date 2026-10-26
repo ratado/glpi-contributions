@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -37,8 +37,8 @@
 // @deprecated 10.0.0 @see RuleImportAsset
 class RuleImportComputer extends Rule
 {
-    const RULE_ACTION_LINK_OR_IMPORT    = 0;
-    const RULE_ACTION_LINK_OR_NO_IMPORT = 1;
+    public const RULE_ACTION_LINK_OR_IMPORT    = 0;
+    public const RULE_ACTION_LINK_OR_NO_IMPORT = 1;
 
 
     public $restrict_matching = Rule::AND_MATCHING;
@@ -52,17 +52,6 @@ class RuleImportComputer extends Rule
     {
         return __('Rules for import and link computers');
     }
-
-
-    /**
-     * @see Rule::maxActionsCount()
-     **/
-    public function maxActionsCount()
-    {
-       // Unlimited
-        return 1;
-    }
-
 
     public function getCriterias()
     {
@@ -84,7 +73,7 @@ class RuleImportComputer extends Rule
         $criterias['states_id']['name']            = __('Find computers in GLPI having the status');
         $criterias['states_id']['linkfield']       = 'state';
         $criterias['states_id']['type']            = 'dropdown';
-       //Means that this criterion can only be used in a global search query
+        //Means that this criterion can only be used in a global search query
         $criterias['states_id']['is_global']       = true;
         $criterias['states_id']['allow_condition'] = [Rule::PATTERN_IS, Rule::PATTERN_IS_NOT];
 
@@ -99,17 +88,17 @@ class RuleImportComputer extends Rule
         $criterias['name']['name']                 = __("Computer's name");
         $criterias['name']['allow_condition']      = [Rule::PATTERN_IS, Rule::PATTERN_IS_NOT,
             Rule::PATTERN_IS_EMPTY,
-            Rule::PATTERN_FIND
+            Rule::PATTERN_FIND,
         ];
 
         $criterias['DESCRIPTION']['name']          = __('Description');
 
         $criterias['serial']['name']               = __('Serial number');
 
-       // Model as Text to allow text criteria (contains, regex, ...)
+        // Model as Text to allow text criteria (contains, regex, ...)
         $criterias['model']['name']                = _n('Model', 'Models', 1);
 
-       // Manufacturer as Text to allow text criteria (contains, regex, ...)
+        // Manufacturer as Text to allow text criteria (contains, regex, ...)
         $criterias['manufacturer']['name']         = Manufacturer::getTypeName(1);
 
         return $criterias;
@@ -134,7 +123,7 @@ class RuleImportComputer extends Rule
         return [self::RULE_ACTION_LINK_OR_IMPORT
                                           => __('Link if possible'),
             self::RULE_ACTION_LINK_OR_NO_IMPORT
-                                          => __('Link if possible, otherwise imports declined')
+                                          => __('Link if possible, otherwise imports declined'),
         ];
     }
 
@@ -144,7 +133,7 @@ class RuleImportComputer extends Rule
      *
      * @see Rule::displayAdditionRuleActionValue()
      *
-     * @param string value the value for this action
+     * @param string $value the value for this action
      *
      * @return string the label's value or ''
      **/
@@ -171,7 +160,7 @@ class RuleImportComputer extends Rule
             case "state":
                 $link_array = ["0" => __('No'),
                     "1" => __('Yes if equal'),
-                    "2" => __('Yes if empty')
+                    "2" => __('Yes if empty'),
                 ];
 
                 Dropdown::showFromArray($name, $link_array, ['value' => $value]);
@@ -187,7 +176,7 @@ class RuleImportComputer extends Rule
     {
 
         return [Rule::PATTERN_FIND     => __('is already present in GLPI'),
-            Rule::PATTERN_IS_EMPTY => __('is empty in GLPI')
+            Rule::PATTERN_IS_EMPTY => __('is empty in GLPI'),
         ];
     }
 
@@ -269,7 +258,7 @@ class RuleImportComputer extends Rule
         $continue          = true;
         $global_criteria   = ['manufacturer', 'model', 'name', 'serial'];
 
-       //Add plugin global criteria
+        //Add plugin global criteria
         if (isset($PLUGIN_HOOKS['use_rules'])) {
             foreach ($PLUGIN_HOOKS['use_rules'] as $plugin => $val) {
                 if (!Plugin::isPluginActive($plugin)) {
@@ -292,7 +281,7 @@ class RuleImportComputer extends Rule
                     // is a real complex criteria
                     if ($crit->fields["condition"] == Rule::PATTERN_FIND) {
                         if (!isset($input[$criterion]) || ($input[$criterion] == '')) {
-                             $continue = false;
+                            $continue = false;
                         } else {
                             $complex_criterias[] = $crit;
                         }
@@ -305,17 +294,17 @@ class RuleImportComputer extends Rule
             $complex_criterias[] = $crit;
         }
 
-       //If a value is missing, then there's a problem !
+        //If a value is missing, then there's a problem !
         if (!$continue) {
             return false;
         }
 
-       //No complex criteria
+        //No complex criteria
         if (empty($complex_criterias)) {
             return true;
         }
 
-       //Build the request to check if the machine exists in GLPI
+        //Build the request to check if the machine exists in GLPI
         if (is_array($input['entities_id'])) {
             $where_entity = implode(',', $input['entities_id']);
         } else {
@@ -333,7 +322,7 @@ class RuleImportComputer extends Rule
                     if ($criteria->fields['condition'] == Rule::PATTERN_IS_EMPTY) {
                         $it_criteria['WHERE']['OR'] = [
                             ['glpi_computers.name' => ''],
-                            ['glpi_computers.name'   => null]
+                            ['glpi_computers.name'   => null],
                         ];
                     } else {
                         $it_criteria['WHERE'][] = ['glpi_computers.name' => $input['name']];
@@ -345,7 +334,7 @@ class RuleImportComputer extends Rule
                     break;
 
                 case 'model':
-                   // search for model, don't create it if not found
+                    // search for model, don't create it if not found
                     $options    = ['manufacturer' => addslashes($input['manufacturer'])];
                     $mid        = Dropdown::importExternal(
                         'ComputerModel',
@@ -359,7 +348,7 @@ class RuleImportComputer extends Rule
                     break;
 
                 case 'manufacturer':
-                   // search for manufacturer, don't create it if not found
+                    // search for manufacturer, don't create it if not found
                     $mid        = Dropdown::importExternal(
                         'Manufacturer',
                         addslashes($input['manufacturer']),
@@ -393,7 +382,7 @@ class RuleImportComputer extends Rule
                         'criteria'     => $complex_criterias,
                         'sql_where'    => $it_criteria['WHERE'],
                         'sql_from'     => '',
-                        'sql_leftjoin' => ''
+                        'sql_leftjoin' => '',
                     ];
                     $sql_results = Plugin::doOneHook(
                         $plugin,

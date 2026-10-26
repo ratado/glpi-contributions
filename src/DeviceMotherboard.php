@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -51,12 +51,12 @@ class DeviceMotherboard extends CommonDevice
             parent::getAdditionalFields(),
             [['name'  => 'chipset',
                 'label' => __('Chipset'),
-                'type'  => 'text'
+                'type'  => 'text',
             ],
                 ['name'  => 'devicemotherboardmodels_id',
                     'label' => _n('Model', 'Models', 1),
-                    'type'  => 'dropdownValue'
-                ]
+                    'type'  => 'dropdownValue',
+                ],
             ]
         );
     }
@@ -79,7 +79,7 @@ class DeviceMotherboard extends CommonDevice
             'table'              => 'glpi_devicemotherboardmodels',
             'field'              => 'name',
             'name'               => _n('Model', 'Models', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         return $tab;
@@ -89,8 +89,8 @@ class DeviceMotherboard extends CommonDevice
     public static function getHTMLTableHeader(
         $itemtype,
         HTMLTableBase $base,
-        HTMLTableSuperHeader $super = null,
-        HTMLTableHeader $father = null,
+        ?HTMLTableSuperHeader $super = null,
+        ?HTMLTableHeader $father = null,
         array $options = []
     ) {
 
@@ -109,9 +109,9 @@ class DeviceMotherboard extends CommonDevice
 
 
     public function getHTMLTableCellForItem(
-        HTMLTableRow $row = null,
-        CommonDBTM $item = null,
-        HTMLTableCell $father = null,
+        ?HTMLTableRow $row = null,
+        ?CommonDBTM $item = null,
+        ?HTMLTableCell $father = null,
         array $options = []
     ) {
 
@@ -134,7 +134,7 @@ class DeviceMotherboard extends CommonDevice
 
         return ['designation'      => 'equal',
             'manufacturers_id' => 'equal',
-            'chipset'          => 'equal'
+            'chipset'          => 'equal',
         ];
     }
 
@@ -153,9 +153,9 @@ class DeviceMotherboard extends CommonDevice
             'joinparams'         => [
                 'beforejoin'         => [
                     'table'              => 'glpi_items_devicemotherboards',
-                    'joinparams'         => $main_joinparams
-                ]
-            ]
+                    'joinparams'         => $main_joinparams,
+                ],
+            ],
         ];
 
         return $tab;

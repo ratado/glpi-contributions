@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -40,7 +40,7 @@ use Glpi\Application\View\TemplateRenderer;
  */
 class SNMPCredential extends CommonDBTM
 {
-   // From CommonDBTM
+    // From CommonDBTM
     public $dohistory                   = true;
     public static $rightname = 'snmpcredential';
 
@@ -55,7 +55,7 @@ class SNMPCredential extends CommonDBTM
 
         $tab[] = [
             'id'                => 'snmpcredential',
-            'name'              => SNMPCredential::getTypeName(0)
+            'name'              => SNMPCredential::getTypeName(0),
         ];
 
         $tab[] = [
@@ -113,6 +113,15 @@ class SNMPCredential extends CommonDBTM
 
     public function showForm($ID, array $options = [])
     {
+        // warning and no form if can't read keyfile,
+        // only version 3 is impacted but it's better to always show the warning & forbid form display
+        $glpi_encryption_key = new GLPIKey();
+        if ($glpi_encryption_key->hasReadErrors()) {
+            $glpi_encryption_key->showReadErrors();
+
+            return false;
+        }
+
         $this->initForm($ID, $options);
         TemplateRenderer::getInstance()->display('components/form/snmpcredential.html.twig', [
             'item'   => $this,
@@ -132,7 +141,7 @@ class SNMPCredential extends CommonDBTM
         switch ($this->fields['snmpversion']) {
             case 1:
             case 3:
-                return (string)$this->fields['snmpversion'];
+                return (string) $this->fields['snmpversion'];
             case 2:
                 return '2c';
             default:
@@ -152,6 +161,14 @@ class SNMPCredential extends CommonDBTM
                 return 'MD5';
             case 2:
                 return 'SHA';
+            case 3:
+                return 'SHA224';
+            case 4:
+                return 'SHA256';
+            case 5:
+                return 'SHA384';
+            case 6:
+                return 'SHA512';
             default:
                 return '';
         }
@@ -170,8 +187,16 @@ class SNMPCredential extends CommonDBTM
                 return 'DES';
             case 2:
                 return 'AES';
-            case 5:
+            case 3:
                 return '3DES';
+            case 4:
+                return 'AES192C';
+            case 5:
+                return 'AES256C';
+            case 6:
+                return 'CFB192-AES';
+            case 7:
+                return 'CFB256-AES';
             default:
                 return '';
         }

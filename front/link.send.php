@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -45,8 +45,8 @@ if (isset($_GET["lID"])) {
         'SELECT' => ['id', 'link', 'data'],
         'FROM'   => 'glpi_links',
         'WHERE'  => [
-            'id' => $_GET['lID']
-        ]
+            'id' => $_GET['lID'],
+        ],
     ]);
 
     if (count($iterator) == 1) {
@@ -55,6 +55,9 @@ if (isset($_GET["lID"])) {
         $link = $current['link'];
 
         if ($item = getItemForItemtype($_GET["itemtype"])) {
+            if (!$item->can($_GET['id'], READ)) {
+                throw new \RuntimeException('Not allowed');
+            }
             if ($item->getFromDB($_GET["id"])) {
                 $content_filename = Link::generateLinkContents($link, $item, false);
                 $content_data     = Link::generateLinkContents($file, $item, false);
@@ -62,14 +65,14 @@ if (isset($_GET["lID"])) {
                 if (isset($_GET['rank']) && isset($content_filename[$_GET['rank']])) {
                     $filename = $content_filename[$_GET['rank']];
                 } else {
-                   // first one (the same for all IP)
+                    // first one (the same for all IP)
                     $filename = reset($content_filename);
                 }
 
                 if (isset($_GET['rank']) && isset($content_data[$_GET['rank']])) {
                     $data = $content_data[$_GET['rank']];
                 } else {
-                   // first one (probably missing arg)
+                    // first one (probably missing arg)
                     $data = reset($content_data);
                 }
                 header("Content-disposition: filename=\"$filename\"");

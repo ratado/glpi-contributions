@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -148,7 +148,7 @@ abstract class AbstractDatabaseChecker
                 if (!array_key_exists($key_name, $index)) {
                     $index[$key_name] = [];
                 }
-                $index[$key_name][$key_specs['Seq_in_index'] - 1] = $key_specs['Column_name'];
+                $index[$key_name][(int) $key_specs['Seq_in_index'] - 1] = $key_specs['Column_name'];
             }
 
             $this->indexes[$table_name] = $index;

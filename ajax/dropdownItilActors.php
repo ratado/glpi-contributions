@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -52,6 +52,7 @@ if (
     $rand = mt_rand();
     $withemail = isset($_POST['allow_email']) && filter_var($_POST['allow_email'], FILTER_VALIDATE_BOOLEAN);
 
+    /** @var CommonITILObject $item */
     if ($item = getItemForItemtype($_POST["itemtype"])) {
         switch ($_POST["type"]) {
             case "user":
@@ -65,26 +66,26 @@ if (
                 }
 
                 $options = ['name'        => '_itil_' . $_POST["actortype"] . '[users_id]',
-                    'entity'      => $_POST['entity_restrict'],
+                    'entity'      => Session::getMatchingActiveEntities($_POST['entity_restrict']),
                     'right'       => $right,
                     'rand'        => $rand,
-                    'ldap_import' => true
+                    'ldap_import' => true,
                 ];
 
                 if ($CFG_GLPI["notifications_mailing"]) {
                     $paramscomment = ['value' => '__VALUE__',
                         'allow_email' => $withemail,
                         'field' => "_itil_" . $_POST["actortype"],
-                        'use_notification' => $_POST["use_notif"]
+                        'use_notification' => $_POST["use_notif"],
                     ];
-                   // Fix rand value
+                    // Fix rand value
                     $options['rand'] = $rand;
                     if ($withemail) {
                         $options['toupdate'] = [
                             'value_fieldname' => 'value',
                             'to_update'       => "notif_user_$rand",
                             'url'             => $CFG_GLPI["root_doc"] . "/ajax/uemailUpdate.php",
-                            'moreparams'      => $paramscomment
+                            'moreparams'      => $paramscomment,
                         ];
                     }
                 }
@@ -101,7 +102,7 @@ if (
                         'to_update'       => "countassign_$rand",
                         'url'             => $CFG_GLPI["root_doc"] .
                                                             "/ajax/actorinformation.php",
-                        'moreparams'      => ['users_id_assign' => '__VALUE__']
+                        'moreparams'      => ['users_id_assign' => '__VALUE__'],
                     ];
                     $options['toupdate'] = $toupdate;
                 }
@@ -147,9 +148,9 @@ if (
 
                 $param = [
                     'name'      => '_itil_' . $_POST["actortype"] . '[groups_id]',
-                    'entity'    => $_POST['entity_restrict'],
+                    'entity'    => Session::getMatchingActiveEntities($_POST['entity_restrict']),
                     'condition' => $cond,
-                    'rand'      => $rand
+                    'rand'      => $rand,
                 ];
                 if (
                     ($_POST["itemtype"] == 'Ticket')
@@ -160,8 +161,8 @@ if (
                         'url'             => $CFG_GLPI["root_doc"] .
                                                                   "/ajax/actorinformation.php",
                         'moreparams'      => ['groups_id_assign'
-                                                                        => '__VALUE__'
-                        ]
+                                                                        => '__VALUE__',
+                        ],
                     ];
                 }
 
@@ -179,24 +180,24 @@ if (
 
             case "supplier":
                 $options = ['name'      => '_itil_' . $_POST["actortype"] . '[suppliers_id]',
-                    'entity'    => $_POST['entity_restrict'],
-                    'rand'      => $rand
+                    'entity'    => Session::getMatchingActiveEntities($_POST['entity_restrict']),
+                    'rand'      => $rand,
                 ];
                 if ($CFG_GLPI["notifications_mailing"]) {
                     $paramscomment = ['value'       => '__VALUE__',
                         'allow_email' => $withemail,
                         'field'       => '_itil_' . $_POST["actortype"],
                         'typefield'   => "supplier",
-                        'use_notification' => $_POST["use_notif"]
+                        'use_notification' => $_POST["use_notif"],
                     ];
-                   // Fix rand value
+                    // Fix rand value
                     $options['rand']     = $rand;
                     if ($withemail) {
                         $options['toupdate'] = [
                             'value_fieldname' => 'value',
                             'to_update'       => "notif_supplier_$rand",
                             'url'             => $CFG_GLPI["root_doc"] . "/ajax/uemailUpdate.php",
-                            'moreparams'      => $paramscomment
+                            'moreparams'      => $paramscomment,
                         ];
                     }
                 }
@@ -209,14 +210,14 @@ if (
                         'to_update'       => "countassign_$rand",
                         'url'             => $CFG_GLPI["root_doc"] .
                                                             "/ajax/actorinformation.php",
-                        'moreparams'      => ['suppliers_id_assign' => '__VALUE__']
+                        'moreparams'      => ['suppliers_id_assign' => '__VALUE__'],
                     ];
                     $options['toupdate'] = $toupdate;
                 }
 
                 $rand = Supplier::dropdown($options);
-               // Display active tickets for a supplier
-               // Need to update information on dropdown changes
+                // Display active tickets for a supplier
+                // Need to update information on dropdown changes
                 if ($_POST["itemtype"] == 'Ticket') {
                     echo "<span id='countassign_$rand'>";
                     echo "</span>";

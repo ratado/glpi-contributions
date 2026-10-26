@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -86,6 +86,7 @@ class KnowbaseItemTranslation extends CommonDBChild
             $nb = 0;
             switch ($item->getType()) {
                 case __CLASS__:
+                    /** @var KnowbaseItemTranslation $item */
                     $ong[1] = $this->getTypeName(1);
                     if ($item->canUpdateItem()) {
                         $ong[3] = __('Edit');
@@ -115,6 +116,7 @@ class KnowbaseItemTranslation extends CommonDBChild
     {
 
         if ($item->getType() == __CLASS__) {
+            /** @var KnowbaseItemTranslation $item */
             switch ($tabnum) {
                 case 1:
                     $item->showFull();
@@ -128,7 +130,7 @@ class KnowbaseItemTranslation extends CommonDBChild
                     $item->showForm($item->getID(), ['parent' => $item]);
                     break;
             }
-        } else if (self::canBeTranslated($item)) {
+        } elseif (self::canBeTranslated($item)) {
             self::showTranslations($item);
         }
         return true;
@@ -151,7 +153,7 @@ class KnowbaseItemTranslation extends CommonDBChild
         }
 
         $linkusers_id = true;
-       // show item : question and answer
+        // show item : question and answer
         if (
             ((Session::getLoginUserID() === false) && $CFG_GLPI["use_public_faq"])
             || (Session::getCurrentInterface() == "helpdesk")
@@ -198,7 +200,7 @@ class KnowbaseItemTranslation extends CommonDBChild
             $params = ['type'             => __CLASS__,
                 'parenttype'       => get_class($item),
                 'knowbaseitems_id' => $item->fields['id'],
-                'id'               => -1
+                'id'               => -1,
             ];
             Ajax::updateItemJsCode(
                 "viewtranslation" . $item->getID() . "$rand",
@@ -256,7 +258,7 @@ class KnowbaseItemTranslation extends CommonDBChild
                 }
                 echo "</td></tr>";
             }
-            echo "</table>";
+            echo "</table></div>";
             if ($canedit) {
                 $massiveactionparams['ontop'] = false;
                 Html::showMassiveActions($massiveactionparams);
@@ -287,7 +289,7 @@ class KnowbaseItemTranslation extends CommonDBChild
         if ($ID > 0) {
             $this->check($ID, READ);
         } else {
-           // Create item
+            // Create item
             $options['itemtype']         = get_class($options['parent']);
             $options['knowbaseitems_id'] = $options['parent']->getID();
             $this->check(-1, CREATE, $options);
@@ -305,7 +307,7 @@ class KnowbaseItemTranslation extends CommonDBChild
                 "language",
                 ['display_none' => false,
                     'value'        => $_SESSION['glpilanguage'],
-                    'used'         => self::getAlreadyTranslatedForItem($options['parent'])
+                    'used'         => self::getAlreadyTranslatedForItem($options['parent']),
                 ]
             );
         }
@@ -328,7 +330,7 @@ class KnowbaseItemTranslation extends CommonDBChild
                 'enable_fileupload' => false,
                 'enable_richtext'   => true,
                 'cols'              => 100,
-                'rows'              => 30
+                'rows'              => 30,
             ]
         );
         echo "</td></tr>\n";
@@ -351,7 +353,7 @@ class KnowbaseItemTranslation extends CommonDBChild
         $obj   = new self();
         $found = $obj->find([
             'knowbaseitems_id'   => $item->getID(),
-            'language'           => $_SESSION['glpilanguage']
+            'language'           => $_SESSION['glpilanguage'],
         ]);
 
         if (
@@ -368,7 +370,7 @@ class KnowbaseItemTranslation extends CommonDBChild
     /**
      * Is kb item translation functionality active
      *
-     * @return true if active, false if not
+     * @return boolean true if active, false if not
      **/
     public static function isKbTranslationActive()
     {
@@ -384,9 +386,9 @@ class KnowbaseItemTranslation extends CommonDBChild
      * It be translated if translation if globally on and item is an instance of CommonDropdown
      * or CommonTreeDropdown and if translation is enabled for this class
      *
-     * @param item the item to check
+     * @param $item the item to check
      *
-     * @return true if item can be translated, false otherwise
+     * @return boolean true if item can be translated, false otherwise
      **/
     public static function canBeTranslated(CommonGLPI $item)
     {
@@ -416,7 +418,7 @@ class KnowbaseItemTranslation extends CommonDBChild
     /**
      * Get already translated languages for item
      *
-     * @param item
+     * @param CommonDBTM $item
      *
      * @return array of already translated languages
      **/
@@ -429,7 +431,7 @@ class KnowbaseItemTranslation extends CommonDBChild
 
         $iterator = $DB->request([
             'FROM'   => getTableForItemType(__CLASS__),
-            'WHERE'  => ['knowbaseitems_id' => $item->getID()]
+            'WHERE'  => ['knowbaseitems_id' => $item->getID()],
         ]);
 
         foreach ($iterator as $data) {
@@ -461,7 +463,7 @@ class KnowbaseItemTranslation extends CommonDBChild
         $values = [
             'id'     => $this->getID(),
             'name'   => $revision->fields['name'],
-            'answer' => $revision->fields['answer']
+            'answer' => $revision->fields['answer'],
         ];
 
         if ($this->update($values)) {

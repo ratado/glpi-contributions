@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -42,18 +42,18 @@ $app = new Appliance();
 
 if (isset($_POST['update'])) {
     $iapp->check($_POST['id'], UPDATE);
-   //update existing relation
+    //update existing relation
     if ($iapp->update($_POST)) {
         $url = $app->getFormURLWithID($_POST['appliances_id']);
     } else {
         $url = $iapp->getFormURLWithID($_POST['id']);
     }
     Html::redirect($url);
-} else if (isset($_POST['add'])) {
+} elseif (isset($_POST['add'])) {
     $iapp->check(-1, CREATE, $_POST);
     $iapp->add($_POST);
     Html::back();
-} else if (isset($_POST['purge'])) {
+} elseif (isset($_POST['purge'])) {
     $iapp->check($_POST['id'], PURGE);
     $iapp->delete($_POST, 1);
     $url = $app->getFormURLWithID($_POST['appliances_id']);

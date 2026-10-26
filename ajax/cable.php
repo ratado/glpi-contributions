@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -33,6 +33,7 @@
  * ---------------------------------------------------------------------
  */
 
+use Glpi\Http\Response;
 use Glpi\Socket;
 
 /** @var array $CFG_GLPI */
@@ -43,9 +44,18 @@ include('../inc/includes.php');
 // Send UTF8 Headers
 header("Content-Type: text/html; charset=UTF-8");
 Html::header_nocache();
-Session::checkLoginUser();
+Session::checkCentralAccess();
 
 $action = $_POST['action'] ?? $_GET["action"];
+
+$itemtype = $_POST['itemtype'] ?? $_GET["itemtype"] ?? null;
+$item = getItemForItemtype($itemtype);
+if (
+    !$item->canView()
+    || (isset($_GET['items_id']) && !$item->can($_GET['items_id'], READ))
+) {
+    Response::sendError(403, "Not allowed");
+}
 
 switch ($action) {
     case 'get_items_from_itemtype':
@@ -67,22 +77,22 @@ switch ($action) {
             Socket::dropdown(['name'         =>  $_GET['dom_name'],
                 'condition'    => ['socketmodels_id'   => $_GET['socketmodels_id'] ?? 0,
                     'itemtype'           => $_GET['itemtype'],
-                    'items_id'           => $_GET['items_id']
+                    'items_id'           => $_GET['items_id'],
                 ],
-                'used'         => (int)$_GET['items_id'] > 0 ? Socket::getSocketAlreadyLinked($_GET['itemtype'], (int)$_GET['items_id']) : [],
+                'used'         => (int) $_GET['items_id'] > 0 ? Socket::getSocketAlreadyLinked($_GET['itemtype'], (int) $_GET['items_id']) : [],
                 'displaywith'  => ['itemtype', 'items_id', 'networkports_id'],
             ]);
         }
         break;
 
     case 'get_networkport_dropdown':
-         NetworkPort::dropdown(['name'                => 'networkports_id',
-             'display_emptychoice' => true,
-             'condition'           => ['items_id' => $_GET['items_id'],
-                 'itemtype' => $_GET['itemtype']
-             ],
-             'comments' => false
-         ]);
+        NetworkPort::dropdown(['name'                => 'networkports_id',
+            'display_emptychoice' => true,
+            'condition'           => ['items_id' => $_GET['items_id'],
+                'itemtype' => $_GET['itemtype'],
+            ],
+            'comments' => false,
+        ]);
         break;
 
 

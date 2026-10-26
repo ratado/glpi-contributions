@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -50,14 +50,14 @@ if ($_POST['softwares_id'] > 0) {
         $_POST['value'] = 0;
     }
 
-   // Make a select box
+    // Make a select box
     $iterator = $DB->request([
         'DISTINCT'  => true,
         'FROM'      => 'glpi_softwarelicenses',
         'WHERE'     => [
-            'glpi_softwarelicenses.softwares_id'   => (int)$_POST['softwares_id']
-        ] + getEntitiesRestrictCriteria('glpi_softwarelicenses', 'entities_id', $_POST['entity_restrict'], true),
-        'ORDERBY'   => 'name'
+            'glpi_softwarelicenses.softwares_id'   => (int) $_POST['softwares_id'],
+        ] + getEntitiesRestrictCriteria('glpi_softwarelicenses', 'entities_id', Session::getMatchingActiveEntities($_POST['entity_restrict']), true),
+        'ORDERBY'   => 'name',
     ]);
     $number = count($iterator);
 

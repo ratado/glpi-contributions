@@ -3,9 +3,9 @@ set -e -u -x -o pipefail
 
 mkdir -p $APP_CONTAINER_HOME
 
-docker-compose pull --quiet
-docker-compose up --no-start
-docker-compose start
+docker compose pull --quiet
+docker compose up --no-start
+docker compose start
 
 if [[ "$UPDATE_FILES_ACL" = true ]]; then
   # Change files rights to give write access to app container user
@@ -15,7 +15,7 @@ if [[ "$UPDATE_FILES_ACL" = true ]]; then
 fi
 
 # Check services health
-for CONTAINER_ID in `docker-compose ps -a -q`; do
+for CONTAINER_ID in `docker compose ps -a -q`; do
   CONTAINER_NAME=`/usr/bin/docker inspect --format='{{print .Name}}{{if .Config.Image}} ({{print .Config.Image}}){{end}}' $CONTAINER_ID`
   HEALTHY=false
   TOTAL_COUNT=0
@@ -36,6 +36,12 @@ for CONTAINER_ID in `docker-compose ps -a -q`; do
     fi
   done
 done
+
+if [[ "$UPDATE_FILES_ACL" = true ]]; then
+  # Prevent git to trigger errors related to unexpected directories ownership
+  docker compose exec -T app git config --global --add safe.directory /var/www/glpi
+  docker compose exec -T app bash -c "if [[ -d "/home/www-data/.cache/composer/vcs" ]]; then find /home/www-data/.cache/composer/vcs -d -mindepth 1 -maxdepth 1 -exec git config --global --add safe.directory {} \;; fi"
+fi
 
 # Always wait for 5 seconds, even when all services are considered as healthy,
 # as they may respond even if their startup script is still running (should not take more than 5 seconds).

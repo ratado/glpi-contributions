@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -46,22 +46,25 @@ class KnowbaseItem_Revision extends CommonDBTM
 
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
-        if (!$item->canUpdateItem()) {
+        if (
+            !($item instanceof CommonDBTM)
+            || !$item->canUpdateItem()
+        ) {
             return '';
         }
 
         $nb = 0;
         if ($_SESSION['glpishow_count_on_tabs']) {
             $where = [];
-            if ($item->getType() == KnowbaseItem::getType()) {
+            if ($item instanceof KnowbaseItem) {
                 $where = [
                     'knowbaseitems_id' => $item->getID(),
-                    'language'         => ''
+                    'language'         => '',
                 ];
             } else {
                 $where = [
                     'knowbaseitems_id' => $item->fields['knowbaseitems_id'],
-                    'language'         => $item->fields['language']
+                    'language'         => $item->fields['language'],
                 ];
             }
 
@@ -120,7 +123,7 @@ class KnowbaseItem_Revision extends CommonDBTM
             $where
         );
 
-       // No revisions in database
+        // No revisions in database
         if ($number < 1) {
             $no_txt = __('No revisions');
             echo "<div class='center'>";
@@ -130,15 +133,15 @@ class KnowbaseItem_Revision extends CommonDBTM
             echo "</div>";
             return;
         }
-       // Display the pager
+        // Display the pager
 
         Html::printAjaxPager(self::getTypeName(1), $start, $number);
-       // Output events
+        // Output events
         echo "<table class='tab_cadre_fixehov'>";
         $header = '<tr>';
         $header .= "<th title='" . _sn('Revision', 'Revisions', 1) . "'>#</th>";
         $header .= "<th>&nbsp;</th>";
-        $header .= "<th>" . __('Author')  . "</th>";
+        $header .= "<th>" . __('Author') . "</th>";
         $header .= "<th>" . __('Creation date') . "</th>";
         $header .= "<th></th></tr>";
         echo $header;
@@ -146,9 +149,9 @@ class KnowbaseItem_Revision extends CommonDBTM
         $user = new User();
         $user->getFromDB($item->fields['users_id']);
 
-       //current contents
+        //current contents
         echo "<tr class='tab_bg_2'>";
-        echo "<td>(" . __('cur')  . ")</td>" .
+        echo "<td>(" . __('cur') . ")</td>" .
               "<td><input type='radio' name='oldid' value='0' style='visibility:hidden'/>" .
               "<input type='radio' name='diff' value='0' checked='checked'/></td>" .
               "<td>" . $user->getLink() . "</td>" .
@@ -156,19 +159,33 @@ class KnowbaseItem_Revision extends CommonDBTM
               "<td></td>" .
               "</tr>";
 
-        $revisions = $DB->request(
-            'glpi_knowbaseitems_revisions',
-            $where + ['ORDER' => 'id DESC']
-        );
+        $revisions = $DB->request([
+            'SELECT' => [
+                'id',
+                'knowbaseitems_id',
+                'revision',
+                'users_id',
+                'date',
+            ],
+            'FROM' => 'glpi_knowbaseitems_revisions',
+            'WHERE' => $where,
+            'ORDER' => 'id DESC',
+        ]);
 
         $is_checked = true;
+        $author_cache = [
+            $item->fields['users_id'] => $user->getLink(),
+        ];
         foreach ($revisions as $revision) {
-           // Before GLPI 9.3.1, author was not stored in revision.
-           // See https://github.com/glpi-project/glpi/issues/4377.
-            $hasRevUser = $user->getFromDB($revision['users_id']);
+            if (!isset($author_cache[$revision['users_id']])) {
+                // Before GLPI 9.3.1, author was not stored in revision.
+                // See https://github.com/glpi-project/glpi/issues/4377.
+                $hasRevUser = $user->getFromDB($revision['users_id']);
+                $author_cache[$revision['users_id']] = $hasRevUser ? $user->getLink() : __s('Unknown user');
+            }
 
             echo "<tr class='tab_bg_2'>";
-            echo "<td>" . $revision['revision']  . "</td>" .
+            echo "<td>" . $revision['revision'] . "</td>" .
                  "<td><input type='radio' name='oldid' value='{$revision['id']}'";
 
             if ($is_checked) {
@@ -178,7 +195,7 @@ class KnowbaseItem_Revision extends CommonDBTM
 
             echo "/> <input type='radio' name='diff' value='{$revision['id']}'/></td>";
 
-            echo "<td>" . ($hasRevUser ? $user->getLink() : __('Unknown user')) . "</td>" .
+            echo "<td>" . $author_cache[$revision['users_id']] . "</td>" .
              "<td class='tab_date'>" . $revision['date'] . "</td>";
 
             $form = null;
@@ -188,14 +205,14 @@ class KnowbaseItem_Revision extends CommonDBTM
                 $form = KnowbaseItemTranslation::getFormURLWithID($revision['knowbaseitems_id']);
             }
 
-            echo "<td><a href='#' data-rev='" . $revision['revision']  . "'
-                    data-revid='" . $revision['id']  . "' class='show_rev'>" . __('show') . "</a>
+            echo "<td><a href='#' data-rev='" . $revision['revision'] . "'
+                    data-revid='" . $revision['id'] . "' class='show_rev'>" . __('show') . "</a>
                  - <a href='$form&to_rev={$revision['id']}' class='restore_rev'>" .
-                    __('restore')  . "</a></td>";
+                    __('restore') . "</a></td>";
             echo "</tr>";
         }
 
-       // TODO: move script to deferred js loading
+        // TODO: move script to deferred js loading
         echo Html::script("public/lib/jquery-prettytextdiff.js");
         echo Html::scriptBlock("
          $(function() {
@@ -221,9 +238,9 @@ class KnowbaseItem_Revision extends CommonDBTM
                      title: __('Show revision %rev').replace(/%rev/, _this.data('rev')),
                      body: `<div>
                         <h2>\${__('Subject')}</h2>
-                        <div>\${data.name}</div>
+                        <div class='text-wrap text-break'>\${data.name}</div>
                         <h2>\${__('Content')}</h2>
-                        <div>\${data.answer}</div>
+                        <div class='text-wrap text-break'>\${data.answer}</div>
                      </div>`,
                   });
                })
@@ -268,18 +285,19 @@ class KnowbaseItem_Revision extends CommonDBTM
                            </tr>
                            <tr>
                               <th>\${__('Subject')}</th>
-                              <td class='original'>\${data['old']['name']}</td>
-                              <td class='changed'>\${data['diff']['name']}</td>
-                              <td class='diff'></td>
+                              <td class='original text-wrap text-break'>\${data['old']['name']}</td>
+                              <td class='changed text-wrap text-break'>\${data['diff']['name']}</td>
+                              <td class='diff text-wrap text-break'></td>
                            </tr>
                            <tr>
                               <th>\${__('Content')}</th>
-                              <td class='original'>\${data['old']['answer']}</td>
-                              <td class='changed'>\${data['diff']['answer']}</td>
-                              <td class='diff'></td>
+                              <td class='original text-wrap text-break'>\${data['old']['answer']}</td>
+                              <td class='changed text-wrap text-break'>\${data['diff']['answer']}</td>
+                              <td class='diff text-wrap text-break'></td>
                            </tr>
                         </table>
                      </div>`,
+                     dialogclass: 'modal-xl'
                   });
 
                   $('#compare_view tr').prettyTextDiff();
@@ -369,13 +387,13 @@ class KnowbaseItem_Revision extends CommonDBTM
             'FROM'   => 'glpi_knowbaseitems_revisions',
             'WHERE'  => [
                 'knowbaseitems_id'   => $this->fields['knowbaseitems_id'],
-                'language'           => $this->fields['language']
-            ]
+                'language'           => $this->fields['language'],
+            ],
         ])->current();
 
         $rev = $result['revision'];
         if ($rev === null) {
-           //no revisions yet
+            //no revisions yet
             $rev = 1;
         } else {
             ++$rev;

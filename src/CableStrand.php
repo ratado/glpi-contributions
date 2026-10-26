@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -71,6 +71,7 @@ class CableStrand extends CommonDropdown
             $nb = 0;
             switch ($item->getType()) {
                 case __CLASS__:
+                    /** @var CableStrand $item */
                     if ($_SESSION['glpishow_count_on_tabs']) {
                         $nb = countElementsInTable(
                             Cable::getTable(),
@@ -87,6 +88,7 @@ class CableStrand extends CommonDropdown
     {
 
         if ($item->getType() == __CLASS__) {
+            /** @var CableStrand $item */
             switch ($tabnum) {
                 case 1:
                     $item->showItems();
@@ -116,12 +118,12 @@ class CableStrand extends CommonDropdown
 
         $criteria = [
             'SELECT' => [
-                'id'
+                'id',
             ],
             'FROM'   => $cable->getTable(),
             'WHERE'  => [
                 'cablestrands_id' => $cablestrands_id,
-            ]
+            ],
         ];
         if ($cable->maybeDeleted()) {
             $criteria['WHERE']['is_deleted'] = 0;
@@ -133,7 +135,7 @@ class CableStrand extends CommonDropdown
 
         $iterator = $DB->request($criteria);
 
-       // Execute a second request to get the total number of rows
+        // Execute a second request to get the total number of rows
         unset($criteria['SELECT']);
         unset($criteria['START']);
         unset($criteria['LIMIT']);

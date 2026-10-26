@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -50,7 +50,7 @@ $handled = false;
 if (!isset($_POST['itemtype']) || !class_exists($_POST['itemtype'])) {
     Html::displayErrorAndDie('Lost');
 }
-$track = new $_POST['itemtype']();
+$track = getItemForItemtype($_POST['itemtype']);
 
 
 if (isset($_POST["add"])) {
@@ -67,9 +67,13 @@ if (isset($_POST["add"])) {
     );
     $redirect = $track->getFormURLWithID($fup->getField('items_id'));
     $handled = true;
-} else if (
-    isset($_POST['add_close'])
-           || isset($_POST['add_reopen'])
+} elseif (
+    (
+        isset($_POST['add_close'])
+        || isset($_POST['add_reopen'])
+    )
+    && !isset($_POST['update'])
+    && empty($_POST['id'])
 ) {
     if ($track->getFromDB($_POST['items_id']) && (method_exists($track, 'canApprove') && $track->canApprove())) {
         $fup->add($_POST);
@@ -83,7 +87,7 @@ if (isset($_POST["add"])) {
             sprintf(__('%s approves or refuses a solution'), $_SESSION["glpiname"])
         );
     }
-} else if (isset($_POST["update"])) {
+} elseif (isset($_POST["update"])) {
     $fup->check($_POST['id'], UPDATE);
     $fup->update($_POST);
 
@@ -97,7 +101,7 @@ if (isset($_POST["add"])) {
     );
     $redirect = $track->getFormURLWithID($fup->getField('items_id'));
     $handled = true;
-} else if (isset($_POST["purge"])) {
+} elseif (isset($_POST["purge"])) {
     $fup->check($_POST['id'], PURGE);
     $fup->delete($_POST, 1);
 
@@ -114,11 +118,11 @@ if (isset($_POST["add"])) {
 
 if ($handled) {
     if (isset($_POST['kb_linked_id'])) {
-       //if followup should be linked to selected KB entry
+        //if followup should be linked to selected KB entry
         $params = [
             'knowbaseitems_id' => $_POST['kb_linked_id'],
             'itemtype'         => $track->getType(),
-            'items_id'         => $track->getID()
+            'items_id'         => $track->getID(),
         ];
         $existing = $DB->request(
             'glpi_knowbaseitems_items',
@@ -132,7 +136,7 @@ if ($handled) {
 
     if ($track->can($_POST["items_id"], READ)) {
         $toadd = '';
-       // Copy followup to KB redirect to KB
+        // Copy followup to KB redirect to KB
         if (isset($_POST['_fup_to_kb']) && $_POST['_fup_to_kb']) {
             $toadd = "&_fup_to_kb=" . $fup->getID();
         }

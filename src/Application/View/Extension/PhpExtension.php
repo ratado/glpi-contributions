@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -87,10 +87,11 @@ class PhpExtension extends AbstractExtension
      */
     public function call(string $callable, array $parameters = [])
     {
-        if (is_callable($callable)) {
-            return call_user_func_array($callable, $parameters);
+        if (!is_callable($callable)) {
+            \trigger_error(sprintf('Invalid callable `%s`.', $callable), E_USER_WARNING);
+            return null;
         }
-        return null;
+        return call_user_func_array($callable, $parameters);
     }
 
     /**
@@ -103,10 +104,29 @@ class PhpExtension extends AbstractExtension
      */
     public function getStatic($class, string $property)
     {
-        if ((is_object($class) || class_exists($class)) && property_exists($class, $property)) {
-            return $class::$$property;
+        if (!is_object($class) && !class_exists($class)) {
+            \trigger_error(
+                sprintf(
+                    'Invalid class or object `%s`.',
+                    \is_string($class) ? $class : \get_debug_type($class)
+                ),
+                E_USER_WARNING
+            );
+            return null;
         }
-        return null;
+        if (!property_exists($class, $property)) {
+            \trigger_error(
+                sprintf(
+                    'Invalid property `%s::%s.',
+                    \is_string($class) ? $class : \get_debug_type($class),
+                    $property
+                ),
+                E_USER_WARNING
+            );
+            return null;
+        }
+
+        return $class::$$property;
     }
 
     /**

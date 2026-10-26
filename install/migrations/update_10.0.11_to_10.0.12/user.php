@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -38,7 +37,7 @@
  * @var \Migration $migration
  */
 
- // Add user_dn_hash field
+// Add user_dn_hash field
 $migration->addField('glpi_users', 'user_dn_hash', 'varchar(32)', [
     'after'  => 'user_dn',
 ]);
@@ -50,8 +49,8 @@ $migration->addPostQuery($DB->buildUpdate(
     ],
     [
         'NOT' => [
-            'user_dn' => null
-        ]
+            'user_dn' => null,
+        ],
     ]
 ));
 

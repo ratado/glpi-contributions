@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -62,7 +62,7 @@ class GLPI
         $this->log_level = Logger::WARNING;
         if (defined('GLPI_LOG_LVL')) {
             $this->log_level = GLPI_LOG_LVL;
-        } else if (
+        } elseif (
             !isset($_SESSION['glpi_use_mode'])
             || ($_SESSION['glpi_use_mode'] == Session::DEBUG_MODE)
         ) {

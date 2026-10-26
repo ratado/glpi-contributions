@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -68,8 +68,8 @@ class Manufacturer extends CommonDropdown
                                            null,
                                            false
                                        ),
-            'type'  => 'registeredIDChooser'
-        ]
+            'type'  => 'registeredIDChooser',
+        ],
         ];
     }
 
@@ -85,7 +85,7 @@ class Manufacturer extends CommonDropdown
             && (is_array($this->input['_registeredID']))
         ) {
             $input = ['itemtype' => $this->getType(),
-                'items_id' => $this->getID()
+                'items_id' => $this->getID(),
             ];
 
             foreach ($this->input['_registeredID'] as $id => $registered_id) {
@@ -97,7 +97,7 @@ class Manufacturer extends CommonDropdown
                 } else {
                     $input['device_type'] = '';
                 }
-               //$input['device_type'] = '';
+                //$input['device_type'] = '';
                 if ($id < 0) {
                     if (!empty($registered_id)) {
                         $id_object->add($input);
@@ -161,7 +161,7 @@ class Manufacturer extends CommonDropdown
 
     public function cleanDBonPurge()
     {
-       // Rules use manufacturer intread of manufacturers_id
+        // Rules use manufacturer intread of manufacturers_id
         Rule::cleanForItemAction($this, 'manufacturer');
     }
 
@@ -178,8 +178,8 @@ class Manufacturer extends CommonDropdown
     public static function getHTMLTableHeader(
         $itemtype,
         HTMLTableBase $base,
-        HTMLTableSuperHeader $super = null,
-        HTMLTableHeader $father = null,
+        ?HTMLTableSuperHeader $super = null,
+        ?HTMLTableHeader $father = null,
         array $options = []
     ) {
 
@@ -202,9 +202,9 @@ class Manufacturer extends CommonDropdown
      * @param $options   array
      **/
     public static function getHTMLTableCellsForItem(
-        HTMLTableRow $row = null,
-        CommonDBTM $item = null,
-        HTMLTableCell $father = null,
+        ?HTMLTableRow $row = null,
+        ?CommonDBTM $item = null,
+        ?HTMLTableCell $father = null,
         array $options = []
     ) {
 

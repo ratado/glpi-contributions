@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -59,7 +59,7 @@ if (isset($_POST["add"])) {
     $url      = Toolbox::getItemTypeFormURL('NotificationTemplateTranslation', true);
     $url     .= "?notificationtemplates_id=$newID";
     Html::redirect($url);
-} else if (isset($_POST["purge"])) {
+} elseif (isset($_POST["purge"])) {
     $notificationtemplate->check($_POST["id"], PURGE);
     $notificationtemplate->delete($_POST, 1);
 
@@ -72,7 +72,7 @@ if (isset($_POST["add"])) {
         sprintf(__('%s purges an item'), $_SESSION["glpiname"])
     );
     $notificationtemplate->redirectToList();
-} else if (isset($_POST["update"])) {
+} elseif (isset($_POST["update"])) {
     $notificationtemplate->check($_POST["id"], UPDATE);
 
     $notificationtemplate->update($_POST);

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -53,7 +53,7 @@ if (isset($_POST['transfer'])) {
         Html::footer();
         exit();
     }
-} else if (isset($_POST['clear'])) {
+} elseif (isset($_POST['clear'])) {
     unset($_SESSION['glpitransfer_list']);
     echo "<div class='b center'>" . __('Operation successful') . "<br>";
     echo "<a href='central.php'>" . __('Back') . "</a></div>";

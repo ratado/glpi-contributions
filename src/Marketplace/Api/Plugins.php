@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -36,7 +36,6 @@
 namespace Glpi\Marketplace\Api;
 
 use GLPINetwork;
-use GuzzleHttp\Client as Guzzle_Client;
 use GuzzleHttp\Psr7\Message;
 use GuzzleHttp\Psr7\Response;
 use Session;
@@ -48,7 +47,7 @@ class Plugins
     protected $last_error  = null;
 
     public const COL_PAGE    = 200;
-    protected const TIMEOUT     = 5;
+    protected const TIMEOUT = 5;
 
     /**
      * Max request attemps on READ operations.
@@ -68,25 +67,10 @@ class Plugins
 
     public function __construct()
     {
-        /** @var array $CFG_GLPI */
-        global $CFG_GLPI;
-
-        $options = [
-            'base_uri'        => GLPI_MARKETPLACE_PLUGINS_API_URI,
-            'connect_timeout' => self::TIMEOUT,
-        ];
-
-        // add proxy string if configured in glpi
-        if (!empty($CFG_GLPI["proxy_name"])) {
-            $proxy_creds      = !empty($CFG_GLPI["proxy_user"])
-                ? $CFG_GLPI["proxy_user"] . ":" . (new \GLPIKey())->decrypt($CFG_GLPI["proxy_passwd"]) . "@"
-                : "";
-            $proxy_string     = "http://{$proxy_creds}" . $CFG_GLPI['proxy_name'] . ":" . $CFG_GLPI['proxy_port'];
-            $options['proxy'] = $proxy_string;
-        }
-
         // init guzzle client with base options
-        $this->httpClient = new Guzzle_Client($options);
+        $this->httpClient = Toolbox::getGuzzleClient([
+            'base_uri'        => GLPI_MARKETPLACE_PLUGINS_API_URI,
+        ]);
     }
 
 
@@ -169,9 +153,9 @@ class Plugins
             $response = $this->request($endpoint, $request_options, $method);
 
             if ($response === false || !is_array($current = json_decode($response->getBody(), true))) {
-                 // retry on error or unexpected response
-                 $attempt_no++;
-                 continue;
+                // retry on error or unexpected response
+                $attempt_no++;
+                continue;
             }
 
             if (count($current) === 0) {
@@ -391,8 +375,8 @@ class Plugins
 
         $response  = $this->request('tags/top', [
             'headers' => [
-                'X-Lang' => $CFG_GLPI['languages'][$_SESSION['glpilanguage']][2]
-            ]
+                'X-Lang' => $CFG_GLPI['languages'][$_SESSION['glpilanguage']][2],
+            ],
         ]);
 
         if ($response === false) {
@@ -478,7 +462,7 @@ class Plugins
                 // calculate percent based on the size and store it in session
                 $percent = 0;
                 if ($downloadTotal > 0) {
-                      $percent = round($downloadedBytes * 100 / $downloadTotal);
+                    $percent = round($downloadedBytes * 100 / $downloadTotal);
                 }
                 $_SESSION['marketplace_dl_progress'][$plugin_key] = $percent;
 

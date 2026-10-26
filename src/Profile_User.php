@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -40,10 +40,10 @@ use Glpi\Toolbox\Sanitizer;
  **/
 class Profile_User extends CommonDBRelation
 {
-   // From CommonDBTM
+    // From CommonDBTM
     public $auto_message_on_action               = false;
 
-   // From CommonDBRelation
+    // From CommonDBRelation
     public static $itemtype_1                    = 'User';
     public static $items_id_1                    = 'users_id';
 
@@ -51,7 +51,7 @@ class Profile_User extends CommonDBRelation
     public static $items_id_2                    = 'profiles_id';
     public static $checkItem_2_Rights            = self::DONT_CHECK_ITEM_RIGHTS;
 
-   // Manage Entity properties forwarding
+    // Manage Entity properties forwarding
     public static $disableAutoEntityForwarding   = true;
 
     /**
@@ -70,19 +70,19 @@ class Profile_User extends CommonDBRelation
 
     public function maybeRecursive()
     {
-       // Store is_recursive fields but not really recursive object
+        // Store is_recursive fields but not really recursive object
         return false;
     }
 
 
-   // TODO CommonDBConnexity : check in details if we can replace canCreateItem by canRelationItem ...
+    // TODO CommonDBConnexity : check in details if we can replace canCreateItem by canRelationItem ...
     public function canCreateItem()
     {
 
         $user = new User();
         return $user->can($this->fields['users_id'], READ)
              && Profile::currentUserHaveMoreRightThan([$this->fields['profiles_id']
-                                                               => $this->fields['profiles_id']
+                                                               => $this->fields['profiles_id'],
              ])
              && Session::haveAccessToEntity($this->fields['entities_id']);
     }
@@ -94,19 +94,19 @@ class Profile_User extends CommonDBRelation
             return false;
         }
 
-        return true;
+        return Profile::currentUserHaveMoreRightThan([$this->fields['profiles_id']])
+            && Session::haveAccessToEntity($this->fields['entities_id']);
     }
 
     public function prepareInputForAdd($input)
     {
-
-       // TODO: check if the entities should not be inherited from the profile or the user
-        if (
-            !isset($input['entities_id'])
-            || ($input['entities_id'] < 0)
-        ) {
+        // TODO: check if the entities should not be inherited from the profile or the user
+        $valid_entity = isset($input['entities_id']) && $input['entities_id'] >= 0;
+        $valid_profile = isset($input['profiles_id']) && $input['profiles_id'] > 0;
+        $valid_user = isset($input['users_id']) && $input['users_id'] > 0;
+        if (!$valid_entity || !$valid_user || !$valid_profile) {
             Session::addMessageAfterRedirect(
-                __('No selected element or badly defined operation'),
+                __('One or more required fields are missing'),
                 false,
                 ERROR
             );
@@ -173,7 +173,7 @@ class Profile_User extends CommonDBRelation
 
         if ($canedit && $num) {
             $massiveactionparams = ['num_displayed' => min($_SESSION['glpilist_limit'], $num),
-                'container'     => 'mass' . __CLASS__ . $rand
+                'container'     => 'mass' . __CLASS__ . $rand,
             ];
             Html::showMassiveActions($massiveactionparams);
         }
@@ -218,8 +218,8 @@ class Profile_User extends CommonDBRelation
                 }
 
                 if ($canshowentity) {
-                     echo "<a href='" . Toolbox::getItemTypeFormURL('Entity') . "?id=" .
-                     $data["entities_id"] . "'>";
+                    echo "<a href='" . Toolbox::getItemTypeFormURL('Entity') . "?id=" .
+                    $data["entities_id"] . "'>";
                 }
                 echo $link . ($canshowentity ? "</a>" : '');
                 echo "</td>";
@@ -234,7 +234,7 @@ class Profile_User extends CommonDBRelation
                 if ($data["is_dynamic"] || $data["is_recursive"]) {
                     $entname = sprintf(__('%1$s %2$s'), $entname, "<span class='b'>(");
                     if ($data["is_dynamic"]) {
-                       //TRANS: letter 'D' for Dynamic
+                        //TRANS: letter 'D' for Dynamic
                         $entname = sprintf(__('%1$s%2$s'), $entname, __('D'));
                     }
                     if ($data["is_dynamic"] && $data["is_recursive"]) {
@@ -324,33 +324,33 @@ class Profile_User extends CommonDBRelation
                 "$putable.is_recursive",
                 "$putable.is_dynamic",
                 "$ptable.id AS pid",
-                "$ptable.name AS pname"
+                "$ptable.name AS pname",
             ],
             'FROM'         => $putable,
             'INNER JOIN'   => [
                 $utable => [
                     'ON' => [
                         $putable => 'users_id',
-                        $utable  => 'id'
-                    ]
+                        $utable  => 'id',
+                    ],
                 ],
                 $ptable  => [
                     'ON' => [
                         $putable => 'profiles_id',
-                        $ptable  => 'id'
-                    ]
-                ]
+                        $ptable  => 'id',
+                    ],
+                ],
             ],
             'WHERE'        => [
                 "$utable.is_deleted"    => 0,
-                "$putable.entities_id"  => $ID
+                "$putable.entities_id"  => $ID,
             ],
             'ORDERBY'      => [
                 "$putable.profiles_id",
                 "$utable.name",
                 "$utable.realname",
-                "$utable.firstname"
-            ]
+                "$utable.firstname",
+            ],
         ]);
 
         $nb = count($iterator);
@@ -362,7 +362,7 @@ class Profile_User extends CommonDBRelation
             = ['container'
                         => 'mass' . __CLASS__ . $rand,
                 'specific_actions'
-                        => ['purge' => _x('button', 'Delete permanently')]
+                        => ['purge' => _x('button', 'Delete permanently')],
             ];
             Html::showMassiveActions($massiveactionparams);
         }
@@ -412,9 +412,9 @@ class Profile_User extends CommonDBRelation
                     echo "<tr class='tab_bg_1'>";
                 }
                 if ($canedit) {
-                     echo "<td width='10'>";
-                     Html::showMassiveActionCheckBox(__CLASS__, $data["linkid"]);
-                     echo "</td>";
+                    echo "<td width='10'>";
+                    Html::showMassiveActionCheckBox(__CLASS__, $data["linkid"]);
+                    echo "</td>";
                 }
 
                 $username = formatUserName(
@@ -426,7 +426,7 @@ class Profile_User extends CommonDBRelation
                 );
 
                 if ($data["is_dynamic"] || $data["is_recursive"]) {
-                     $username = sprintf(__('%1$s %2$s'), $username, "<span class='b'>(");
+                    $username = sprintf(__('%1$s %2$s'), $username, "<span class='b'>(");
                     if ($data["is_dynamic"]) {
                         $username = sprintf(__('%1$s%2$s'), $username, __('D'));
                     }
@@ -438,10 +438,10 @@ class Profile_User extends CommonDBRelation
                     }
                     $username = sprintf(__('%1$s%2$s'), $username, ")</span>");
                 }
-                 echo "<td>" . $username . "</td>";
-                 $i++;
+                echo "<td>" . $username . "</td>";
+                $i++;
 
-                 $current_pid = $data['pid'];
+                $current_pid = $data['pid'];
                 if ($data['pid'] != $current_pid) {
                     echo "</tr>";
                     echo "</tbody>";
@@ -484,7 +484,7 @@ class Profile_User extends CommonDBRelation
                 "$putable.entities_id AS entity",
                 "$putable.id AS linkid",
                 "$putable.is_dynamic",
-                "$putable.is_recursive"
+                "$putable.is_recursive",
             ],
             'DISTINCT'        => true,
             'FROM'            => $putable,
@@ -492,21 +492,21 @@ class Profile_User extends CommonDBRelation
                 $etable  => [
                     'ON' => [
                         $putable => 'entities_id',
-                        $etable  => 'id'
-                    ]
+                        $etable  => 'id',
+                    ],
                 ],
                 $utable  => [
                     'ON' => [
                         $putable => 'users_id',
-                        $utable  => 'id'
-                    ]
-                ]
+                        $utable  => 'id',
+                    ],
+                ],
             ],
             'WHERE'           => [
                 "$putable.profiles_id"  => $ID,
-                "$utable.is_deleted"    => 0
+                "$utable.is_deleted"    => 0,
             ] + getEntitiesRestrictCriteria($putable, 'entities_id', $_SESSION['glpiactiveentities'], true),
-            'ORDERBY'         => "$etable.completename"
+            'ORDERBY'         => "$etable.completename",
         ]);
 
         $nb = count($iterator);
@@ -516,7 +516,7 @@ class Profile_User extends CommonDBRelation
         if ($canedit && $nb) {
             Html::openMassiveActionsForm('mass' . __CLASS__ . $rand);
             $massiveactionparams = ['num_displayed' => min($_SESSION['glpilist_limit'], $nb),
-                'container'     => 'mass' . __CLASS__ . $rand
+                'container'     => 'mass' . __CLASS__ . $rand,
             ];
             Html::showMassiveActions($massiveactionparams);
         }
@@ -555,7 +555,7 @@ class Profile_User extends CommonDBRelation
                         echo "</td></tr>\n";
                     }
 
-                   // New entity
+                    // New entity
                     $i              = 0;
                     $temp           = $data["entity"];
                     $canedit_entity = $canedit && in_array($temp, $_SESSION['glpiactiveentities']);
@@ -601,7 +601,7 @@ class Profile_User extends CommonDBRelation
                 );
 
                 if ($data["is_dynamic"] || $data["is_recursive"]) {
-                     $username = sprintf(__('%1$s %2$s'), $username, "<span class='b'>(");
+                    $username = sprintf(__('%1$s %2$s'), $username, "<span class='b'>(");
                     if ($data["is_dynamic"]) {
                         $username = sprintf(__('%1$s%2$s'), $username, __('D'));
                     }
@@ -609,7 +609,7 @@ class Profile_User extends CommonDBRelation
                         $username = sprintf(__('%1$s%2$s'), $username, ", ");
                     }
                     if ($data["is_recursive"]) {
-                           $username = sprintf(__('%1$s%2$s'), $username, __('R'));
+                        $username = sprintf(__('%1$s%2$s'), $username, __('R'));
                     }
                     $username = sprintf(__('%1$s%2$s'), $username, ")</span>");
                 }
@@ -663,11 +663,11 @@ class Profile_User extends CommonDBRelation
         $iterator = $DB->request([
             'SELECT'          => [
                 'entities_id',
-                'is_recursive'
+                'is_recursive',
             ],
             'DISTINCT'        => true,
             'FROM'            => 'glpi_profiles_users',
-            'WHERE'           => ['users_id' => (int)$user_ID]
+            'WHERE'           => ['users_id' => (int) $user_ID],
         ]);
         $entities = [];
 
@@ -680,10 +680,10 @@ class Profile_User extends CommonDBRelation
             }
         }
 
-       // Set default user entity at the beginning
+        // Set default user entity at the beginning
         if ($default_first) {
             $user = new User();
-            if ($user->getFromDB((int)$user_ID)) {
+            if ($user->getFromDB((int) $user_ID)) {
                 $ent = $user->getField('entities_id');
                 if (in_array($ent, $entities)) {
                     array_unshift($entities, $ent);
@@ -720,7 +720,7 @@ class Profile_User extends CommonDBRelation
         $iterator = $DB->request([
             'SELECT'          => [
                 "$putable.entities_id",
-                "$putable.is_recursive"
+                "$putable.is_recursive",
             ],
             'DISTINCT'        => true,
             'FROM'            => $putable,
@@ -728,21 +728,21 @@ class Profile_User extends CommonDBRelation
                 $ptable  => [
                     'ON' => [
                         $putable => 'profiles_id',
-                        $ptable  => 'id'
-                    ]
+                        $ptable  => 'id',
+                    ],
                 ],
                 $prtable => [
                     'ON' => [
                         $prtable => 'profiles_id',
-                        $ptable  => 'id'
-                    ]
-                ]
+                        $ptable  => 'id',
+                    ],
+                ],
             ],
             'WHERE'           => [
-                "$putable.users_id"  => (int)$user_ID,
+                "$putable.users_id"  => (int) $user_ID,
                 "$prtable.name"      => $rightname,
-                "$prtable.rights"    => ['&', $rights]
-            ]
+                "$prtable.rights"    => ['&', $rights],
+            ],
         ]);
 
         if (count($iterator) > 0) {
@@ -781,7 +781,7 @@ class Profile_User extends CommonDBRelation
 
         $profiles = [];
 
-        $where = ['users_id' => (int)$user_ID];
+        $where = ['users_id' => (int) $user_ID];
         if (count($sqlfilter) > 0) {
             $where = $where + $sqlfilter;
         }
@@ -790,7 +790,7 @@ class Profile_User extends CommonDBRelation
             'SELECT'          => 'profiles_id',
             'DISTINCT'        => true,
             'FROM'            => 'glpi_profiles_users',
-            'WHERE'           => $where
+            'WHERE'           => $where,
         ]);
 
         foreach ($iterator as $data) {
@@ -820,9 +820,9 @@ class Profile_User extends CommonDBRelation
             'SELECT' => ['entities_id', 'is_recursive'],
             'FROM'   => self::getTable(),
             'WHERE'  => [
-                'users_id'     => (int)$users_id,
-                'profiles_id'  => (int)$profiles_id
-            ]
+                'users_id'     => (int) $users_id,
+                'profiles_id'  => (int) $profiles_id,
+            ],
         ]);
 
         $entities = [];
@@ -861,7 +861,7 @@ class Profile_User extends CommonDBRelation
         $iterator = $DB->request([
             'SELECT' => ['entities_id', 'is_recursive'],
             'FROM'   => 'glpi_profiles_users',
-            'WHERE'  => ['users_id' => (int)$users_id]
+            'WHERE'  => ['users_id' => (int) $users_id],
         ]);
 
         $entities = [];
@@ -884,14 +884,14 @@ class Profile_User extends CommonDBRelation
     /**
      * Get entities for which a user have a right
      *
-     * @param $user_ID         user ID
-     * @param $only_dynamic    get only recursive rights (false by default)
+     * @param int  $user_ID      user ID
+     * @param bool $only_dynamic get only recursive rights (false by default)
      *
      * @return array of entities ID
      **/
     public static function getForUser($user_ID, $only_dynamic = false)
     {
-        $condition = ['users_id' => (int)$user_ID];
+        $condition = ['users_id' => (int) $user_ID];
 
         if ($only_dynamic) {
             $condition['is_dynamic'] = 1;
@@ -914,9 +914,9 @@ class Profile_User extends CommonDBRelation
             'COUNT'  => 'cpt',
             'FROM'   => self::getTable(),
             'WHERE'  => [
-                'users_id'     => (int)$user_ID,
-                'profiles_id'  => (int)$profile_id
-            ]
+                'users_id'     => (int) $user_ID,
+                'profiles_id'  => (int) $profile_id,
+            ],
         ])->current();
         return $result['cpt'];
     }
@@ -930,7 +930,7 @@ class Profile_User extends CommonDBRelation
     {
 
         $crit = [
-            'users_id' => (int)$user_ID,
+            'users_id' => (int) $user_ID,
         ];
 
         if ($only_dynamic) {
@@ -948,7 +948,7 @@ class Profile_User extends CommonDBRelation
 
         $tab[] = [
             'id'                 => 'common',
-            'name'               => __('Characteristics')
+            'name'               => __('Characteristics'),
         ];
 
         $tab[] = [
@@ -957,7 +957,7 @@ class Profile_User extends CommonDBRelation
             'field'              => 'id',
             'name'               => __('ID'),
             'massiveaction'      => false,
-            'datatype'           => 'number'
+            'datatype'           => 'number',
         ];
 
         $tab[] = [
@@ -966,7 +966,7 @@ class Profile_User extends CommonDBRelation
             'field'              => 'is_dynamic',
             'name'               => __('Dynamic'),
             'datatype'           => 'bool',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -975,7 +975,7 @@ class Profile_User extends CommonDBRelation
             'field'              => 'name',
             'name'               => self::getTypeName(1),
             'datatype'           => 'dropdown',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -985,7 +985,7 @@ class Profile_User extends CommonDBRelation
             'name'               => User::getTypeName(1),
             'massiveaction'      => false,
             'datatype'           => 'dropdown',
-            'right'              => 'all'
+            'right'              => 'all',
         ];
 
         $tab[] = [
@@ -994,7 +994,7 @@ class Profile_User extends CommonDBRelation
             'field'              => 'completename',
             'name'               => Entity::getTypeName(1),
             'massiveaction'      => true,
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -1003,7 +1003,7 @@ class Profile_User extends CommonDBRelation
             'field'              => 'is_recursive',
             'name'               => __('Child entities'),
             'datatype'           => 'bool',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         return $tab;
@@ -1025,12 +1025,12 @@ class Profile_User extends CommonDBRelation
         );
 
         if (isset($this->fields['is_dynamic']) && $this->fields['is_dynamic']) {
-           //TRANS: D for Dynamic
+            //TRANS: D for Dynamic
             $dyn  = __('D');
             $name = sprintf(__('%1$s, %2$s'), $name, $dyn);
         }
         if (isset($this->fields['is_recursive']) && $this->fields['is_recursive']) {
-           //TRANS: R for Recursive
+            //TRANS: R for Recursive
             $rec  = __('R');
             $name = sprintf(__('%1$s, %2$s'), $name, $rec);
         }
@@ -1044,8 +1044,8 @@ class Profile_User extends CommonDBRelation
 
         if (!$withtemplate) {
             $nb = 0;
-            switch ($item->getType()) {
-                case 'Entity':
+            switch (get_class($item)) {
+                case Entity::class:
                     if (Session::haveRight('user', READ)) {
                         if ($_SESSION['glpishow_count_on_tabs']) {
                             $count = $DB->request([
@@ -1055,14 +1055,14 @@ class Profile_User extends CommonDBRelation
                                     User::getTable() => [
                                         'FKEY' => [
                                             $this->getTable() => 'users_id',
-                                            User::getTable()  => 'id'
-                                        ]
-                                    ]
+                                            User::getTable()  => 'id',
+                                        ],
+                                    ],
                                 ],
                                 'WHERE'     => [
                                     User::getTable() . '.is_deleted'    => 0,
-                                    $this->getTable() . '.entities_id'  => $item->getID()
-                                ]
+                                    $this->getTable() . '.entities_id'  => $item->getID(),
+                                ],
                             ])->current();
                             $nb        = $count['cpt'];
                         }
@@ -1070,16 +1070,16 @@ class Profile_User extends CommonDBRelation
                     }
                     break;
 
-                case 'Profile':
+                case Profile::class:
                     if (Session::haveRight('user', READ)) {
                         if ($_SESSION['glpishow_count_on_tabs']) {
-                              $nb = self::countForItem($item);
+                            $nb = self::countForItem($item);
                         }
                         return self::createTabEntry(User::getTypeName(Session::getPluralNumber()), $nb);
                     }
                     break;
 
-                case 'User':
+                case User::class:
                     if ($_SESSION['glpishow_count_on_tabs']) {
                         $nb = self::countForItem($item);
                     }
@@ -1097,16 +1097,16 @@ class Profile_User extends CommonDBRelation
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
 
-        switch ($item->getType()) {
-            case 'Entity':
+        switch (get_class($item)) {
+            case Entity::class:
                 self::showForEntity($item);
                 break;
 
-            case 'Profile':
+            case Profile::class:
                 self::showForProfile($item);
                 break;
 
-            case 'User':
+            case User::class:
                 self::showForUser($item);
                 break;
         }
@@ -1191,8 +1191,8 @@ class Profile_User extends CommonDBRelation
         $params['LEFT JOIN']['glpi_entities'] = [
             'FKEY'   => [
                 self::getTable()  => 'entities_id',
-                'glpi_entities'   => 'id'
-            ]
+                'glpi_entities'   => 'id',
+            ],
         ];
         return $params;
     }
@@ -1219,7 +1219,7 @@ class Profile_User extends CommonDBRelation
                 'SELECT' => 'id',
                 'FROM'   => 'glpi_users',
                 'WHERE'  => ['is_active' => 1, 'is_deleted' => 0],
-            ])
+            ]),
         ]);
         $authorizations_ids = array_column($super_admin_authorizations, 'id');
 
@@ -1250,11 +1250,11 @@ class Profile_User extends CommonDBRelation
         }
 
         $profile_flags = [];
-        if ((bool)$this->fields['is_dynamic']) {
+        if ((bool) $this->fields['is_dynamic']) {
             //TRANS: letter 'D' for Dynamic
             $profile_flags[] = __('D');
         }
-        if ((bool)$this->fields['is_recursive']) {
+        if ((bool) $this->fields['is_recursive']) {
             //TRANS: letter 'D' for Dynamic
             $profile_flags[] = __('R');
         }

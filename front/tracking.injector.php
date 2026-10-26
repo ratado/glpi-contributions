@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -33,6 +33,8 @@
  * ---------------------------------------------------------------------
  */
 
+use Glpi\Toolbox\Sanitizer;
+
 /**
  * @var array $CFG_GLPI
  * @var array $_UPOST
@@ -54,21 +56,21 @@ if (
 $track = new Ticket();
 
 // Security check
-if (empty($_POST) || (count($_POST) == 0)) {
+if (count($_POST) == 0) {
     Html::redirect($CFG_GLPI["root_doc"] . "/front/helpdesk.public.php");
 }
 
 if (isset($_POST["_type"]) && ($_POST["_type"] == "Helpdesk")) {
     Html::nullHeader(Ticket::getTypeName(Session::getPluralNumber()));
-} else if ($_POST["_from_helpdesk"]) {
+} elseif ($_POST["_from_helpdesk"]) {
     Html::helpHeader(__('Simplified interface'));
 } else {
     Html::header(__('Simplified interface'), '', $_SESSION["glpiname"], "helpdesk", "tracking");
 }
 
-if (isset($_POST['_actors']) && is_string($_POST['_actors'])) {
+if (isset($_UPOST['_actors']) && is_string($_UPOST['_actors'])) {
     try {
-        $_POST['_actors'] = json_decode($_UPOST['_actors'], true, 512, JSON_THROW_ON_ERROR);
+        $_POST['_actors'] = Sanitizer::sanitize(json_decode($_UPOST['_actors'], true, 512, JSON_THROW_ON_ERROR));
     } catch (\JsonException $e) {
         $_POST['_actors'] = [];
     }
@@ -80,10 +82,13 @@ if (isset($_POST['add'])) {
         $track->getEmpty();
     }
     $_POST['check_delegatee'] = true;
-    if (isset($_UPOST['_actors'])) {
-        $_POST['_actors'] = json_decode($_UPOST['_actors'], true);
-       // with self-service, we only have observers
-        unset($_POST['_actors']['requester'], $_POST['_actors']['assign']);
+    if (isset($_POST['_actors'])) {
+        // with self-service, we only have observers
+        unset($_POST['_actors']['assign']);
+        if (!($_POST['nodelegate'] ?? false)) {
+            // remove requester, only for delegation
+            unset($_POST['_actors']['requester']);
+        }
     }
     if ($track->add($_POST)) {
         if ($_SESSION['glpibackcreated'] && Ticket::canView()) {

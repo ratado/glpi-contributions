@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -42,6 +42,7 @@ include('../inc/includes.php');
 Session::checkRight("config", READ);
 
 if (isset($_GET['check_version'])) {
+    Session::checkRight("config", UPDATE);
     Session::addMessageAfterRedirect(
         Toolbox::checkNewVersionAvailable()
     );
@@ -51,16 +52,18 @@ if (isset($_GET['check_version'])) {
 $config = new Config();
 $_POST['id'] = Config::getConfigIDForContext('core');
 if (!empty($_POST["update_auth"])) {
+    Session::checkRight("config", UPDATE);
     $config->update($_POST);
     Html::back();
 }
 if (!empty($_POST["update"])) {
+    Session::checkRight("config", UPDATE);
     $context = array_key_exists('config_context', $_POST) ? $_POST['config_context'] : 'core';
 
     $glpikey = new GLPIKey();
     foreach (array_keys($_POST) as $field) {
         if ($glpikey->isConfigSecured($context, $field)) {
-           // Field must not be altered, it will be encrypted and never displayed, so sanitize is not necessary.
+            // Field must not be altered, it will be encrypted and never displayed, so sanitize is not necessary.
             $_POST[$field] = $_UPOST[$field];
         }
     }
@@ -93,5 +96,5 @@ if (!empty($_POST['reset_translation_cache'])) {
 }
 
 Config::displayFullPageForItem($_POST['id'], ["config", "config"], [
-    'formoptions'  => "data-track-changes=true"
+    'formoptions'  => "data-track-changes=true",
 ]);

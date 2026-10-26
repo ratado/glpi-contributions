@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -60,7 +60,7 @@ class PrinterLog extends CommonDBChild
     /**
      * Get the tab name used for item
      *
-     * @param object $item the item object
+     * @param CommonGLPI $item the item object
      * @param integer $withtemplate 1 if is a template form
      * @return string|array name of the tab
      */
@@ -69,7 +69,7 @@ class PrinterLog extends CommonDBChild
 
         $array_ret = [];
 
-        if ($item->getType() == 'Printer') {
+        if ($item instanceof Printer) {
             $cnt = countElementsInTable([static::getTable()], [static::$items_id => $item->getField('id')]);
             $array_ret[] = self::createTabEntry(self::getTypeName(Session::getPluralNumber()), $cnt);
         }
@@ -80,14 +80,14 @@ class PrinterLog extends CommonDBChild
     /**
      * Display the content of the tab
      *
-     * @param object $item
+     * @param CommonGLPI $item
      * @param integer $tabnum number of the tab to display
      * @param integer $withtemplate 1 if is a template form
      * @return boolean
      */
     public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
     {
-        if ($item->getType() == Printer::getType() && $item->getID() > 0) {
+        if (get_class($item) == Printer::class && $item->getID() > 0) {
             $printerlog = new self();
             $printerlog->showMetrics($item);
             return true;
@@ -111,15 +111,15 @@ class PrinterLog extends CommonDBChild
         $bdate = new DateTime();
         $bdate->sub(new DateInterval('P1Y'));
         $filters = [
-            'date' => ['>', $bdate->format('Y-m-d')]
+            'date' => ['>', $bdate->format('Y-m-d')],
         ];
         $filters = array_merge($filters, $user_filters);
 
         $iterator = $DB->request([
             'FROM'   => $this->getTable(),
             'WHERE'  => [
-                'printers_id'  => $printer->fields['id']
-            ] + $filters
+                'printers_id'  => $printer->fields['id'],
+            ] + $filters,
         ]);
 
         $series = iterator_to_array($iterator, false);
@@ -149,7 +149,7 @@ class PrinterLog extends CommonDBChild
     {
         $raw_metrics = $this->getMetrics($printer);
 
-       //build graph data
+        //build graph data
         $params = [
             'label'         => $this->getTypeName(),
             'icon'          => Printer::getIcon(),
@@ -178,7 +178,13 @@ class PrinterLog extends CommonDBChild
         foreach ($raw_metrics as $metrics) {
             $date = new DateTime($metrics['date']);
             $labels[] = $fmt->format($date);
-            unset($metrics['id'], $metrics['date'], $metrics['printers_id']);
+            unset(
+                $metrics['id'],
+                $metrics['date'],
+                $metrics['printers_id'],
+                $metrics['date_creation'],
+                $metrics['date_mod']
+            );
 
             // Keep values if at least 1 label is greater than 0
             $valuesum = array_sum($metrics);
@@ -204,10 +210,10 @@ class PrinterLog extends CommonDBChild
             'label' => $params['label'],
             'icon'  => $params['icon'],
             'color' => '#ffffff',
-            'distributed' => false
+            'distributed' => false,
         ];
 
-       //display graph
+        //display graph
         echo "<div class='dashboard printer_barchart'>";
         echo Widget::multipleAreas($bar_conf);
         echo "</div>";

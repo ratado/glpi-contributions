@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -47,6 +47,8 @@ if (isset($_POST['action'])) {
 
     switch ($_POST['action']) {
         case 'move_item':
+            $item_rack->check($item_rack->getID(), UPDATE);
+
             $answer['status'] = $item_rack->update([
                 'id'       => (int) $_POST['id'],
                 'position' => (int) $_POST['position'],

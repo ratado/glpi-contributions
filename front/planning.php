@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -46,7 +46,8 @@ if (isset($_GET['genical'])) {
 
 include('../inc/includes.php');
 
-if (!isset($_GET['genical'])) {
+// The iCal/WebCal export authenticates with its own token further down
+if (!isset($_GET['genical']) || isset($_GET['checkavailability'])) {
     Session::checkRight("planning", READ);
 }
 
@@ -75,9 +76,9 @@ if (isset($_GET['checkavailability'])) {
 
     Planning::checkAvailability($_GET);
     Html::popFooter();
-} else if (isset($_GET['genical'])) {
+} elseif (isset($_GET['genical'])) {
     if (isset($_GET['token'])) {
-       // Check user token
+        // Check user token
         $user = Session::authWithToken(
             $_GET['token'],
             'personal_token',
@@ -86,8 +87,8 @@ if (isset($_GET['checkavailability'])) {
         );
         if ($user) {
             if (isset($_GET['entities_id']) && isset($_GET['is_recursive'])) {
-               // load entities & profiles
-               // needed to pass canViewItem() in populatePlanning functions in case of ical export
+                // load entities & profiles
+                // needed to pass canViewItem() in populatePlanning functions in case of ical export
                 $_SESSION["glpidefault_entity"]  = $user->fields['entities_id'];
                 Session::initEntityProfiles($user->getID());
                 if (isset($_SESSION['glpiprofiles'][$user->fields['profiles_id']])) {
@@ -127,7 +128,7 @@ if (isset($_GET['checkavailability'])) {
             $canview = false;
             // If not mine check global right
             if (!$ismine) {
-               // First check user
+                // First check user
                 $entities = Profile_User::getUserEntitiesForRight(
                     $user->getID(),
                     Planning::$rightname,
@@ -140,7 +141,7 @@ if (isset($_GET['checkavailability'])) {
                         $canview = true;
                     }
                 }
-               // Else check group
+                // Else check group
                 if (!$canview && $_GET['gID']) {
                     $group = new Group();
                     if ($group->getFromDB($_GET['gID'])) {

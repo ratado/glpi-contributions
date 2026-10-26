@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -43,9 +43,13 @@ Html::header_nocache();
 
 Session::checkCentralAccess();
 
+if (isset($_POST['entity_restrict'])) {
+    $_POST['entity_restrict'] = Session::getMatchingActiveEntities($_POST['entity_restrict']);
+}
+
 // Make a select box
 if ($_POST["idtable"] && class_exists($_POST["idtable"])) {
-   // Link to user for search only > normal users
+    // Link to user for search only > normal users
     $link = "getDropdownValue.php";
 
     if ($_POST["idtable"] == 'User') {
@@ -56,22 +60,27 @@ if ($_POST["idtable"] && class_exists($_POST["idtable"])) {
 
     $field_id = Html::cleanId("dropdown_" . $_POST["name"] . $rand);
 
-    $p        = [
+    $displaywith = ['otherserial', 'serial'];
+    $p = [
         'value'               => 0,
         'valuename'           => Dropdown::EMPTY_VALUE,
         'itemtype'            => $_POST["idtable"],
         'display_emptychoice' => true,
-        'displaywith'         => ['otherserial', 'serial'],
-        '_idor_token'         => Session::getNewIDORToken($_POST["idtable"]),
+        'displaywith'         => $displaywith,
+    ];
+    $idor_params = [
+        'displaywith' => $displaywith,
     ];
     if (isset($_POST['value'])) {
         $p['value'] = $_POST['value'];
     }
     if (isset($_POST['entity_restrict'])) {
-        $p['entity_restrict'] = $_POST['entity_restrict'];
+        $p['entity_restrict']           = $_POST['entity_restrict'];
+        $idor_params['entity_restrict'] = $_POST['entity_restrict'];
     }
     if (isset($_POST['condition'])) {
-        $p['condition'] = $_POST['condition'];
+        $p['condition']           = $_POST['condition'];
+        $idor_params['condition'] = $_POST['condition'];
     }
     if (isset($_POST['used'])) {
         $_POST['used'] = Toolbox::jsonDecode($_POST['used'], true);
@@ -82,6 +91,7 @@ if ($_POST["idtable"] && class_exists($_POST["idtable"])) {
     if (isset($_POST['width'])) {
         $p['width'] = $_POST['width'];
     }
+    $p['_idor_token'] = Session::getNewIDORToken($_POST["idtable"], $idor_params);
 
     echo  Html::jsAjaxDropdown(
         $_POST["name"],
@@ -92,7 +102,7 @@ if ($_POST["idtable"] && class_exists($_POST["idtable"])) {
 
     if (!empty($_POST['showItemSpecificity'])) {
         $params = ['items_id' => '__VALUE__',
-            'itemtype' => $_POST["idtable"]
+            'itemtype' => $_POST["idtable"],
         ];
         if (isset($_POST['entity_restrict'])) {
             $params['entity_restrict'] = $_POST['entity_restrict'];

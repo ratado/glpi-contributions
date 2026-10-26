@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -62,7 +62,7 @@ abstract class LevelAgreementLevel extends RuleTicket
      **/
     public function __construct()
     {
-       // Override in order not to use glpi_rules table.
+        // Override in order not to use glpi_rules table.
     }
 
 
@@ -71,7 +71,7 @@ abstract class LevelAgreementLevel extends RuleTicket
      **/
     public static function getConditionsArray()
     {
-       // Override ruleticket one
+        // Override ruleticket one
         return [];
     }
 
@@ -100,7 +100,7 @@ abstract class LevelAgreementLevel extends RuleTicket
 
         $tab[] = [
             'id'                 => 'common',
-            'name'               => __('Characteristics')
+            'name'               => __('Characteristics'),
         ];
 
         $tab[] = [
@@ -118,7 +118,7 @@ abstract class LevelAgreementLevel extends RuleTicket
             'field'              => 'name',
             'name'               => static::getTypeName(),
             'datatype'           => 'itemlink',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -128,7 +128,7 @@ abstract class LevelAgreementLevel extends RuleTicket
             'name'               => __('Execution'),
             'massiveaction'      => false,
             'searchtype'         => 'equals',
-            'datatype'           => 'specific'
+            'datatype'           => 'specific',
         ];
 
         $tab[] = [
@@ -138,7 +138,7 @@ abstract class LevelAgreementLevel extends RuleTicket
             'name'               => __('Logical operator'),
             'massiveaction'      => false,
             'searchtype'         => 'equals',
-            'datatype'           => 'specific'
+            'datatype'           => 'specific',
         ];
 
         $tab[] = [
@@ -146,7 +146,7 @@ abstract class LevelAgreementLevel extends RuleTicket
             'table'              => static::getTable(),
             'field'              => 'is_active',
             'name'               => __('Active'),
-            'datatype'           => 'bool'
+            'datatype'           => 'bool',
         ];
 
         $tab[] = [
@@ -155,7 +155,7 @@ abstract class LevelAgreementLevel extends RuleTicket
             'field'              => 'completename',
             'name'               => Entity::getTypeName(1),
             'massiveaction'      => false,
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -164,7 +164,7 @@ abstract class LevelAgreementLevel extends RuleTicket
             'field'              => 'is_recursive',
             'name'               => __('Child entities'),
             'datatype'           => 'bool',
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         return $tab;
@@ -203,15 +203,12 @@ abstract class LevelAgreementLevel extends RuleTicket
         return parent::getSpecificValueToSelect($field, $name, $values, $options);
     }
 
-
-
-
     public function getActions()
     {
 
         $actions = parent::getActions();
 
-       // Only append actors
+        // Only append actors
         $actions['_users_id_requester']['force_actions']  = ['append'];
         $actions['_groups_id_requester']['force_actions'] = ['append'];
         $actions['_users_id_assign']['force_actions']     = ['append'];
@@ -231,20 +228,15 @@ abstract class LevelAgreementLevel extends RuleTicket
     public function getCriterias()
     {
 
-        $actions = parent::getActions();
+        $criteria = parent::getCriterias();
 
-        unset($actions['olas_id']);
-        unset($actions['slas_id']);
-       // Could not be used as criteria
-        unset($actions['users_id_validate_requester_supervisor']);
-        unset($actions['users_id_validate_assign_supervisor']);
-        unset($actions['affectobject']);
-        unset($actions['groups_id_validate']);
-        unset($actions['users_id_validate']);
-        unset($actions['validation_percent']);
-        $actions['status']['name']    = __('Status');
-        $actions['status']['type']    = 'dropdown_status';
-        return $actions;
+        unset($criteria['olas_id']);
+        unset($criteria['slas_id']);
+        unset($criteria['slas_id_ttr']);
+        unset($criteria['slas_id_tto']);
+        $criteria['status']['name']    = __('Status');
+        $criteria['status']['type']    = 'dropdown_status';
+        return $criteria;
     }
 
 
@@ -342,7 +334,7 @@ abstract class LevelAgreementLevel extends RuleTicket
             }
         }
 
-       // Display default value;
+        // Display default value;
         if (($key = array_search($p['value'], $p['used'])) !== false) {
             unset($p['used'][$key]);
         }
@@ -371,8 +363,8 @@ abstract class LevelAgreementLevel extends RuleTicket
             'DISTINCT'        => true,
             'FROM'            => static::getTable(),
             'WHERE'           => [
-                static::$fkparent => $las_id
-            ]
+                static::$fkparent => $las_id,
+            ],
         ]);
 
         foreach ($iterator as $data) {
@@ -389,7 +381,10 @@ abstract class LevelAgreementLevel extends RuleTicket
             $nb = 0;
             switch ($item->getType()) {
                 case static::$parentclass:
-                    if ($_SESSION['glpishow_count_on_tabs']) {
+                    if (
+                        $_SESSION['glpishow_count_on_tabs']
+                        && ($item instanceof CommonDBTM)
+                    ) {
                         $nb =  countElementsInTable(static::getTable(), [static::$fkparent => $item->getID()]);
                     }
                     return self::createTabEntry(static::getTypeName(Session::getPluralNumber()), $nb);
@@ -403,6 +398,7 @@ abstract class LevelAgreementLevel extends RuleTicket
     {
 
         if ($item->getType() == static::$parentclass) {
+            /** @var OlaLevel|SlaLevel $level */
             $level = new static();
             $level->showForParent($item);
         }
@@ -419,5 +415,18 @@ abstract class LevelAgreementLevel extends RuleTicket
     {
         // No definition time here so we must guess the unit from the raw seconds value
         return abs($this->fields['execution_time']) >= DAY_TIMESTAMP;
+    }
+
+    public function getSpecificMassiveActions($checkitem = null)
+    {
+        $actions = parent::getSpecificMassiveActions($checkitem);
+
+        /**
+         * Remove the export action
+         * A levelAgreementLevel can not be exported
+         */
+        unset($actions[Rule::class . MassiveAction::CLASS_ACTION_SEPARATOR . 'export']);
+
+        return $actions;
     }
 }

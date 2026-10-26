@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -52,7 +52,7 @@ class Antivirus extends InventoryAsset
             'base_version' => 'signature_version',
             'enabled'      => 'is_active',
             'uptodate'     => 'is_uptodate',
-            'expiration'   => 'date_expiration'
+            'expiration'   => 'date_expiration',
         ];
 
         foreach ($this->data as &$val) {
@@ -73,7 +73,7 @@ class Antivirus extends InventoryAsset
             if (!property_exists($val, 'is_uptodate') || empty($val->is_uptodate)) {
                 $val->is_uptodate = 0;
             } else {
-                $val->is_uptodate = (int)$val->is_uptodate;
+                $val->is_uptodate = (int) $val->is_uptodate;
             }
 
             $val->is_dynamic = 1;
@@ -97,7 +97,7 @@ class Antivirus extends InventoryAsset
         $iterator = $DB->request([
             'SELECT' => ['id', 'name', 'antivirus_version', 'is_dynamic'],
             'FROM'   => ComputerAntivirus::getTable(),
-            'WHERE'  => ['computers_id' => $this->item->fields['id']]
+            'WHERE'  => ['computers_id' => $this->item->fields['id']],
         ]);
 
         foreach ($iterator as $data) {
@@ -116,7 +116,7 @@ class Antivirus extends InventoryAsset
         $value = $this->data;
         $computerAntivirus = new ComputerAntivirus();
 
-       //check for existing
+        //check for existing
         foreach ($value as $k => $val) {
             $compare = ['name' => $val->name, 'antivirus_version' => $val->antivirus_version];
             $compare = array_map('strtolower', $compare);
@@ -125,7 +125,7 @@ class Antivirus extends InventoryAsset
                 if ($compare == $arraydb) {
                     $computerAntivirus->getFromDB($keydb);
                     $input = $this->handleInput($val, $computerAntivirus) + [
-                        'id'           => $keydb
+                        'id'           => $keydb,
                     ];
                     $computerAntivirus->update(Sanitizer::sanitize($input));
                     unset($value[$k]);
@@ -135,7 +135,7 @@ class Antivirus extends InventoryAsset
             }
         }
 
-        if ((!$this->main_asset || !$this->main_asset->isPartial()) && count($db_antivirus) !== 0) {
+        if (count($db_antivirus) !== 0) {
             foreach ($db_antivirus as $idtmp => $data) {
                 if ($data['is_dynamic'] == 1) {
                     $computerAntivirus->delete(['id' => $idtmp], true);

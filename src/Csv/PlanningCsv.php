@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -73,7 +73,7 @@ class PlanningCsv implements ExportToCsvInterface
             __('Item type'),
             __('Item id'),
             __('Begin date'),
-            __('End date')
+            __('End date'),
         ];
     }
 
@@ -92,7 +92,7 @@ class PlanningCsv implements ExportToCsvInterface
             'who'       => $this->users_id,
             'whogroup'  => $this->groups_id,
             'begin'     => $begin,
-            'end'       => $end
+            'end'       => $end,
         ];
 
         if (empty($this->limititemtype)) {
@@ -122,7 +122,7 @@ class PlanningCsv implements ExportToCsvInterface
                     'itemtype'  => $itemtype->getTypeName(1),
                     'items_id'  => $val[$itemtype->getForeignKeyField()],
                     'begindate' => $dateBegin->format('Y-m-d H:i:s'),
-                    'enddate'   => $dateEnd->format('Y-m-d H:i:s')
+                    'enddate'   => $dateEnd->format('Y-m-d H:i:s'),
                 ];
             }
         }

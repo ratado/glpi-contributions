@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -68,7 +68,7 @@ if (($_POST["action"] ?? null) == "clone_event") {
 }
 
 if (($_POST["action"] ?? null) == "delete_event") {
-    $extevent->check(-1, DELETE);
+    $extevent->check((int) $_POST['event']['items_id'], DELETE);
     echo Planning::deleteEvent($_POST['event']);
     exit;
 }
@@ -80,7 +80,9 @@ if ($_REQUEST["action"] == "get_externalevent_template") {
         && $_POST[$key] > 0
     ) {
         $template = new PlanningExternalEventTemplate();
-        $template->getFromDB($_POST[$key]);
+        if (!$template->getFromDB((int) $_POST[$key]) || !$template->canViewItem()) {
+            Html::displayRightError();
+        }
 
         $template->fields = Sanitizer::decodeHtmlSpecialCharsRecursive($template->fields);
         $template->fields['rrule'] = json_decode($template->fields['rrule'], true);

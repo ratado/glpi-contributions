@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -41,35 +41,35 @@ use Glpi\Toolbox\Sanitizer;
  **/
 class Log extends CommonDBTM
 {
-    const HISTORY_ADD_DEVICE         = 1;
-    const HISTORY_UPDATE_DEVICE      = 2;
-    const HISTORY_DELETE_DEVICE      = 3;
-    const HISTORY_INSTALL_SOFTWARE   = 4;
-    const HISTORY_UNINSTALL_SOFTWARE = 5;
-    const HISTORY_DISCONNECT_DEVICE  = 6;
-    const HISTORY_CONNECT_DEVICE     = 7;
-    const HISTORY_LOCK_DEVICE        = 8;
-    const HISTORY_UNLOCK_DEVICE      = 9;
+    public const HISTORY_ADD_DEVICE         = 1;
+    public const HISTORY_UPDATE_DEVICE      = 2;
+    public const HISTORY_DELETE_DEVICE      = 3;
+    public const HISTORY_INSTALL_SOFTWARE   = 4;
+    public const HISTORY_UNINSTALL_SOFTWARE = 5;
+    public const HISTORY_DISCONNECT_DEVICE  = 6;
+    public const HISTORY_CONNECT_DEVICE     = 7;
+    public const HISTORY_LOCK_DEVICE        = 8;
+    public const HISTORY_UNLOCK_DEVICE      = 9;
 
-    const HISTORY_LOG_SIMPLE_MESSAGE = 12;
-    const HISTORY_DELETE_ITEM        = 13;
-    const HISTORY_RESTORE_ITEM       = 14;
-    const HISTORY_ADD_RELATION       = 15;
-    const HISTORY_DEL_RELATION       = 16;
-    const HISTORY_ADD_SUBITEM        = 17;
-    const HISTORY_UPDATE_SUBITEM     = 18;
-    const HISTORY_DELETE_SUBITEM     = 19;
-    const HISTORY_CREATE_ITEM        = 20;
-    const HISTORY_UPDATE_RELATION    = 21;
-    const HISTORY_LOCK_RELATION      = 22;
-    const HISTORY_LOCK_SUBITEM       = 23;
-    const HISTORY_UNLOCK_RELATION    = 24;
-    const HISTORY_UNLOCK_SUBITEM     = 25;
-    const HISTORY_LOCK_ITEM          = 26;
-    const HISTORY_UNLOCK_ITEM        = 27;
+    public const HISTORY_LOG_SIMPLE_MESSAGE = 12;
+    public const HISTORY_DELETE_ITEM        = 13;
+    public const HISTORY_RESTORE_ITEM       = 14;
+    public const HISTORY_ADD_RELATION       = 15;
+    public const HISTORY_DEL_RELATION       = 16;
+    public const HISTORY_ADD_SUBITEM        = 17;
+    public const HISTORY_UPDATE_SUBITEM     = 18;
+    public const HISTORY_DELETE_SUBITEM     = 19;
+    public const HISTORY_CREATE_ITEM        = 20;
+    public const HISTORY_UPDATE_RELATION    = 21;
+    public const HISTORY_LOCK_RELATION      = 22;
+    public const HISTORY_LOCK_SUBITEM       = 23;
+    public const HISTORY_UNLOCK_RELATION    = 24;
+    public const HISTORY_UNLOCK_SUBITEM     = 25;
+    public const HISTORY_LOCK_ITEM          = 26;
+    public const HISTORY_UNLOCK_ITEM        = 27;
 
-   // Plugin must use value starting from
-    const HISTORY_PLUGIN             = 1000;
+    // Plugin must use value starting from
+    public const HISTORY_PLUGIN             = 1000;
 
     public static $rightname = 'logs';
 
@@ -92,11 +92,14 @@ class Log extends CommonDBTM
         }
 
         $nb = 0;
-        if ($_SESSION['glpishow_count_on_tabs']) {
+        if (
+            $_SESSION['glpishow_count_on_tabs']
+            && ($item instanceof CommonDBTM)
+        ) {
             $nb = countElementsInTable(
                 'glpi_logs',
                 ['itemtype' => $item->getType(),
-                    'items_id' => $item->getID()
+                    'items_id' => $item->getID(),
                 ]
             );
         }
@@ -127,8 +130,8 @@ class Log extends CommonDBTM
         if (!count($oldvalues)) {
             return false;
         }
-       // needed to have  $SEARCHOPTION
-        list($real_type, $real_id) = $item->getLogTypeID();
+        // needed to have  $SEARCHOPTION
+        [$real_type, $real_id] = $item->getLogTypeID();
         $searchopt                 = Search::getOptions($real_type);
         if (!is_array($searchopt)) {
             return false;
@@ -141,13 +144,13 @@ class Log extends CommonDBTM
             }
             $changes = [];
 
-           // Parsing $SEARCHOPTION to find changed field
+            // Parsing $SEARCHOPTION to find changed field
             foreach ($searchopt as $key2 => $val2) {
                 if (!isset($val2['table'])) {
-                   // skip sub-title
+                    // skip sub-title
                     continue;
                 }
-               // specific for profile
+                // specific for profile
                 if (
                     ($item->getType() == 'ProfileRight')
                     && ($key == 'rights')
@@ -159,12 +162,12 @@ class Log extends CommonDBTM
                         $id_search_option = $key2;
                         $changes          =  [$id_search_option, addslashes($oldval ?? ''), $values[$key] ?? ''];
                     }
-                } else if (
+                } elseif (
                     ($val2['linkfield'] == $key && $real_type === $item->getType())
                        || ($key == $val2['field'] && $val2['table'] == $item->getTable())
                        || ($val2['linkfield'] == $key && $item->getType() == 'Infocom')
                 ) {
-                   // Linkfield or standard field not massive action enable
+                    // Linkfield or standard field not massive action enable
                     $id_search_option = $key2; // Give ID of the $SEARCHOPTION
 
                     if ($val2['table'] == $item->getTable()) {
@@ -174,7 +177,7 @@ class Log extends CommonDBTM
                         }
                         $changes = [$id_search_option, addslashes($oldval ?? ''), $values[$key] ?? ''];
                     } else {
-                       // other cases; link field -> get data from dropdown
+                        // other cases; link field -> get data from dropdown
                         if ($val2["table"] != 'glpi_auth_tables') {
                             $changes = [$id_search_option,
                                 addslashes(sprintf(
@@ -192,7 +195,7 @@ class Log extends CommonDBTM
                                         $values[$key]
                                     ),
                                     $values[$key]
-                                ))
+                                )),
                             ];
                         }
                     }
@@ -272,7 +275,7 @@ class Log extends CommonDBTM
             'date_mod'          => $date_mod,
             'id_search_option'  => $id_search_option,
             'old_value'         => $old_value,
-            'new_value'         => $new_value
+            'new_value'         => $new_value,
         ];
 
         if (static::$use_queue) {
@@ -283,7 +286,7 @@ class Log extends CommonDBTM
 
         $result = $DB->insert(self::getTable(), $params);
 
-        if ($result && $DB->affectedRows($result) > 0) {
+        if ($result && $DB->affectedRows() > 0) {
             return $_SESSION['glpi_maxhistory'] = $DB->insertId();
         }
         return false;
@@ -314,7 +317,7 @@ class Log extends CommonDBTM
         $is_filtered = count($filters) > 0;
         $sql_filters = self::convertFiltersValuesToSqlCriteria($filters);
 
-       // Total Number of events
+        // Total Number of events
         $total_number    = countElementsInTable("glpi_logs", ['items_id' => $items_id, 'itemtype' => $itemtype ]);
         $filtered_number = countElementsInTable("glpi_logs", ['items_id' => $items_id, 'itemtype' => $itemtype ] + $sql_filters);
 
@@ -342,7 +345,7 @@ class Log extends CommonDBTM
             'csv_url'           => $CFG_GLPI['root_doc'] . "/front/log/export.php?" . http_build_query([
                 'filter'   => $filters,
                 'itemtype' => $item::getType(),
-                'id'       => $item->getId()
+                'id'       => $item->getId(),
             ]),
         ]);
         ;
@@ -372,14 +375,14 @@ class Log extends CommonDBTM
             'FROM'   => self::getTable(),
             'WHERE'  => [
                 'items_id'  => $items_id,
-                'itemtype'  => $itemtype
+                'itemtype'  => $itemtype,
             ] + $sqlfilters,
-            'ORDER'  => 'id DESC'
+            'ORDER'  => 'id DESC',
         ];
 
         if ($limit) {
-            $query['START'] = (int)$start;
-            $query['LIMIT'] = (int)$limit;
+            $query['START'] = (int) $start;
+            $query['LIMIT'] = (int) $limit;
         }
 
         $iterator = $DBread->request($query);
@@ -396,11 +399,11 @@ class Log extends CommonDBTM
             $tmp['change']          = "";
             $tmp['datatype']        = "";
 
-           // This is an internal device ?
+            // This is an internal device ?
             if ($data["linked_action"]) {
                 $action_label = self::getLinkedActionLabel($data["linked_action"]);
 
-               // Yes it is an internal device
+                // Yes it is an internal device
                 switch ($data["linked_action"]) {
                     case self::HISTORY_CREATE_ITEM:
                     case self::HISTORY_DELETE_ITEM:
@@ -416,43 +419,43 @@ class Log extends CommonDBTM
                             if ($item2 instanceof Item_Devices) {
                                 $tmp['field'] = $item2->getDeviceTypeName(1);
                             } else {
-                                 $tmp['field'] = $item2->getTypeName(1);
+                                $tmp['field'] = $item2->getTypeName(1);
                             }
                         }
-                     //TRANS: %s is the component name
+                        //TRANS: %s is the component name
                         $tmp['change'] = sprintf(__('%1$s: %2$s'), $action_label, $data["new_value"]);
                         break;
 
                     case self::HISTORY_UPDATE_DEVICE:
-                         $tmp['field'] = NOT_AVAILABLE;
-                         $linktype_field = explode('#', $data["itemtype_link"]);
-                         $linktype       = $linktype_field[0];
-                         $field          = $linktype_field[1];
-                         $devicetype     = $linktype::getDeviceType();
-                         $tmp['field']   = $devicetype;
-                         $specif_fields  = $linktype::getSpecificities();
+                        $tmp['field'] = NOT_AVAILABLE;
+                        $linktype_field = explode('#', $data["itemtype_link"]);
+                        $linktype       = $linktype_field[0];
+                        $field          = $linktype_field[1];
+                        $devicetype     = $linktype::getDeviceType();
+                        $tmp['field']   = $devicetype;
+                        $specif_fields  = $linktype::getSpecificities();
                         if (isset($specif_fields[$field]['short name'])) {
                             $tmp['field']   = $devicetype;
                             $tmp['field']  .= " (" . $specif_fields[$field]['short name'] . ")";
                         }
-                         //TRANS: %1$s is the old_value, %2$s is the new_value
-                         $tmp['change']  = sprintf(
-                             __('%1$s: %2$s'),
-                             sprintf(__('%1$s (%2$s)'), $action_label, $tmp['field']),
-                             sprintf(__('%1$s by %2$s'), $data["old_value"], $data[ "new_value"])
-                         );
+                        //TRANS: %1$s is the old_value, %2$s is the new_value
+                        $tmp['change']  = sprintf(
+                            __('%1$s: %2$s'),
+                            sprintf(__('%1$s (%2$s)'), $action_label, $tmp['field']),
+                            sprintf(__('%1$s by %2$s'), $data["old_value"], $data[ "new_value"])
+                        );
                         break;
 
                     case self::HISTORY_DELETE_DEVICE:
-                         $tmp['field'] = NOT_AVAILABLE;
+                        $tmp['field'] = NOT_AVAILABLE;
                         if ($item2 = getItemForItemtype($data["itemtype_link"])) {
                             if ($item2 instanceof Item_Devices) {
-                                 $tmp['field'] = $item2->getDeviceTypeName(1);
+                                $tmp['field'] = $item2->getDeviceTypeName(1);
                             } else {
                                 $tmp['field'] = $item2->getTypeName(1);
                             }
                         }
-                       //TRANS: %s is the component name
+                        //TRANS: %s is the component name
                         $tmp['change'] = sprintf(__('%1$s: %2$s'), $action_label, $data["old_value"]);
                         break;
 
@@ -533,6 +536,7 @@ class Log extends CommonDBTM
                         $tmp['change'] = sprintf(__('%1$s: %2$s'), $action_label, $data["new_value"]);
 
                         if ($data['itemtype'] == 'Ticket') {
+                            /** @var CommonITILObject $item */
                             if ($data['id_search_option']) { // Recent record - see CommonITILObject::getSearchOptionsActors()
                                 $as = $SEARCHOPTION[$data['id_search_option']]['name'];
                             } else { // Old record
@@ -556,15 +560,15 @@ class Log extends CommonDBTM
                                     $isa = $item->$is(CommonITILActor::ASSIGN, $iditem);
                                     $iso = $item->$is(CommonITILActor::OBSERVER, $iditem);
                                 }
-                            // Simple Heuristic, of course not enough
+                                // Simple Heuristic, of course not enough
                                 if ($isr && !$isa && !$iso) {
                                     $as = _n('Requester', 'Requesters', 1);
-                                } else if (!$isr && $isa && !$iso) {
+                                } elseif (!$isr && $isa && !$iso) {
                                     $as = __('Assigned to');
-                                } else if (!$isr && !$isa && $iso) {
+                                } elseif (!$isr && !$isa && $iso) {
                                     $as = _n('Watcher', 'Watchers', 1);
                                 } else {
-                      // Deleted or Ambiguous
+                                    // Deleted or Ambiguous
                                     $as = false;
                                 }
                             }
@@ -581,11 +585,9 @@ class Log extends CommonDBTM
                         break;
 
                     case self::HISTORY_UPDATE_RELATION:
-                        $tmp['field']   = NOT_AVAILABLE;
-                        if ($linktype_field = explode('#', $data["itemtype_link"])) {
-                            $linktype     = $linktype_field[0];
-                            $tmp['field'] = is_a($linktype, CommonGLPI::class, true) ? $linktype::getTypeName() : $linktype;
-                        }
+                        $linktype_field = explode('#', $data["itemtype_link"]);
+                        $linktype     = $linktype_field[0];
+                        $tmp['field'] = is_a($linktype, CommonGLPI::class, true) ? $linktype::getTypeName() : $linktype;
                         $tmp['change'] = sprintf(
                             __('%1$s: %2$s'),
                             $action_label,
@@ -694,17 +696,17 @@ class Log extends CommonDBTM
                 $fieldname = "";
                 $searchopt = [];
                 $tablename = '';
-               // It's not an internal device
+                // It's not an internal device
                 foreach ($SEARCHOPTION as $key2 => $val2) {
                     if ($key2 === $data["id_search_option"]) {
-                         $tmp['field'] =  $val2["name"];
-                         $tablename    =  $val2["table"];
-                         $fieldname    = $val2["field"];
-                         $searchopt    = $val2;
+                        $tmp['field'] =  $val2["name"];
+                        $tablename    =  $val2["table"];
+                        $fieldname    = $val2["field"];
+                        $searchopt    = $val2;
                         if (isset($val2['datatype'])) {
                             $tmp['datatype'] = $val2["datatype"];
                         }
-                         break;
+                        break;
                     }
                 }
                 if (
@@ -712,7 +714,7 @@ class Log extends CommonDBTM
                     || ($tmp['datatype'] == 'right')
                 ) {
                     switch ($tmp['datatype']) {
-                         // specific case for text field
+                        // specific case for text field
                         case 'text':
                             $tmp['change'] = __('Update of the field');
                             break;
@@ -800,9 +802,9 @@ class Log extends CommonDBTM
             'FROM'            => self::getTable(),
             'WHERE'  => [
                 'items_id'  => $items_id,
-                'itemtype'  => $itemtype
+                'itemtype'  => $itemtype,
             ],
-            'ORDER'  => 'id DESC'
+            'ORDER'  => 'id DESC',
         ]);
 
         $values = [];
@@ -843,10 +845,10 @@ class Log extends CommonDBTM
             'FROM'    => self::getTable(),
             'WHERE'   => [
                 'items_id'  => $items_id,
-                'itemtype'  => $itemtype
+                'itemtype'  => $itemtype,
             ],
             'GROUPBY' => $affected_fields,
-            'ORDER'   => 'id DESC'
+            'ORDER'   => 'id DESC',
         ]);
 
         $values = [];
@@ -854,7 +856,7 @@ class Log extends CommonDBTM
             $key = null;
             $value = null;
 
-           // This is an internal device ?
+            // This is an internal device ?
             if ($data["linked_action"]) {
                 // Yes it is an internal device
                 switch ($data["linked_action"]) {
@@ -916,7 +918,7 @@ class Log extends CommonDBTM
 
                         $value = $devicetype;
                         if (isset($specif_fields[$field]['short name'])) {
-                             $value .= " (" . $specif_fields[$field]['short name'] . ")";
+                            $value .= " (" . $specif_fields[$field]['short name'] . ")";
                         }
                         break;
 
@@ -960,7 +962,7 @@ class Log extends CommonDBTM
                         break;
                 }
             } else {
-               // It's not an internal device
+                // It's not an internal device
                 foreach (Search::getOptions($itemtype) as $search_opt_key => $search_opt_val) {
                     if ($search_opt_key == $data["id_search_option"]) {
                         $key = 'id_search_option::' . $data['id_search_option'] . ';';
@@ -981,7 +983,7 @@ class Log extends CommonDBTM
                 $other = __('Others');
                 if ($a === $other) {
                     return 1;
-                } else if ($b === $other) {
+                } elseif ($b === $other) {
                     return -1;
                 }
 
@@ -1016,9 +1018,9 @@ class Log extends CommonDBTM
             'FROM'            => self::getTable(),
             'WHERE'  => [
                 'items_id'  => $items_id,
-                'itemtype'  => $itemtype
+                'itemtype'  => $itemtype,
             ],
-            'ORDER'           => 'id DESC'
+            'ORDER'           => 'id DESC',
         ]);
 
         $values = [];
@@ -1026,7 +1028,7 @@ class Log extends CommonDBTM
             $key = $data["linked_action"];
             $value = null;
 
-           // This is an internal device ?
+            // This is an internal device ?
             if ($data["linked_action"]) {
                 $value = self::getLinkedActionLabel($data["linked_action"]);
 
@@ -1049,7 +1051,7 @@ class Log extends CommonDBTM
                 $other = __('Others');
                 if ($a === $other) {
                     return 1;
-                } else if ($b === $other) {
+                } elseif ($b === $other) {
                     return -1;
                 }
 
@@ -1202,17 +1204,30 @@ class Log extends CommonDBTM
         if (isset($filters['affected_fields']) && !empty($filters['affected_fields'])) {
             $affected_field_crit = [];
             foreach ($filters['affected_fields'] as $index => $affected_field) {
+                $index = (int) $index;
                 $affected_field_crit[$index] = [];
                 foreach (explode(";", $affected_field) as $var) {
                     if (1 === preg_match('/^(?P<key>.+):(?P<operator>.*):(?P<values>.+)$/', $var, $matches)) {
                         $key = $matches['key'];
+                        $allowed_keys = ['linked_action', 'id_search_option', 'itemtype_link'];
+                        if (!in_array($key, $allowed_keys, true)) {
+                            continue;
+                        }
                         $operator = $matches['operator'];
+                        if (!empty($operator) && $operator != 'NOT') {
+                            throw new RuntimeException('Invalid operator: ' . $operator);
+                        }
                         // Each field can have multiple values for a given filter
                         $values = explode(',', $matches['values']);
 
                         // linked_action and id_search_option are stored as integers
                         if (in_array($key, ['linked_action', 'id_search_option'])) {
                             $values = array_map('intval', $values);
+                        } elseif ($key === 'itemtype_link') {
+                            $values = array_filter(
+                                $values,
+                                fn($val) => getItemForItemtype($val) !== false
+                            );
                         }
 
                         if (!empty($operator)) {
@@ -1222,10 +1237,15 @@ class Log extends CommonDBTM
                         }
                     }
                 }
+                if (empty($affected_field_crit[$index])) {
+                    unset($affected_field_crit[$index]);
+                }
             }
-            $sql_filters[] = [
-                'OR' => $affected_field_crit
-            ];
+            if ($affected_field_crit !== []) {
+                $sql_filters[] = [
+                    'OR' => $affected_field_crit,
+                ];
+            }
         }
 
         if (isset($filters['date']) && !empty($filters['date'])) {

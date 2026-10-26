@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -40,7 +40,7 @@
  **/
 class Document_Item extends CommonDBRelation
 {
-   // From CommonDBRelation
+    // From CommonDBRelation
     public static $itemtype_1    = 'Document';
     public static $items_id_1    = 'documents_id';
     public static $take_entity_1 = true;
@@ -68,7 +68,7 @@ class Document_Item extends CommonDBRelation
 
         if ($this->fields['itemtype'] == 'Ticket') {
             $ticket = new Ticket();
-           // Not item linked for closed tickets
+            // Not item linked for closed tickets
             if (
                 $ticket->getFromDB($this->fields['items_id'])
                 && in_array($ticket->fields['status'], $ticket->getClosedStatusArray())
@@ -107,7 +107,7 @@ class Document_Item extends CommonDBRelation
             return false;
         }
 
-       // Do not insert circular link for document
+        // Do not insert circular link for document
         if (
             ($input['itemtype'] == 'Document')
             && ($input['items_id'] == $input['documents_id'])
@@ -116,8 +116,8 @@ class Document_Item extends CommonDBRelation
             return false;
         }
 
-       // #1476 - Inject ID of the actual user to known who attach an already existing document
-       // to another item
+        // #1476 - Inject ID of the actual user to known who attach an already existing document
+        // to another item
         if (!isset($input['users_id'])) {
             $input['users_id'] = Session::getLoginUserID();
         }
@@ -130,7 +130,7 @@ class Document_Item extends CommonDBRelation
             }
         }
 
-       // Avoid duplicate entry
+        // Avoid duplicate entry
         if ($this->alreadyExists($input)) {
             trigger_error('Duplicated document item relation', E_USER_WARNING);
             return false;
@@ -154,7 +154,7 @@ class Document_Item extends CommonDBRelation
             'documents_id'      => $input['documents_id'],
             'itemtype'          => $input['itemtype'],
             'items_id'          => $input['items_id'],
-            'timeline_position' => $input['timeline_position'] ?? null
+            'timeline_position' => $input['timeline_position'] ?? null,
         ];
         if (array_key_exists('timeline_position', $input) && !empty($input['timeline_position'])) {
             $criteria['timeline_position'] = $input['timeline_position'];
@@ -170,7 +170,7 @@ class Document_Item extends CommonDBRelation
      **/
     public function pre_deleteItem()
     {
-       // fordocument mandatory
+        // fordocument mandatory
         if ($this->fields['itemtype'] == 'Ticket') {
             $ticket = new Ticket();
             $ticket->getFromDB($this->fields['items_id']);
@@ -183,12 +183,12 @@ class Document_Item extends CommonDBRelation
             );
 
             if (isset($tt->mandatory['_documents_id'])) {
-                 // refuse delete if only one document
+                // refuse delete if only one document
                 if (
                     countElementsInTable(
                         $this->getTable(),
                         ['items_id' => $this->fields['items_id'],
-                            'itemtype' => 'Ticket'
+                            'itemtype' => 'Ticket',
                         ]
                     ) == 1
                 ) {
@@ -216,6 +216,7 @@ class Document_Item extends CommonDBRelation
             $input  = [
                 'id'              => $this->fields['items_id'],
                 'date_mod'        => $_SESSION["glpi_currenttime"],
+                '_do_update_date_mod' => true,
             ];
 
             if (!isset($this->input['_do_notif']) || $this->input['_do_notif']) {
@@ -250,7 +251,7 @@ class Document_Item extends CommonDBRelation
                 $input['_forcenotif'] = true;
             }
 
-           //Clean ticket description if an image is in it
+            //Clean ticket description if an image is in it
             $doc = new Document();
             $doc->getFromDB($this->fields['documents_id']);
             if (!empty($doc->fields['tag'])) {
@@ -292,7 +293,7 @@ class Document_Item extends CommonDBRelation
                 return $ong;
 
             default:
-               // Can exist for template
+                // Can exist for template
                 if (
                     Document::canView()
                     || ($item->getType() == 'Ticket')
@@ -352,9 +353,9 @@ class Document_Item extends CommonDBRelation
             return false;
         }
         $canedit = $doc->can($instID, UPDATE);
-       // for a document,
-       // don't show here others documents associated to this one,
-       // it's done for both directions in self::showAssociated
+        // for a document,
+        // don't show here others documents associated to this one,
+        // it's done for both directions in self::showAssociated
         $types_iterator = self::getDistinctTypes($instID, ['NOT' => ['itemtype' => 'Document']]);
         $number = count($types_iterator);
 
@@ -378,7 +379,7 @@ class Document_Item extends CommonDBRelation
                                                            )
                                                            : $doc->fields['entities_id']),
                 'checkright'
-                                                      => true
+                                                      => true,
             ]);
             echo "</td><td class='center'>";
             echo "<input type='submit' name='add' value=\"" . _sx('button', 'Add') . "\" class='btn btn-primary'>";
@@ -418,15 +419,19 @@ class Document_Item extends CommonDBRelation
         echo $header_begin . $header_top . $header_end;
 
         foreach ($types_iterator as $type_row) {
-            $itemtype = $type_row['itemtype'];
-            if (!($item = getItemForItemtype($itemtype))) {
+            $main_itemtype = $type_row['itemtype'];
+            if (!is_a($main_itemtype, CommonDBTM::class, true)) {
                 continue;
             }
 
-            if ($item->canView()) {
-                $iterator = self::getTypeItems($instID, $itemtype);
+            if ($main_itemtype::canView()) {
+                $iterator = self::getTypeItems($instID, $main_itemtype);
 
                 foreach ($iterator as $data) {
+                    if (!($item = getItemForItemtype($main_itemtype))) {
+                        continue;
+                    }
+                    $itemtype = $main_itemtype;
                     $linkname_extra = "";
                     if ($item instanceof ITILFollowup || $item instanceof ITILSolution) {
                         $linkname_extra = "(" . $item::getTypeName(1) . ")";
@@ -435,7 +440,7 @@ class Document_Item extends CommonDBRelation
                         $item->getFromDB($data['items_id']);
                         $data['id'] = $item->fields['id'];
                         $data['entity'] = $item->fields['entities_id'];
-                    } else if (
+                    } elseif (
                         $item instanceof CommonITILTask
                         || $item instanceof CommonITILValidation
                     ) {
@@ -462,7 +467,7 @@ class Document_Item extends CommonDBRelation
                     }
                     if ($item instanceof CommonDevice) {
                         $linkname = $data["designation"];
-                    } else if ($item instanceof Item_Devices) {
+                    } elseif ($item instanceof Item_Devices) {
                         $linkname = $data["itemtype"];
                     } else {
                         $linkname = $data[$item::getNameField()];
@@ -566,7 +571,7 @@ class Document_Item extends CommonDBRelation
 
         $entity = $_SESSION["glpiactive_entity"];
         if ($item->isEntityAssign()) {
-           /// Case of personal items : entity = -1 : create on active entity (Reminder case))
+            /// Case of personal items : entity = -1 : create on active entity (Reminder case))
             if ($item->getEntityID() >= 0) {
                 $entity = $item->getEntityID();
             }
@@ -605,7 +610,7 @@ class Document_Item extends CommonDBRelation
          */
         global $CFG_GLPI, $DB;
 
-       //default options
+        //default options
         $params['rand'] = mt_rand();
         if (is_array($options) && count($options)) {
             foreach ($options as $key => $val) {
@@ -621,11 +626,11 @@ class Document_Item extends CommonDBRelation
             $withtemplate = 0;
         }
 
-       // find documents already associated to the item
+        // find documents already associated to the item
         $doc_item   = new self();
         $used_found = $doc_item->find([
             'items_id'  => $item->getID(),
-            'itemtype'  => $item->getType()
+            'itemtype'  => $item->getType(),
         ]);
         $used       = array_keys($used_found);
         $used       = array_combine($used, $used);
@@ -634,12 +639,12 @@ class Document_Item extends CommonDBRelation
             $item->canAddItem('Document')
             && $withtemplate < 2
         ) {
-           // Restrict entity for knowbase
+            // Restrict entity for knowbase
             $entities = "";
             $entity   = $_SESSION["glpiactive_entity"];
 
             if ($item->isEntityAssign()) {
-               /// Case of personal items : entity = -1 : create on active entity (Reminder case))
+                /// Case of personal items : entity = -1 : create on active entity (Reminder case))
                 if ($item->getEntityID() >= 0) {
                     $entity = $item->getEntityID();
                 }
@@ -655,8 +660,8 @@ class Document_Item extends CommonDBRelation
                 'COUNT'     => 'cpt',
                 'FROM'      => 'glpi_documents',
                 'WHERE'     => [
-                    'is_deleted' => 0
-                ] + getEntitiesRestrictCriteria('glpi_documents', '', $entities, true)
+                    'is_deleted' => 0,
+                ] + getEntitiesRestrictCriteria('glpi_documents', '', $entities, true),
             ])->current();
             $nb = $count['cpt'];
 
@@ -712,8 +717,8 @@ class Document_Item extends CommonDBRelation
                       $CFG_GLPI["documentcategories_id_forticket"] . "'>";
                 }
 
-                Document::dropdown(['entity' => $entities ,
-                    'used'   => $used
+                Document::dropdown(['entity' => $entities,
+                    'used'   => $used,
                 ]);
                 echo "</td><td class='center' width='20%'>";
                 echo "<input type='submit' name='add' value=\"" .
@@ -743,7 +748,7 @@ class Document_Item extends CommonDBRelation
         /** @var \DBmysql $DB */
         global $DB;
 
-       //default options
+        //default options
         $params['rand'] = mt_rand();
 
         if (is_array($options) && count($options)) {
@@ -762,7 +767,7 @@ class Document_Item extends CommonDBRelation
             'headings'  => __('Heading'),
             'mime'      => __('MIME type'),
             'tag'       => __('Tag'),
-            'assocdate' => _n('Date', 'Dates', 1)
+            'assocdate' => _n('Date', 'Dates', 1),
         ];
 
         if (isset($_GET["order"]) && ($_GET["order"] == "ASC")) {
@@ -786,7 +791,7 @@ class Document_Item extends CommonDBRelation
 
         $criteria = self::getDocumentForItemRequest($item, ["$sort $order"]);
 
-       // Document : search links in both order using union
+        // Document : search links in both order using union
         if ($item->getType() == 'Document') {
             $owhere = $criteria['WHERE'];
             $o2where =  $owhere + ['glpi_documents_items.documents_id' => $item->getID()];
@@ -794,8 +799,8 @@ class Document_Item extends CommonDBRelation
             $criteria['WHERE'] = [
                 'OR' => [
                     $owhere,
-                    $o2where
-                ]
+                    $o2where,
+                ],
             ];
         }
 
@@ -818,7 +823,7 @@ class Document_Item extends CommonDBRelation
         ) {
             Html::openMassiveActionsForm('mass' . __CLASS__ . $params['rand']);
             $massiveactionparams = ['num_displayed'  => min($_SESSION['glpilist_limit'], $number),
-                'container'      => 'mass' . __CLASS__ . $params['rand']
+                'container'      => 'mass' . __CLASS__ . $params['rand'],
             ];
             Html::showMassiveActions($massiveactionparams);
         }
@@ -852,18 +857,18 @@ class Document_Item extends CommonDBRelation
         $used = [];
 
         if ($number) {
-           // Don't use this for document associated to document
-           // To not loose navigation list for current document
+            // Don't use this for document associated to document
+            // To not loose navigation list for current document
             if ($item->getType() != 'Document') {
                 Session::initNavigateListItems(
                     'Document',
                     //TRANS : %1$s is the itemtype name,
-                              //        %2$s is the name of the item (used for headings of a list)
-                                           sprintf(
-                                               __('%1$s = %2$s'),
-                                               $item->getTypeName(1),
-                                               $item->getName()
-                                           )
+                    //        %2$s is the name of the item (used for headings of a list)
+                    sprintf(
+                        __('%1$s = %2$s'),
+                        $item->getTypeName(1),
+                        $item->getName()
+                    )
                 );
             }
 
@@ -950,11 +955,11 @@ class Document_Item extends CommonDBRelation
         $specificities              = parent::getRelationMassiveActionsSpecificities();
         $specificities['itemtypes'] = Document::getItemtypesThatCanHave();
 
-       // Define normalized action for add_item and remove_item
+        // Define normalized action for add_item and remove_item
         $specificities['normalized']['add'][]          = 'add_item';
         $specificities['normalized']['remove'][]       = 'remove_item';
 
-       // Set the labels for add_item and remove_item
+        // Set the labels for add_item and remove_item
         $specificities['button_labels']['add_item']    = $specificities['button_labels']['add'];
         $specificities['button_labels']['remove_item'] = $specificities['button_labels']['remove'];
 
@@ -979,28 +984,43 @@ class Document_Item extends CommonDBRelation
             static::getTable() . '.' . static::$items_id_1  => $items_id,
             [
                 static::getTable() . '.itemtype'                => static::$itemtype_1,
-                static::getTable() . '.' . static::$items_id_2  => $items_id
-            ]
-        ]
+                static::getTable() . '.' . static::$items_id_2  => $items_id,
+            ],
+        ],
         ];
 
         if ($itemtype != 'KnowbaseItem') {
             $params = parent::getTypeItemsQueryParams($items_id, $itemtype, $noent, $commonwhere);
         } else {
-           //KnowbaseItem case: no entity restriction, we'll manage it here
+            //KnowbaseItem case: no entity restriction, we'll manage it here
             $params = parent::getTypeItemsQueryParams($items_id, $itemtype, true, $commonwhere);
             $params['SELECT'][] = new QueryExpression('-1 AS entity');
             $kb_params = KnowbaseItem::getVisibilityCriteria();
 
             if (!Session::getLoginUserID()) {
-               // Anonymous access
+                // Anonymous access
                 $kb_params['WHERE'] = [
                     'glpi_entities_knowbaseitems.entities_id'    => 0,
-                    'glpi_entities_knowbaseitems.is_recursive'   => 1
+                    'glpi_entities_knowbaseitems.is_recursive'   => 1,
                 ];
             }
 
-            $params = array_merge_recursive($params, $kb_params);
+            // Use a subquery to check visibility instead of merging LEFT JOINs
+            // into the main query, which would multiply rows when a KB article
+            // has multiple visibility targets (profiles, users, groups, entities).
+            $subquery_criteria = [
+                'SELECT' => ['glpi_knowbaseitems.id'],
+                'FROM'   => 'glpi_knowbaseitems',
+            ];
+            if (isset($kb_params['LEFT JOIN'])) {
+                $subquery_criteria['LEFT JOIN'] = $kb_params['LEFT JOIN'];
+            }
+            if (isset($kb_params['WHERE'])) {
+                $subquery_criteria['WHERE'] = $kb_params['WHERE'];
+            }
+            $params['WHERE'][] = [
+                'glpi_knowbaseitems.id' => new QuerySubQuery($subquery_criteria),
+            ];
         }
 
         return $params;
@@ -1023,7 +1043,7 @@ class Document_Item extends CommonDBRelation
             $params = parent::getListForItemParams($item);
         } else {
             $params = parent::getListForItemParams($item, true);
-           // Anonymous access from FAQ
+            // Anonymous access from FAQ
             $params['WHERE'][self::getTable() . '.entities_id'] = 0;
         }
 
@@ -1046,9 +1066,9 @@ class Document_Item extends CommonDBRelation
             static::getTable() . '.' . static::$items_id_1  => $items_id,
             [
                 static::getTable() . '.itemtype'                => static::$itemtype_1,
-                static::getTable() . '.' . static::$items_id_2  => $items_id
-            ]
-        ]
+                static::getTable() . '.' . static::$items_id_2  => $items_id,
+            ],
+        ],
         ];
 
         $params = parent::getDistinctTypesParams($items_id, $extra_where);
@@ -1067,12 +1087,12 @@ class Document_Item extends CommonDBRelation
      */
     public function isFromSupportAgent()
     {
-       // If not a CommonITILObject
+        // If not a CommonITILObject
         if (!is_a($this->fields['itemtype'], 'CommonITILObject', true)) {
             return true;
         }
 
-       // Get parent item
+        // Get parent item
         $commonITILObject = new $this->fields['itemtype']();
         $commonITILObject->getFromDB($this->fields['items_id']);
 
@@ -1081,17 +1101,17 @@ class Document_Item extends CommonDBRelation
         $roles = $actors[$user_id] ?? [];
 
         if (in_array(CommonITILActor::ASSIGN, $roles)) {
-           // The author is assigned -> support agent
+            // The author is assigned -> support agent
             return true;
-        } else if (
+        } elseif (
             in_array(CommonITILActor::OBSERVER, $roles)
             || in_array(CommonITILActor::REQUESTER, $roles)
         ) {
-           // The author is an observer or a requester -> not a support agent
+            // The author is an observer or a requester -> not a support agent
             return false;
         } else {
-           // The author is not an actor of the ticket -> he was most likely a
-           // support agent that is no longer assigned to the ticket
+            // The author is not an actor of the ticket -> he was most likely a
+            // support agent that is no longer assigned to the ticket
             return true;
         }
     }
@@ -1105,32 +1125,32 @@ class Document_Item extends CommonDBRelation
                 'glpi_entities.id AS entityID',
                 'glpi_entities.completename AS entity',
                 'glpi_documentcategories.completename AS headings',
-                'glpi_documents.*'
+                'glpi_documents.*',
             ],
             'FROM'      => 'glpi_documents_items',
             'LEFT JOIN' => [
                 'glpi_documents'  => [
                     'ON' => [
                         'glpi_documents_items'  => 'documents_id',
-                        'glpi_documents'        => 'id'
-                    ]
+                        'glpi_documents'        => 'id',
+                    ],
                 ],
                 'glpi_entities'   => [
                     'ON' => [
                         'glpi_documents'  => 'entities_id',
-                        'glpi_entities'   => 'id'
-                    ]
+                        'glpi_entities'   => 'id',
+                    ],
                 ],
                 'glpi_documentcategories'  => [
                     'ON' => [
                         'glpi_documentcategories'  => 'id',
-                        'glpi_documents'           => 'documentcategories_id'
-                    ]
-                ]
+                        'glpi_documents'           => 'documentcategories_id',
+                    ],
+                ],
             ],
             'WHERE'     => [
                 'glpi_documents_items.items_id'  => $item->getID(),
-                'glpi_documents_items.itemtype'  => $item->getType()
+                'glpi_documents_items.itemtype'  => $item->getType(),
             ],
             'ORDERBY'   => $order,
         ];
@@ -1138,7 +1158,7 @@ class Document_Item extends CommonDBRelation
         if (Session::getLoginUserID()) {
             $criteria['WHERE'] = $criteria['WHERE'] + getEntitiesRestrictCriteria('glpi_documents', '', '', true);
         } else {
-           // Anonymous access from FAQ
+            // Anonymous access from FAQ
             $criteria['WHERE']['glpi_documents.entities_id'] = 0;
         }
 

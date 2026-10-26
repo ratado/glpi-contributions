@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -43,7 +43,7 @@ Session::checkRight("dropdown", UPDATE);
 $matching_field = null;
 
 if (isset($_POST['itemtype'], $_POST['field']) && is_a($_POST['itemtype'], CommonDropdown::class, true)) {
-    $itemtype = new $_POST['itemtype']();
+    $itemtype = getItemForItemtype($_POST['itemtype']);
     $matching_field = $itemtype->getAdditionalField($_POST['field']);
 }
 

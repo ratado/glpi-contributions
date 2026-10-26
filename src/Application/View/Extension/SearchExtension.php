@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -53,12 +53,12 @@ class SearchExtension extends AbstractExtension
 
     public function showItem(
         int $displaytype,
-        string $value = null,
+        ?string $value = null,
         int $num = 0,
         int $row = 0,
         string $extraparams = ""
     ): string {
-       // This is mandatory as Search::showItem expected third param to be passed by reference...
+        // This is mandatory as Search::showItem expected third param to be passed by reference...
         return Search::showItem($displaytype, $value, $num, $row, $extraparams);
     }
 }

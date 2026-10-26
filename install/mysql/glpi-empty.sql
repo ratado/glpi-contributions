@@ -5,7 +5,7 @@
 --
 -- http://glpi-project.org
 --
--- @copyright 2015-2024 Teclib' and contributors.
+-- @copyright 2015-2026 Teclib' and contributors.
 -- @copyright 2003-2014 by the INDEPNET Development Team.
 -- @licence   https://www.gnu.org/licenses/gpl-3.0.html
 --
@@ -900,8 +900,8 @@ CREATE TABLE `glpi_items_disks` (
   `device` varchar(255) DEFAULT NULL,
   `mountpoint` varchar(255) DEFAULT NULL,
   `filesystems_id` int unsigned NOT NULL DEFAULT '0',
-  `totalsize` int NOT NULL DEFAULT '0',
-  `freesize` int NOT NULL DEFAULT '0',
+  `totalsize` bigint NOT NULL DEFAULT '0',
+  `freesize` bigint NOT NULL DEFAULT '0',
   `is_deleted` tinyint NOT NULL DEFAULT '0',
   `is_dynamic` tinyint NOT NULL DEFAULT '0',
   `encryption_status` int NOT NULL DEFAULT '0',
@@ -2750,7 +2750,7 @@ CREATE TABLE `glpi_entities` (
   `send_domains_alert_close_expiries_delay` int NOT NULL DEFAULT '-2',
   `send_domains_alert_expired_delay` int NOT NULL DEFAULT '-2',
   `autoclose_delay` int NOT NULL DEFAULT '-2',
-  `autopurge_delay` int NOT NULL DEFAULT '-10',
+  `autopurge_delay` int NOT NULL DEFAULT '-2',
   `notclosed_delay` int NOT NULL DEFAULT '-2',
   `calendars_strategy` tinyint NOT NULL DEFAULT '-2',
   `calendars_id` int unsigned NOT NULL DEFAULT '0',
@@ -6094,7 +6094,8 @@ CREATE TABLE `glpi_queuednotifications` (
   KEY `send_time` (`send_time`),
   KEY `sent_time` (`sent_time`),
   KEY `mode` (`mode`),
-  KEY `notificationtemplates_id` (`notificationtemplates_id`)
+  KEY `notificationtemplates_id` (`notificationtemplates_id`),
+  KEY `recipient` (`recipient`(255))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
 
@@ -7589,7 +7590,7 @@ CREATE TABLE `glpi_users` (
   `date_sync` timestamp NULL DEFAULT NULL,
   `is_deleted` tinyint NOT NULL DEFAULT '0',
   `profiles_id` int unsigned NOT NULL DEFAULT '0',
-  `entities_id` int unsigned NOT NULL DEFAULT '0',
+  `entities_id` int unsigned DEFAULT '0',
   `usertitles_id` int unsigned NOT NULL DEFAULT '0',
   `usercategories_id` int unsigned NOT NULL DEFAULT '0',
   `date_format` int DEFAULT NULL,
@@ -7609,7 +7610,7 @@ CREATE TABLE `glpi_users` (
   `followup_private` tinyint DEFAULT NULL,
   `task_private` tinyint DEFAULT NULL,
   `default_requesttypes_id` int unsigned DEFAULT NULL,
-  `password_forget_token` char(40) DEFAULT NULL,
+  `password_forget_token` varchar(255) DEFAULT NULL,
   `password_forget_token_date` timestamp NULL DEFAULT NULL,
   `user_dn` text,
   `user_dn_hash` varchar(32),

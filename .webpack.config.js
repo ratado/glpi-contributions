@@ -51,6 +51,12 @@ let config = {
                 use: ['script-loader', 'strip-sourcemap-loader'],
             },
             {
+                // Test for a polyfill (or any file) and it won't be included in your
+                // bundle
+                test: path.resolve(__dirname, 'node_modules/jquery.fancytree/dist/modules/jquery.fancytree.ui-deps.js'),
+                use: 'null-loader',
+            },
+            {
             // Build styles
                 test: /\.css$/,
                 use: [MiniCssExtractPlugin.loader, 'css-loader'],
@@ -175,6 +181,14 @@ var filesToCopy = [
 ];
 
 let copyPatterns = [];
+
+// See https://github.com/glpi-project/glpi/issues/17745
+copyPatterns.push({
+    from:    path.resolve(__dirname, 'node_modules/flatpickr/dist/l10n/cat.js'),
+    to:      path.resolve(__dirname, libOutputPath + '/flatpickr/l10n/ca.js'),
+    toType:  'file',
+});
+
 for (let s = 0; s < filesToCopy.length; s++) {
     let specs = filesToCopy[s];
     let to = (specs.to || libOutputPath) + '/' + specs.package.replace(/^@/, ''); // remove leading @ in case of prefixed package

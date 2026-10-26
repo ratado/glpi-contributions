@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @copyright 2010-2022 by the FusionInventory Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
@@ -36,10 +36,8 @@
 
 namespace Glpi\Inventory\Asset;
 
-use Blacklist;
 use CommonDBTM;
 use Glpi\Toolbox\Sanitizer;
-use IPAddress;
 use Printer as GPrinter;
 use PrinterLog;
 use PrinterModel;
@@ -69,6 +67,10 @@ class Printer extends NetworkEquipment
 
     public function prepare(): array
     {
+        if ($this->item->getType() != GPrinter::getType() && $this->conf->import_printer == 0) {
+            return [];
+        }
+
         parent::prepare();
 
         if (!property_exists($this->raw_data->content ?? new \stdClass(), 'network_device')) {
@@ -107,12 +109,12 @@ class Printer extends NetworkEquipment
             }
             unset($val->port);
 
-           //inventoried printers certainly have ethernet
+            //inventoried printers certainly have ethernet
             if (property_exists($this->raw_data->content ?? new \stdClass(), 'network_device')) {
                 $val->have_ethernet = 1;
             }
 
-           // Hack for USB Printer serial
+            // Hack for USB Printer serial
             if (
                 property_exists($val, 'serial')
                 && preg_match('/\/$/', $val->serial)
@@ -145,10 +147,10 @@ class Printer extends NetworkEquipment
                 }
 
                 if (isset($this->extra_data['pagecounters'])) {
-                    $pcounter = (object)$this->extra_data['pagecounters'];
+                    $pcounter = (object) $this->extra_data['pagecounters'];
                     foreach ($mapping_pcounter as $origin => $dest) {
                         if (property_exists($pcounter, $origin)) {
-                             $pcounter->$dest = $pcounter->$origin;
+                            $pcounter->$dest = $pcounter->$origin;
                         }
 
                         if (property_exists($pcounter, 'total_pages')) {
@@ -220,7 +222,7 @@ class Printer extends NetworkEquipment
         $lclass = null;
         if (class_exists($this->item->getType() . '_Item')) {
             $lclass = $this->item->getType() . '_Item';
-        } else if (class_exists('Item_' . $this->item->getType())) {
+        } elseif (class_exists('Item_' . $this->item->getType())) {
             $lclass = 'Item_' . $this->item->getType();
         } else {
             throw new \RuntimeException('Unable to find linked item object name for ' . $this->item->getType());
@@ -232,15 +234,16 @@ class Printer extends NetworkEquipment
                 'itemtype'     => "Printer",
                 'name'         => $val->name,
                 'serial'       => $val->serial ?? '',
-                'is_dynamic'   => 1
+                'is_dynamic'   => 1,
             ];
             $data = $rule->processAllRules($input, [], ['class' => $this, 'return' => true]);
             if (isset($data['found_inventories'])) {
                 $items_id = null;
                 $itemtype = 'Printer';
                 if ($data['found_inventories'][0] == 0) {
-                   // add printer
+                    // add printer
                     $val->entities_id = $entities_id;
+                    $val->is_recursive = $this->is_recursive;
                     $val->is_dynamic = 1;
                     $items_id = $printer->add(Sanitizer::sanitize($this->handleInput($val, $printer)));
                 } else {
@@ -259,7 +262,7 @@ class Printer extends NetworkEquipment
                     'items_id'  => $items_id,
                     'itemtype'  => $itemtype,
                     'agents_id' => $agents_id,
-                    'method'    => 'inventory'
+                    'method'    => 'inventory',
                 ];
                 $rulesmatched->add($inputrulelog, [], false);
                 $rulesmatched->cleanOlddata(end($printers), 'Printer');
@@ -269,24 +272,24 @@ class Printer extends NetworkEquipment
         $iterator = $DB->request([
             'SELECT'    => [
                 'glpi_printers.id',
-                'glpi_computers_items.id AS link_id'
+                'glpi_computers_items.id AS link_id',
             ],
             'FROM'      => 'glpi_computers_items',
             'LEFT JOIN' => [
                 'glpi_printers' => [
                     'FKEY' => [
                         'glpi_printers'         => 'id',
-                        'glpi_computers_items'  => 'items_id'
-                    ]
-                ]
+                        'glpi_computers_items'  => 'items_id',
+                    ],
+                ],
             ],
             'WHERE'     => [
                 'itemtype'                          => 'Printer',
                 'computers_id'                      => $this->item->fields['id'],
                 'entities_id'                       => $entities_id,
                 'glpi_computers_items.is_dynamic'   => 1,
-                'glpi_printers.is_global'           => 0
-            ]
+                'glpi_printers.is_global'           => 0,
+            ],
         ]);
 
         foreach ($iterator as $data) {
@@ -295,7 +298,7 @@ class Printer extends NetworkEquipment
             $db_printers[$idtmp] = $data['id'];
         }
         if (count($db_printers)) {
-           // Check all fields from source:
+            // Check all fields from source:
             foreach ($printers as $key => $printers_id) {
                 foreach ($db_printers as $keydb => $prints_id) {
                     if ($printers_id == $prints_id) {
@@ -306,7 +309,7 @@ class Printer extends NetworkEquipment
                 }
             }
 
-           // Delete printers links in DB
+            // Delete printers links in DB
             foreach ($db_printers as $idtmp => $data) {
                 $link_item->delete(['id' => $idtmp], true);
             }
@@ -318,7 +321,7 @@ class Printer extends NetworkEquipment
                 'computers_id' => $this->item->fields['id'],
                 'itemtype'     => 'Printer',
                 'items_id'     => $printers_id,
-                'is_dynamic'   => 1
+                'is_dynamic'   => 1,
             ];
             $this->addOrMoveItem($input);
         }
@@ -349,7 +352,7 @@ class Printer extends NetworkEquipment
             'printers_id' => $this->item->fields['id'],
             'date'        => date('Y-m-d', strtotime($_SESSION['glpi_currenttime'])),
         ];
-        $input = array_merge((array)$this->counters, $unicity_input);
+        $input = array_merge((array) $this->counters, $unicity_input);
 
         $metrics = new PrinterLog();
         if ($metrics->getFromDBByCrit($unicity_input)) {
@@ -358,36 +361,6 @@ class Printer extends NetworkEquipment
         } else {
             $metrics->add(Sanitizer::sanitize($input), [], false);
         }
-    }
-
-    /**
-     * Try to know if printer need to be updated from discovery
-     * Only if IP has changed
-     * @return boolean
-     */
-    public static function needToBeUpdatedFromDiscovery(CommonDBTM $item, $val)
-    {
-        if (property_exists($val, 'ips')) {
-            foreach ($val->ips as $ip) {
-                $blacklist = new Blacklist();
-                //exclude IP if needed
-                if ('' != $blacklist->process(Blacklist::IP, $ip)) {
-                    //try to find IP (get from discovery) from known IP of Printer
-                    //if found refuse update
-                    //if no, printer IP have changed so  we allow the update from discovery
-                    $ipadress = new IPAddress($ip);
-                    $tmp['mainitems_id'] = $item->fields['id'];
-                    $tmp['mainitemtype'] = $item::getType();
-                    $tmp['is_dynamic']   = 1;
-                    $tmp['name']         = $ipadress->getTextual();
-                    if ($ipadress->getFromDBByCrit(Sanitizer::sanitize($tmp))) {
-                        return false;
-                    }
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public function getItemtype(): string

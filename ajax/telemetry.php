@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -43,12 +43,16 @@ Html::header_nocache();
 
 if (!($_SESSION['telemetry_from_install'] ?? false)) {
     Session::checkRight("config", READ);
+    $hide_sensitive_data = false;
+} else {
+    $hide_sensitive_data = true;
 }
 
 echo Html::css("public/lib/prismjs.css");
 echo Html::script("public/lib/prismjs.js");
 
-$infos = Telemetry::getTelemetryInfos();
+$infos = Telemetry::getTelemetryInfos($hide_sensitive_data);
+
 echo "<p>" . __("We only collect the following data: plugins usage, performance and responsiveness statistics about user interface features, memory, and hardware configuration.") . "</p>";
 echo "<pre><code class='language-json'>";
 echo json_encode($infos, JSON_PRETTY_PRINT);

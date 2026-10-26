@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -38,13 +38,13 @@ global $CFG_GLPI;
 
 include('../inc/includes.php');
 
-if (!isset($_GET['itemtype']) || !class_exists($_GET['itemtype'])) {
+$itemDevice = getItemForItemtype($_GET['itemtype']);
+if (!$itemDevice) {
     throw new \RuntimeException(
         'Missing or incorrect item device type called!'
     );
 }
 
-$itemDevice = new $_GET['itemtype']();
 if (!$itemDevice->canView()) {
     Session::redirectIfNotLoggedIn();
     Html::displayRightError();
@@ -56,6 +56,6 @@ if (in_array($itemDevice->getType(), $CFG_GLPI['devices_in_menu'])) {
     Html::header($itemDevice->getTypeName(Session::getPluralNumber()), '', "config", "commondevice", $itemDevice->getType());
 }
 
-Search::show($_GET['itemtype']);
+Search::show($itemDevice->getType());
 
 Html::footer();

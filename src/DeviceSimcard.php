@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -52,19 +52,19 @@ class DeviceSimcard extends CommonDevice
                 [
                     'name'  => 'devicesimcardtypes_id',
                     'label' => _n('Type', 'Types', 1),
-                    'type'  => 'dropdownValue'
+                    'type'  => 'dropdownValue',
                 ],
                 [
                     'name'  => 'voltage',
                     'label' => __('Voltage'),
                     'type'  => 'integer',
                     'min'   => 0,
-                    'unit'  => 'mV'
+                    'unit'  => 'mV',
                 ],
                 [
                     'name'  => 'allow_voip',
                     'label' => __('Allow VOIP'),
-                    'type'  => 'bool'
+                    'type'  => 'bool',
                 ],
             ]
         );
@@ -87,7 +87,7 @@ class DeviceSimcard extends CommonDevice
             'table'              => 'glpi_devicesimcardtypes',
             'field'              => 'name',
             'name'               => _n('Type', 'Types', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -95,7 +95,7 @@ class DeviceSimcard extends CommonDevice
             'table'              => $this->getTable(),
             'field'              => 'allow_voip',
             'name'               => __('Allow VOIP'),
-            'datatype'           => 'bool'
+            'datatype'           => 'bool',
         ];
 
         return $tab;
@@ -114,7 +114,7 @@ class DeviceSimcard extends CommonDevice
         return [
             'designation'             => 'equal',
             'manufacturers_id'        => 'equal',
-            'devicesensortypes_id'    => 'equal',
+            'devicesimcardtypes_id'   => 'equal',
         ];
     }
 

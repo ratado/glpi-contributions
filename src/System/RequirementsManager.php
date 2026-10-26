@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -63,11 +63,11 @@ class RequirementsManager
     /**
      * Returns core requirement list.
      *
-     * @param \DBmysql $db  DB instance (if null BD requirements will not be returned).
+     * @param \DBmysql|null $db  DB instance (if null BD requirements will not be returned).
      *
      * @return RequirementsList
      */
-    public function getCoreRequirementList(\DBmysql $db = null): RequirementsList
+    public function getCoreRequirementList(?\DBmysql $db = null): RequirementsList
     {
         $requirements = [];
 

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -56,7 +56,6 @@ class SavedSearch_User extends CommonDBRelation
                 } else {
                     return "<span class='fa fa-star bookmark_record'><span class='sr-only'>" . __('No') . "</span></span>";
                 }
-                break;
         }
         return parent::getSpecificValueToDisplay($field, $values, $options);
     }
@@ -76,7 +75,7 @@ class SavedSearch_User extends CommonDBRelation
                     $options['name'],
                     [
                         '1'   => __('Yes'),
-                        '0'   => __('No')
+                        '0'   => __('No'),
                     ],
                     $options
                 );
@@ -104,14 +103,14 @@ class SavedSearch_User extends CommonDBRelation
         $iter = $DB->request(['SELECT' => 'savedsearches_id',
             'FROM'   => 'glpi_savedsearches_users',
             'WHERE'  => ['users_id' => $users_id,
-                'itemtype' => $itemtype
-            ]
+                'itemtype' => $itemtype,
+            ],
         ]);
         if (count($iter)) {
             $row = $iter->current();
-           // Load default bookmark for this $itemtype
+            // Load default bookmark for this $itemtype
             $bookmark = new SavedSearch();
-           // Only get data for bookmarks
+            // Only get data for bookmarks
             return $bookmark->getParameters($row['savedsearches_id']);
         }
         return false;

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -35,9 +35,9 @@
 
 class DomainRelation extends CommonDropdown
 {
-    const BELONGS = 1;
-    const MANAGE = 2;
-   // From CommonDBTM
+    public const BELONGS = 1;
+    public const MANAGE = 2;
+    // From CommonDBTM
     public $dohistory                   = true;
     public static $rightname                   = 'dropdown';
 
@@ -45,12 +45,12 @@ class DomainRelation extends CommonDropdown
         [
             'id'        => self::BELONGS,
             'name'      => 'Belongs',
-            'comment'   => 'Item belongs to domain'
+            'comment'   => 'Item belongs to domain',
         ], [
             'id'        => self::MANAGE,
             'name'      => 'Manage',
-            'comment'   => 'Item manages domain'
-        ]
+            'comment'   => 'Item manages domain',
+        ],
     ];
 
     public static function getTypeName($nb = 0)
@@ -119,7 +119,7 @@ class DomainRelation extends CommonDropdown
     public function pre_deleteItem()
     {
         if (in_array($this->fields['id'], [self::BELONGS, self::MANAGE])) {
-           //keep defaults
+            //keep defaults
             return false;
         }
         return true;

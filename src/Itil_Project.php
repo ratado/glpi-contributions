@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -70,6 +70,7 @@ class Itil_Project extends CommonDBRelation
                 case Change::class:
                 case Problem::class:
                 case Ticket::class:
+                    /** @var Change|Problem|Ticket $item */
                     if ($_SESSION['glpishow_count_on_tabs']) {
                         $nb = countElementsInTable(
                             self::getTable(),
@@ -83,6 +84,7 @@ class Itil_Project extends CommonDBRelation
                     break;
 
                 case Project::class:
+                    /** @var Project $item */
                     if ($_SESSION['glpishow_count_on_tabs']) {
                         $nb = countElementsInTable(self::getTable(), ['projects_id' => $item->getID()]);
                     }
@@ -133,7 +135,7 @@ class Itil_Project extends CommonDBRelation
 
         $canedit = $project->canEdit($ID);
 
-        /** @var CommonITILObject $itemtype */
+        /** @var class-string<CommonITILObject> $itemtype */
         foreach ([Change::class, Problem::class, Ticket::class] as $itemtype) {
             $rand    = mt_rand();
 
@@ -143,7 +145,7 @@ class Itil_Project extends CommonDBRelation
             $iterator = $DB->request([
                 'SELECT'          => [
                     "$selfTable.id AS linkid",
-                    "$itemTable.*"
+                    "$itemTable.*",
                 ],
                 'DISTINCT'        => true,
                 'FROM'            => $selfTable,
@@ -189,7 +191,7 @@ class Itil_Project extends CommonDBRelation
                         $label = __('Add a problem');
                         break;
                     case Ticket::class:
-                         $label = __('Add a ticket');
+                        $label = __('Add a ticket');
                         break;
                 }
                 echo '<tr class="tab_bg_2"><th colspan="2">' . $label . '</th></tr>';
@@ -241,16 +243,16 @@ class Itil_Project extends CommonDBRelation
 
                 $i = 0;
                 foreach ($items as $data) {
-                     Session::addToNavigateListItems($itemtype, $data['id']);
-                     $itemtype::showShort(
-                         $data['id'],
-                         [
-                             'row_num'                => $i,
-                             'type_for_massiveaction' => __CLASS__,
-                             'id_for_massiveaction'   => $data['linkid']
-                         ]
-                     );
-                     $i++;
+                    Session::addToNavigateListItems($itemtype, $data['id']);
+                    $itemtype::showShort(
+                        $data['id'],
+                        [
+                            'row_num'                => $i,
+                            'type_for_massiveaction' => __CLASS__,
+                            'id_for_massiveaction'   => $data['linkid'],
+                        ]
+                    );
+                    $i++;
                 }
                 $itemtype::commonListHeader(Search::HTML_OUTPUT, $massContainerId);
             }
@@ -290,7 +292,7 @@ class Itil_Project extends CommonDBRelation
         $iterator = $DB->request([
             'SELECT'          => [
                 "$selfTable.id AS linkid",
-                "$projectTable.*"
+                "$projectTable.*",
             ],
             'DISTINCT'        => true,
             'FROM'            => $selfTable,
@@ -341,7 +343,7 @@ class Itil_Project extends CommonDBRelation
             Project::dropdown(
                 [
                     'used'   => $used,
-                    'entity' => $itil->getEntityID()
+                    'entity' => $itil->getEntityID(),
                 ]
             );
             echo '</td>';
@@ -386,10 +388,10 @@ class Itil_Project extends CommonDBRelation
                     [
                         'row_num'               => $i,
                         'type_for_massiveaction' => __CLASS__,
-                        'id_for_massiveaction'   => $data['linkid']
+                        'id_for_massiveaction'   => $data['linkid'],
                     ]
                 );
-                 $i++;
+                $i++;
             }
             Project::commonListHeader(Search::HTML_OUTPUT, $massContainerId);
         }

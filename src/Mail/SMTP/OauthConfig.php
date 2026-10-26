@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -52,9 +52,7 @@ final class OauthConfig
     /**
      * Singleton constructor. Keep it private to force usage of `getInstance()`.
      */
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Get singleton instance.
@@ -119,14 +117,13 @@ final class OauthConfig
                     $config['proxy_name'],
                     $config['proxy_port']
                 );
-            $provider_options['verify'] = false;
         }
 
         $provider = new $provider_class(
             [
                 'clientId'     => $client_id,
                 'clientSecret' => $client_secret,
-                'redirectUri'  => $config['url_base'] . '/front/smtp_oauth2_callback.php'
+                'redirectUri'  => $config['url_base'] . '/front/smtp_oauth2_callback.php',
             ] + $provider_options
         );
 

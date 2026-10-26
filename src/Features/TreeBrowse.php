@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -38,7 +38,6 @@ namespace Glpi\Features;
 use CommonDBTM;
 use CommonITILObject;
 use CommonTreeDropdown;
-use DB;
 use DropdownTranslation;
 use Html;
 use ITILCategory;
@@ -63,10 +62,12 @@ trait TreeBrowse
 
         $ajax_url    = $CFG_GLPI["root_doc"] . "/ajax/treebrowse.php";
         $loading_txt = __s('Loading...');
-        $start       = (int)($_REQUEST['start'] ?? 0);
-        $browse      = (int)($_REQUEST['browse'] ?? 0);
-        $is_deleted  = (int)($_REQUEST['is_deleted'] ?? 0);
+        $start       = (int) ($_REQUEST['start'] ?? 0);
+        $browse      = (int) ($_REQUEST['browse'] ?? 0);
+        $is_deleted  = (int) ($_REQUEST['is_deleted'] ?? 0);
         $criteria    = json_encode($params['criteria']);
+        $sort        = json_encode($_REQUEST['sort'] ?? []);
+        $order       = json_encode($_REQUEST['order'] ?? []);
 
         $category_list = json_encode(self::getTreeCategoryList($itemtype, $params));
         $no_cat_found  = __s("No category found");
@@ -83,16 +84,22 @@ trait TreeBrowse
                 'start': $start,
                 'browse': $browse,
                 'is_deleted': $is_deleted,
-                'criteria': $criteria
+                'criteria': $criteria,
+                'sort': $sort,
+                'order': $order,
             });
         };
 JAVASCRIPT;
 
         if ($update) {
-            $category_list = json_encode(self::getTreeCategoryList($itemtype, $params));
             $JS .= <<<JAVASCRIPT
             $('#tree_category').fancytree('option', 'source', {$category_list});
 JAVASCRIPT;
+
+            $params['criteria'][] = $_SESSION['treebrowse'][$itemtype];
+            $results = Search::getDatas($itemtype, $params);
+            $results['searchform_id'] = $params['searchform_id'] ?? null;
+            Search::displayData($results);
         } else {
             $JS .= <<<JAVASCRIPT
             $(function() {
@@ -198,8 +205,8 @@ JAVASCRIPT;
                 'FROM'   => $itemtype::getTable(),
                 'WHERE'  => [
                     $itemtype::getTableField($cat_fk) => new QueryExpression($DB::quoteName($cat_itemtype::getTableField('id'))),
-                    $id_criteria
-                ]
+                    $id_criteria,
+                ],
             ],
             'items_count'
         );
@@ -221,7 +228,7 @@ JAVASCRIPT;
         $cat_iterator = $DB->request([
             'SELECT' => $select,
             'FROM' => $cat_table,
-            'ORDER' => $order
+            'ORDER' => $order,
         ]);
 
         $inst = new $cat_itemtype();
@@ -247,17 +254,15 @@ JAVASCRIPT;
                 'WHERE'  => [
                     $itemtype::getTableField($cat_fk) => 0,
                     $id_criteria,
-                ]
+                ],
             ]
         )->current();
-        if ($no_cat_count['cpt'] > 0) {
-            $categories[] = [
-                'id'          => -1,
-                'name'        => __s('Without Category'),
-                'items_count' => $no_cat_count['cpt'],
-                $cat_fk       => 0,
-            ];
-        }
+        $categories[] = [
+            'id'          => -1,
+            'name'        => __s('Without Category'),
+            'items_count' => $no_cat_count['cpt'],
+            $cat_fk       => 0,
+        ];
 
         // construct flat data
         $nodes   = [];
@@ -268,7 +273,7 @@ JAVASCRIPT;
                 'title'  => $category['name'],
                 'parent' => $category[$cat_fk] ?? 0,
                 'a_attr' => [
-                    'data-id' => $cat_id
+                    'data-id' => $cat_id,
                 ],
             ];
 
@@ -281,7 +286,7 @@ JAVASCRIPT;
             $nodes[] = $node;
         }
 
-       // recursive construct tree data
+        // recursive construct tree data
         $buildtree = function (array &$elements, $parent = 0) use (&$buildtree) {
             $branch = [];
 
@@ -289,7 +294,7 @@ JAVASCRIPT;
                 if ($element['parent'] === $parent) {
                     $children = $buildtree($elements, $element['key']);
                     if (count($children) > 0) {
-                         $element['children'] = $children;
+                        $element['children'] = $children;
                     }
                     $branch[] = $element;
                     unset($elements[$index]);

@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -86,23 +86,23 @@ $RELATION = [
     ],
 
     'glpi_applianceenvironments' => [
-        'glpi_appliances' => 'applianceenvironments_id'
+        'glpi_appliances' => 'applianceenvironments_id',
     ],
 
     'glpi_appliances'     => [
-        '_glpi_appliances_items' => 'appliances_id'
+        '_glpi_appliances_items' => 'appliances_id',
     ],
 
     'glpi_appliances_items' => [
-        '_glpi_appliances_items_relations' => 'appliances_items_id'
+        '_glpi_appliances_items_relations' => 'appliances_items_id',
     ],
 
     'glpi_appliancetypes' => [
-        'glpi_appliances' => 'appliancetypes_id'
+        'glpi_appliances' => 'appliancetypes_id',
     ],
 
     'glpi_databaseinstancetypes' => [
-        'glpi_databaseinstances' => 'databaseinstancetypes_id'
+        'glpi_databaseinstances' => 'databaseinstancetypes_id',
     ],
 
     'glpi_authldaps' => [
@@ -478,11 +478,11 @@ $RELATION = [
     ],
 
     'glpi_domaintypes' => [
-        'glpi_domains'  => 'domaintypes_id'
+        'glpi_domains'  => 'domaintypes_id',
     ],
 
     'glpi_domainrecordtypes'    => [
-        'glpi_domainrecords'  => 'domainrecordtypes_id'
+        'glpi_domainrecords'  => 'domainrecordtypes_id',
     ],
 
     'glpi_enclosuremodels' => [
@@ -1286,7 +1286,7 @@ $RELATION = [
         'glpi_cables' => [
             'sockets_id_endpoint_a',
             'sockets_id_endpoint_b',
-        ]
+        ],
     ],
 
     'glpi_softwarecategories' => [
@@ -1632,6 +1632,7 @@ global $CFG_GLPI;
 $specifically_managed_types = [
     Agent::class, // FIXME Agent should be a CommonDBChild with $mustBeAttached=true
     Consumable::class, // Consumables are handled manually to redefine `date_out` to `null`
+    DatabaseInstance::class, // FIXME DatabaseInstance should be a CommonDBChild with $mustBeAttached=true
     Item_Cluster::class, // FIXME $mustBeAttached_1 and $mustBeAttached_2 should probably be set to true
     Item_Enclosure::class, // FIXME $mustBeAttached_1 and $mustBeAttached_2 should probably be set to true
     Item_Rack::class, // FIXME $mustBeAttached_1 and $mustBeAttached_2 should probably be set to true
@@ -1712,6 +1713,7 @@ foreach ($polymorphic_types_mapping as $target_itemtype => $source_itemtypes) {
             // related item will be preserved with its foreign key defined to 0, making it an unwanted orphaned item.
             $target_table_key_prefix = '_';
         }
+        /** @var class-string<CommonDBTM> $target_itemtype */
         $target_table_key = $target_table_key_prefix . $target_itemtype::getTable();
         $source_table     = $source_itemtype::getTable();
 

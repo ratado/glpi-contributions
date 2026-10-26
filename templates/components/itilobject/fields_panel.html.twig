@@ -5,8 +5,7 @@
  #
  # http://glpi-project.org
  #
- # @copyright 2015-2024 Teclib' and contributors.
- # @copyright 2003-2014 by the INDEPNET Development Team.
+ # @copyright 2015-2026 Teclib' and contributors.
  # @licence   https://www.gnu.org/licenses/gpl-3.0.html
  #
  # ---------------------------------------------------------------------
@@ -228,12 +227,13 @@
                   field_options|merge({
                      'entity': item.fields['entities_id'],
                      'width': '100%',
-                     'hide_if_no_elements': true
+                     'hide_if_no_elements': true,
+                     'nochecklimit': true
                   })
                ) }}
             {% endif %}
 
-            {% if item.getType() != 'Ticket' or item.isNewItem() %}
+            {% if (item.getType() == 'Ticket' and item.isNewItem()) or not item.isNewItem() %}
                {{ fields.dropdownTimestampField(
                   'actiontime',
                   item.fields['actiontime'],

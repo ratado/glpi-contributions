@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -35,6 +35,7 @@
 
 namespace Glpi\Api;
 
+use GLPIKey;
 use Toolbox;
 
 class APIXmlrpc extends API
@@ -51,9 +52,7 @@ class APIXmlrpc extends API
      *
      * @return void
      */
-    public function manageUploadedFiles()
-    {
-    }
+    public function manageUploadedFiles() {}
 
     /**
      * parse POST var to retrieve
@@ -180,8 +179,8 @@ class APIXmlrpc extends API
                 $totalcount = 0;
                 $response = $this->getItems($this->parameters['itemtype'], $this->parameters, $totalcount);
 
-               //add pagination headers
-                $range = [0, $_SESSION['glpilist_limit']];
+                //add pagination headers
+                $range = [0, $_SESSION['glpilist_limit'] - 1];
                 if (isset($this->parameters['range'])) {
                     $range = explode("-", $this->parameters['range']);
                 }
@@ -271,7 +270,12 @@ class APIXmlrpc extends API
                           ? $parameters[0]
                           : []);
 
-       // transform input from array to object
+        // decrypt session token
+        if (\array_key_exists('session_token', $this->parameters)) {
+            $this->parameters['session_token'] = (new GLPIKey())->decrypt(\base64_decode($this->parameters['session_token']));
+        }
+
+        // transform input from array to object
         if (
             isset($this->parameters['input'])
             && is_array($this->parameters['input'])
@@ -289,7 +293,7 @@ class APIXmlrpc extends API
             }
         }
 
-       // check boolean parameters
+        // check boolean parameters
         foreach ($this->parameters as &$parameter) {
             if ($parameter === "true") {
                 $parameter = true;
@@ -318,7 +322,7 @@ class APIXmlrpc extends API
 
         $response = $this->escapekeys($response);
         $out = xmlrpc_encode_request(null, $response, ['encoding' => 'UTF-8',
-            'escaping' => 'markup'
+            'escaping' => 'markup',
         ]);
         echo $out;
         exit;

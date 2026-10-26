@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -35,7 +35,7 @@
 
 class Link_Itemtype extends CommonDBChild
 {
-   // From CommonDbChild
+    // From CommonDbChild
     public static $itemtype = 'Link';
     public static $items_id = 'links_id';
 
@@ -82,7 +82,7 @@ class Link_Itemtype extends CommonDBChild
         $iterator = $DB->request([
             'FROM'   => 'glpi_links_itemtypes',
             'WHERE'  => ['links_id' => $links_id],
-            'ORDER'  => 'itemtype'
+            'ORDER'  => 'itemtype',
         ]);
         $types  = [];
         $used   = [];
@@ -116,7 +116,7 @@ class Link_Itemtype extends CommonDBChild
         if ($canedit && $numrows) {
             Html::openMassiveActionsForm('mass' . __CLASS__ . $rand);
             $massiveactionparams = ['num_displayed'  => min($_SESSION['glpilist_limit'], $numrows),
-                'container'      => 'mass' . __CLASS__ . $rand
+                'container'      => 'mass' . __CLASS__ . $rand,
             ];
             Html::showMassiveActions($massiveactionparams);
         }
@@ -167,6 +167,7 @@ class Link_Itemtype extends CommonDBChild
             $nb = 0;
             switch ($item->getType()) {
                 case 'Link':
+                    /** @var Link $item */
                     if ($_SESSION['glpishow_count_on_tabs']) {
                         $nb = countElementsInTable(
                             $this->getTable(),
@@ -210,7 +211,7 @@ class Link_Itemtype extends CommonDBChild
         $DB->delete(
             self::getTable(),
             [
-                'itemtype'  => ['LIKE', "%Plugin$itemtype%"]
+                'itemtype'  => ['LIKE', "%Plugin$itemtype%"],
             ]
         );
     }

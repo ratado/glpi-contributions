@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -49,7 +48,7 @@ class Update extends \GLPITestCase
         $expected = [
             'dbversion' => GLPI_SCHEMA_VERSION,
             'language'  => 'en_GB',
-            'version'   => GLPI_VERSION
+            'version'   => GLPI_VERSION,
         ];
         $this->array($update->getCurrents())->isEqualTo($expected);
     }
@@ -72,7 +71,7 @@ class Update extends \GLPITestCase
             'glpi_use_mode',
             'debug_sql',
             'debug_vars',
-            'use_log_in_files'
+            'use_log_in_files',
         ]);
     }
 
@@ -288,12 +287,8 @@ class Update extends \GLPITestCase
      */
     public function testGetMigrationsToDo(string $current_version, bool $force_latest, array $expected_migrations)
     {
-        $class = new \ReflectionClass(\Update::class);
-        $method = $class->getMethod('getMigrationsToDo');
-        $method->setAccessible(true);
-
         global $DB;
         $update = new \Update($DB, [], vfsStream::url('install/migrations'));
-        $this->array($method->invokeArgs($update, [$current_version, $force_latest]))->isIdenticalTo($expected_migrations);
+        $this->array($this->callPrivateMethod($update, 'getMigrationsToDo', $current_version, $force_latest))->isIdenticalTo($expected_migrations);
     }
 }

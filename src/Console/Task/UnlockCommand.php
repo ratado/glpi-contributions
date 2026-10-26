@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -108,16 +108,16 @@ class UnlockCommand extends AbstractCommand
                         . ', ' . $this->db->quoteValue('::')
                         . ', ' . $this->db->quoteName('name')
                         . ') AS ' . $this->db->quoteName('task')
-                    )
+                    ),
                 ],
                 'FROM'   => CronTask::getTable(),
                 'WHERE'  => [
                     'state' => CronTask::STATE_RUNNING,
                     new QueryExpression(
-                        'UNIX_TIMESTAMP(' .  $this->db->quoteName('lastrun') . ') + ' . $delay
+                        'UNIX_TIMESTAMP(' . $this->db->quoteName('lastrun') . ') + ' . $delay
                         . ' <  UNIX_TIMESTAMP(NOW())'
-                    )
-                ]
+                    ),
+                ],
             ]
         );
 

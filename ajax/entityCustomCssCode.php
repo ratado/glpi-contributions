@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -72,16 +72,16 @@ if (isset($_POST['enable_custom_css']) && isset($_POST['entities_id'])) {
         'mode'               => 'text/css',
         'lineNumbers'        => true,
 
-      // Autocomplete with CTRL+SPACE
+        // Autocomplete with CTRL+SPACE
         'extraKeys'          => [
             'Ctrl-Space' => 'autocomplete',
         ],
 
-      // Code folding configuration
+        // Code folding configuration
         'foldGutter' => true,
         'gutters'    => [
             'CodeMirror-linenumbers',
-            'CodeMirror-foldgutter'
+            'CodeMirror-foldgutter',
         ],
     ];
     if (!$enable_custom_css) {

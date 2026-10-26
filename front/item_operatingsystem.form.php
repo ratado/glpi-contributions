@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -41,20 +41,20 @@ $ios = new \Item_OperatingSystem();
 
 if (isset($_POST['update'])) {
     $ios->check($_POST['id'], UPDATE);
-   //update existing OS
+    //update existing OS
     $ios->update($_POST);
 
     $item = getItemForItemtype($_POST['itemtype']);
     $url = $item->getFormURLWithID($_POST['items_id']);
     Html::redirect($url);
-} else if (isset($_POST['add'])) {
+} elseif (isset($_POST['add'])) {
     $ios->check(-1, CREATE, $_POST);
     $ios->add($_POST);
 
     $item = getItemForItemtype($_POST['itemtype']);
     $url = $item->getFormURLWithID($_POST['items_id']);
     Html::redirect($url);
-} else if (isset($_POST['purge'])) {
+} elseif (isset($_POST['purge'])) {
     $ios->check($_POST['id'], PURGE);
     $ios->delete($_POST, 1);
 
@@ -73,7 +73,7 @@ if (isset($_GET['id'])) {
 } else {
     $params = [
         'itemtype'  => $_GET['itemtype'],
-        'items_id'  => $_GET['items_id']
+        'items_id'  => $_GET['items_id'],
     ];
 }
 

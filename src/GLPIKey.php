@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -61,10 +61,15 @@ class GLPIKey
      * @var array
      */
     protected $fields = [
+        'glpi_apiclients.app_token',
         'glpi_authldaps.rootdn_passwd',
         'glpi_mailcollectors.passwd',
         'glpi_snmpcredentials.auth_passphrase',
         'glpi_snmpcredentials.priv_passphrase',
+        'glpi_users.api_token',
+        'glpi_users.cookie_token',
+        'glpi_users.password_forget_token',
+        'glpi_users.personal_token',
     ];
 
     /**
@@ -80,7 +85,7 @@ class GLPIKey
             'smtp_passwd',
             'smtp_oauth_client_secret',
             'smtp_oauth_refresh_token',
-        ]
+        ],
     ];
 
     public function __construct(string $config_dir = GLPI_CONFIG_DIR)
@@ -101,7 +106,7 @@ class GLPIKey
     {
         if (version_compare($glpi_version, '9.4.6', '<')) {
             return null;
-        } else if (version_compare($glpi_version, '9.5.x', '<')) {
+        } elseif (version_compare($glpi_version, '9.5.x', '<')) {
             return $this->legacykeyfile;
         } else {
             return $this->keyfile;
@@ -116,6 +121,51 @@ class GLPIKey
     public function keyExists()
     {
         return file_exists($this->keyfile);
+    }
+
+    /**
+     * Check if key is valid
+     *
+     * @return string[]
+     */
+    public function getKeyFileReadErrors(): array
+    {
+        $errors = [];
+        if (!file_exists($this->keyfile)) {
+            $errors[] = sprintf(__s('The security key file does not exist. You have to run the "%s" command to generate a key.'), 'php bin/console security:change_key');
+
+            return $errors; // early return, as, if file does not exist, no need to check further
+        }
+        if (false === ($key = @file_get_contents($this->keyfile))) {
+            $errors[] = sprintf(__s("Unable to get security key file contents. Fix file permissions of %s."), $this->keyfile);
+
+            return $errors; // early return, as, if file does not exist, no need to check further
+        }
+        if (strlen($key) !== SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_KEYBYTES) {
+            $errors[] = sprintf(__s('Invalid security key file contents. You have to run the "%s" command to regenerate a key.'), 'php bin/console security:change_key');
+        }
+
+        return $errors;
+    }
+
+    public function hasReadErrors(): bool
+    {
+        return !empty($this->getKeyFileReadErrors());
+    }
+
+    public function showReadErrors(): void
+    {
+        $glpi_key_read_errors = $this->getKeyFileReadErrors();
+        if (!empty($glpi_key_read_errors)) {
+            \Glpi\Application\View\TemplateRenderer::getInstance()->display(
+                '/central/messages.html.twig',
+                [
+                    'messages' => [
+                        'errors' => $glpi_key_read_errors,
+                    ],
+                ]
+            );
+        }
     }
 
     /**
@@ -151,7 +201,7 @@ class GLPIKey
         if (!file_exists($this->legacykeyfile)) {
             return GLPIKEY;
         }
-       //load key from existing config file
+        //load key from existing config file
         if (!is_readable($this->legacykeyfile) || ($key = file_get_contents($this->legacykeyfile)) === false) {
             trigger_error('Unable to get security legacy key file contents.', E_USER_WARNING);
             return null;
@@ -170,7 +220,7 @@ class GLPIKey
         /** @var \DBmysql $DB */
         global $DB;
 
-       // Check ability to create/update key file.
+        // Check ability to create/update key file.
         if (
             (file_exists($this->keyfile) && !is_writable($this->keyfile))
             || (!file_exists($this->keyfile) && !is_writable(dirname($this->keyfile)))
@@ -179,7 +229,7 @@ class GLPIKey
             return false;
         }
 
-       // Fetch old key before generating the new one (but only if DB exists and there is something to migrate)
+        // Fetch old key before generating the new one (but only if DB exists and there is something to migrate)
         $previous_key = null;
         if ($DB instanceof DBmysql && $DB->connected) {
             if ($this->keyExists()) {
@@ -282,7 +332,7 @@ class GLPIKey
         $success = true;
 
         foreach ($this->getFields() as $field) {
-            list($table, $column) = explode('.', $field);
+            [$table, $column] = explode('.', $field);
 
             $iterator = $DB->request([
                 'SELECT' => ['id', $column],
@@ -291,7 +341,7 @@ class GLPIKey
             ]);
 
             foreach ($iterator as $row) {
-                 $value = (string)$row[$column];
+                $value = (string) $row[$column];
                 if ($sodium_key !== null) {
                     $pass = $this->encrypt($this->decrypt($value, $sodium_key));
                 } else {
@@ -304,7 +354,7 @@ class GLPIKey
                 );
 
                 if (!$success) {
-                     break;
+                    break;
                 }
             }
         }
@@ -333,11 +383,11 @@ class GLPIKey
                     'context'   => $context,
                     'name'      => $names,
                     ['NOT' => ['value' => null]],
-                ]
+                ],
             ]);
 
             foreach ($iterator as $row) {
-                 $value = (string)$row['value'];
+                $value = (string) $row['value'];
                 if ($sodium_key !== null) {
                     $pass = $this->encrypt($this->decrypt($value, $sodium_key));
                 } else {
@@ -350,7 +400,7 @@ class GLPIKey
                 );
 
                 if (!$success) {
-                     break;
+                    break;
                 }
             }
         }
@@ -373,8 +423,8 @@ class GLPIKey
         }
 
         if ($key === null) {
-           // Cannot encrypt string as key reading fails, returns a empty value
-           // to ensure sensitive data is not propagated unencrypted.
+            // Cannot encrypt string as key reading fails, returns a empty value
+            // to ensure sensitive data is not propagated unencrypted.
             return '';
         }
 
@@ -399,7 +449,7 @@ class GLPIKey
     public function decrypt(?string $string, $key = null): ?string
     {
         if (empty($string)) {
-           // Avoid sodium exception for blank content. Just return the null/empty value.
+            // Avoid sodium exception for blank content. Just return the null/empty value.
             return $string;
         }
 
@@ -408,7 +458,7 @@ class GLPIKey
         }
 
         if ($key === null) {
-           // Cannot decrypt string as key reading fails, returns encrypted value.
+            // Cannot decrypt string as key reading fails, returns encrypted value.
             return $string;
         }
 
@@ -458,7 +508,7 @@ class GLPIKey
         }
 
         if ($key === null) {
-           // Cannot decrypt string as key reading fails, returns encrypted value.
+            // Cannot decrypt string as key reading fails, returns encrypted value.
             return $string;
         }
 
@@ -468,8 +518,14 @@ class GLPIKey
         for ($i = 0; $i < strlen($string); $i++) {
             $char    = substr($string, $i, 1);
             $keychar = substr($key, ($i % strlen($key)) - 1, 1);
-            $char    = chr(ord($char) - ord($keychar));
-            $result .= $char;
+
+            $bytevalue = ord($char) - ord($keychar);
+            while ($bytevalue < 0) {
+                $bytevalue += 256;
+            }
+            $bytevalue %= 256;
+
+            $result .= chr($bytevalue);
         }
 
         return Sanitizer::unsanitize($result);

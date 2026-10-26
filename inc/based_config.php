@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -48,14 +48,14 @@ if (!empty($tz)) {
 include_once(GLPI_ROOT . "/inc/autoload.function.php");
 
 (function () {
-   // Define GLPI_* constants that can be customized by admin.
-   //
-   // Use a self-invoking anonymous function to:
-   // - prevent any global variables/functions definition from `local_define.php` and `downstream.php` files;
-   // - prevent any global variables definition from current function logic.
+    // Define GLPI_* constants that can be customized by admin.
+    //
+    // Use a self-invoking anonymous function to:
+    // - prevent any global variables/functions definition from `local_define.php` and `downstream.php` files;
+    // - prevent any global variables definition from current function logic.
 
     $constants = [
-      // Constants related to system paths
+        // Constants related to system paths
         'GLPI_CONFIG_DIR'      => GLPI_ROOT . '/config', // Path for configuration files (db, security key, ...)
         'GLPI_VAR_DIR'         => GLPI_ROOT . '/files',  // Path for all files
         'GLPI_MARKETPLACE_DIR' => GLPI_ROOT . '/marketplace', // Path for marketplace plugins
@@ -75,7 +75,7 @@ include_once(GLPI_ROOT . "/inc/autoload.function.php");
         'GLPI_UPLOAD_DIR'      => '{GLPI_VAR_DIR}/_uploads', // Path for upload storage
         "GLPI_INVENTORY_DIR"   => '{GLPI_VAR_DIR}/_inventories', //Path for inventories
 
-      // Security constants
+        // Security constants
         'GLPI_USE_CSRF_CHECK'            => '1',
         'GLPI_CSRF_EXPIRES'              => '7200',
         'GLPI_CSRF_MAX_TOKENS'           => '100',
@@ -85,52 +85,75 @@ include_once(GLPI_ROOT . "/inc/autoload.function.php");
         'GLPI_SERVERSIDE_URL_ALLOWLIST'  => [
             // allowlist (regex format) of URL that can be fetched from server side (used for RSS feeds and external calendars, among others)
             // URL will be considered as safe as long as it matches at least one entry of the allowlist
-            '/^(https?|feed):\/\/[^@:]+(\/.*)?$/', // only accept http/https/feed protocols, and reject presence of @ (username) and : (protocol) in host part of URL
-        ],
 
-      // Constants related to GLPI Project / GLPI Network external services
+            // Based on https://github.com/symfony/symfony/blob/7.3/src/Symfony/Component/Validator/Constraints/UrlValidator.php
+            '~^
+                (http|https|feed)://                                                # protocol
+                (
+                    (?:
+                        (?:xn--[a-z0-9-]++\.)*+xn--[a-z0-9-]++                      # a domain name using punycode
+                            |
+                        (?:[\pL\pN\pS\pM\-\_]++\.)+[\pL\pN\pM]++                    # a multi-level domain name
+                            |
+                        [a-z0-9\-\_]++                                              # a single-level domain name
+                    )\.?
+                        |                                                           # or
+                    \d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}                              # an IP address
+                        |                                                           # or
+                    \[
+                        (?:(?:(?:(?:(?:(?:(?:[0-9a-f]{1,4})):){6})(?:(?:(?:(?:(?:[0-9a-f]{1,4})):(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:::(?:(?:(?:[0-9a-f]{1,4})):){5})(?:(?:(?:(?:(?:[0-9a-f]{1,4})):(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:[0-9a-f]{1,4})))?::(?:(?:(?:[0-9a-f]{1,4})):){4})(?:(?:(?:(?:(?:[0-9a-f]{1,4})):(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-f]{1,4})):){0,1}(?:(?:[0-9a-f]{1,4})))?::(?:(?:(?:[0-9a-f]{1,4})):){3})(?:(?:(?:(?:(?:[0-9a-f]{1,4})):(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-f]{1,4})):){0,2}(?:(?:[0-9a-f]{1,4})))?::(?:(?:(?:[0-9a-f]{1,4})):){2})(?:(?:(?:(?:(?:[0-9a-f]{1,4})):(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-f]{1,4})):){0,3}(?:(?:[0-9a-f]{1,4})))?::(?:(?:[0-9a-f]{1,4})):)(?:(?:(?:(?:(?:[0-9a-f]{1,4})):(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-f]{1,4})):){0,4}(?:(?:[0-9a-f]{1,4})))?::)(?:(?:(?:(?:(?:[0-9a-f]{1,4})):(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9]))\.){3}(?:(?:25[0-5]|(?:[1-9]|1[0-9]|2[0-4])?[0-9])))))))|(?:(?:(?:(?:(?:(?:[0-9a-f]{1,4})):){0,5}(?:(?:[0-9a-f]{1,4})))?::)(?:(?:[0-9a-f]{1,4})))|(?:(?:(?:(?:(?:(?:[0-9a-f]{1,4})):){0,6}(?:(?:[0-9a-f]{1,4})))?::))))
+                    \]                                                              # an IPv6 address
+                )
+                (?:/ (?:[\pL\pN\pS\pM\-._\~!$&\'()*+,;=:@]|%[0-9A-Fa-f]{2})* )*     # a path
+                (?:\? (?:[\pL\pN\-._\~!$&\'\[\]()*+,;=:@/?]|%[0-9A-Fa-f]{2})* )?    # a query (optional)
+            $~ixuD',
+        ],
+        'GLPI_DISALLOWED_UPLOADS_PATTERN' => '/\.(php\d*|phar)$/i', // Prevent upload of any PHP file / PHP archive; can be set to an empty value to allow every files
+
+        // Constants related to GLPI Project / GLPI Network external services
         'GLPI_TELEMETRY_URI'                => 'https://telemetry.glpi-project.org', // Telemetry project URL
         'GLPI_INSTALL_MODE'                 => is_dir(GLPI_ROOT . '/.git') ? 'GIT' : 'TARBALL', // Install mode for telemetry
         'GLPI_NETWORK_MAIL'                 => 'glpi@teclib.com',
         'GLPI_NETWORK_SERVICES'             => 'https://services.glpi-network.com', // GLPI Network services project URL
-        'GLPI_NETWORK_REGISTRATION_API_URL' => '{GLPI_NETWORK_SERVICES}/api/registration/',
-        'GLPI_MARKETPLACE_PLUGINS_API_URI'  => '{GLPI_NETWORK_SERVICES}/api/marketplace/',
+        'GLPI_NETWORK_API_URL'              => '{GLPI_NETWORK_SERVICES}/api', // GLPI Network API base URL
+        'GLPI_NETWORK_REGISTRATION_API_URL' => '{GLPI_NETWORK_API_URL}/registration/', // GLPI Network registration API
+        'GLPI_MARKETPLACE_PLUGINS_API_URI'  => '{GLPI_NETWORK_API_URL}/marketplace/', // GLPI Network marketplace API
         'GLPI_MARKETPLACE_ALLOW_OVERRIDE'   => true, // allow marketplace to override a plugin found outside GLPI_MARKETPLACE_DIR
         'GLPI_MARKETPLACE_MANUAL_DOWNLOADS' => true, // propose manual download link of plugins which cannot be installed/updated by marketplace
         'GLPI_USER_AGENT_EXTRA_COMMENTS'    => '', // Extra comment to add to GLPI User-Agent
 
-      // SQL compatibility
+        // SQL compatibility
         'GLPI_DISABLE_ONLY_FULL_GROUP_BY_SQL_MODE' => '1', // '1' to disable ONLY_FULL_GROUP_BY 'sql_mode'
 
-      // Other constants
+        // Other constants
         'GLPI_AJAX_DASHBOARD'         => '1', // 1 for "multi ajax mode" 0 for "single ajax mode" (see Glpi\Dashboard\Grid::getCards)
         'GLPI_CALDAV_IMPORT_STATE'    => 0, // external events created from a caldav client will take this state by default (0 = Planning::INFO)
         'GLPI_DEMO_MODE'              => '0',
         'GLPI_CENTRAL_WARNINGS'       => '1', // display (1), or not (0), warnings on GLPI Central page
-        'GLPI_TEXT_MAXSIZE'           => '4000' // character threshold for displaying read more button
+        'GLPI_TEXT_MAXSIZE'           => '4000', // character threshold for displaying read more button
     ];
 
-   // Define constants values based on server env variables (i.e. defined using apache SetEnv directive)
+    // Define constants values based on server env variables (i.e. defined using apache SetEnv directive)
     foreach (array_keys($constants) as $name) {
         if (!defined($name) && ($value = getenv($name)) !== false) {
             define($name, $value);
         }
     }
 
-   // Define constants values from local configuration file
+    // Define constants values from local configuration file
     if (file_exists(GLPI_ROOT . '/config/local_define.php') && !defined('TU_USER')) {
         require_once GLPI_ROOT . '/config/local_define.php';
     }
 
-   // Define constants values from downstream distribution file
-    if (file_exists(GLPI_ROOT . '/inc/downstream.php')) {
+    // Define constants values from downstream distribution file
+    if (!defined('TU_USER') && file_exists(GLPI_ROOT . '/inc/downstream.php')) {
         include_once(GLPI_ROOT . '/inc/downstream.php');
     }
 
-   // Define constants values from defaults
-   // 1. First, define constants that does not inherit from another one.
-   // 2. Second, define constants that inherits from another one.
-   // This logic is quiet simple and is not made to handle chain inheritance.
+    // Define constants values from defaults
+    // 1. First, define constants that does not inherit from another one.
+    // 2. Second, define constants that inherits from another one.
+    // This logic is quiet simple and is not made to handle chain inheritance.
     $inherit_pattern = '/\{(?<name>GLPI_[\w]+)\}/';
     foreach ($constants as $key => $value) {
         if (!defined($key) && (!is_string($value) || !preg_match($inherit_pattern, $value))) {
@@ -139,7 +162,7 @@ include_once(GLPI_ROOT . "/inc/autoload.function.php");
     }
     foreach ($constants as $key => $value) {
         if (!defined($key)) {
-           // Replace {GLPI_*} by value of corresponding constant
+            // Replace {GLPI_*} by value of corresponding constant
             $value = preg_replace_callback(
                 '/\{(?<name>GLPI_[\w]+)\}/',
                 function ($matches) {
@@ -152,14 +175,14 @@ include_once(GLPI_ROOT . "/inc/autoload.function.php");
         }
     }
 
-   // Where to load plugins.
-   // Order in this array is important (priority to first found).
+    // Where to load plugins.
+    // Order in this array is important (priority to first found).
     if (!defined('PLUGINS_DIRECTORIES')) {
         define('PLUGINS_DIRECTORIES', [
             GLPI_MARKETPLACE_DIR,
             GLPI_ROOT . '/plugins',
         ]);
-    } else if (!is_array(PLUGINS_DIRECTORIES)) {
+    } elseif (!is_array(PLUGINS_DIRECTORIES)) {
         throw new \Exception('PLUGINS_DIRECTORIES constant value must be an array');
     }
 })();

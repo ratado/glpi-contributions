@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @copyright 2010-2022 by the FusionInventory Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
@@ -81,7 +81,7 @@ abstract class InventoryAsset
     protected array $known_links = [];
     /** @var array */
     protected array $raw_links = [];
-        /** @var array */
+    /** @var array */
     protected array $input_notmanaged = [];
 
     /**
@@ -90,7 +90,7 @@ abstract class InventoryAsset
      * @param CommonDBTM $item Item instance
      * @param array|null $data Data part, optional
      */
-    public function __construct(CommonDBTM $item, array $data = null)
+    public function __construct(CommonDBTM $item, ?array $data = null)
     {
         $this->item = $item;
         if ($data !== null) {
@@ -109,6 +109,21 @@ abstract class InventoryAsset
     {
         $this->data = $data;
         return $this;
+    }
+
+    public function getEntity(): int
+    {
+        return $this->entities_id;
+    }
+
+    public function maybeRecursive()
+    {
+        return true;
+    }
+
+    public function isRecursive(): bool
+    {
+        return (bool) $this->is_recursive;
     }
 
     /**
@@ -190,7 +205,7 @@ abstract class InventoryAsset
         $lockedfield = new Lockedfield();
 
         $items_id = 0;
-        //compare current itemtype et mainasset itemtype to be sure
+        //compare current itemtype with mainasset itemtype to be sure
         //to get related lock
         if (get_class($this->item) == $itemtype) {
             $items_id = $this->item->fields['id'] ?? 0;
@@ -198,7 +213,10 @@ abstract class InventoryAsset
         $locks = $lockedfield->getLockedNames($itemtype, $items_id);
 
         $data = $this->data;
-        foreach ($data as &$value) {
+        foreach ($data as $key => &$value) {
+            if (property_exists($this, 'current_key') && $this->current_key !== null && $key !== $this->current_key) {
+                continue;
+            }
             $blacklist->processBlackList($value);
             // save raw manufacture name before its replacement by id for importing model
             // (we need manufacturers name in when importing model in dictionary)
@@ -207,19 +225,33 @@ abstract class InventoryAsset
                 $manufacturer_name = $value->manufacturers_id;
             }
 
+            // Set autoupdate system for all assets contained in this field and linked to the current item.
+            // Extract the asset class name (e.g., "Monitor" from "Glpi\Inventory\Asset\Monitor")
+            $asset_itemtype_ns = explode('\\', get_class($this));
+            $asset_itemtype = end($asset_itemtype_ns);
+
+            if ($temp_item = getItemForItemtype($asset_itemtype)) {
+                if ($temp_item->isField('autoupdatesystems_id') && isset($this->item->fields['autoupdatesystems_id'])) {
+                    if ($this->item->fields['autoupdatesystems_id'] == 0) {
+                        $value->autoupdatesystems_id = 0;
+                    } else {
+                        $value->autoupdatesystems_id = Dropdown::getDropdownName('glpi_autoupdatesystems', $this->item->fields['autoupdatesystems_id']);
+                    }
+                }
+            }
+
             foreach ($value as $key => &$val) {
                 if ($val instanceof \stdClass || is_array($val)) {
                     continue;
                 }
 
-
                 $known_key = md5($key . $val);
                 //keep raw values...
                 $this->raw_links[$known_key] = $val;
 
-                //do not process field if it's locked
+                //do not process field if it's locked and from update process
                 foreach ($locks as $lock) {
-                    if ($key == $lock) {
+                    if ($key == $lock && !$this->item->isNewItem()) {
                         continue 2;
                     }
                 }
@@ -228,6 +260,9 @@ abstract class InventoryAsset
                     $manufacturer = new Manufacturer();
                     unset($this->raw_links[$known_key]);
                     $val  = $manufacturer->processName($val);
+                    if ($val < 0) { //rule can return -1
+                        $val = 0;
+                    }
                     $known_key = md5($key . $val);
                     //keep raw values...
                     $this->raw_links[$known_key] = $val;
@@ -239,31 +274,47 @@ abstract class InventoryAsset
                 if (!isset($this->known_links[$known_key]) && $value->$key !== 0) {
                     $entities_id = $this->entities_id;
                     if ($key == "locations_id") {
-                        $this->known_links[$known_key] = Dropdown::importExternal('Location', $value->$key, $entities_id);
-                    } else if (preg_match('/^.+models_id/', $key)) {
+                        $new_id = Dropdown::importExternal('Location', $value->$key, $entities_id);
+                        if ($new_id < 0) { //importExternal can return -1
+                            $new_id = 0;
+                        }
+                        $this->known_links[$known_key] = $new_id;
+                    } elseif (preg_match('/^.+models_id/', $key)) {
                         // models that need manufacturer relation for dictionary import
                         // see CommonDCModelDropdown::$additional_fields_for_dictionnary
-                        $this->known_links[$known_key] = Dropdown::importExternal(
+                        $new_id = Dropdown::importExternal(
                             getItemtypeForForeignKeyField($key),
                             $value->$key,
                             $entities_id,
                             ['manufacturer' => $manufacturer_name]
                         );
-                    } else if (isset($foreignkey_itemtype[$key])) {
-                        $this->known_links[$known_key] = Dropdown::importExternal($foreignkey_itemtype[$key], $value->$key, $entities_id);
-                    } else if ($key !== 'entities_id' && $key !== 'states_id' && isForeignKeyField($key) && is_a($itemtype = getItemtypeForForeignKeyField($key), CommonDropdown::class, true)) {
+                        if ($new_id < 0) { //importExternal can return -1
+                            $new_id = 0;
+                        }
+                        $this->known_links[$known_key] = $new_id;
+                    } elseif (isset($foreignkey_itemtype[$key])) {
+                        $new_id = Dropdown::importExternal($foreignkey_itemtype[$key], $value->$key, $entities_id);
+                        if ($new_id < 0) { //importExternal can return -1
+                            $new_id = 0;
+                        }
+                        $this->known_links[$known_key] = $new_id;
+                    } elseif ($key !== 'entities_id' && $key !== 'states_id' && isForeignKeyField($key) && is_a($itemtype = getItemtypeForForeignKeyField($key), CommonDropdown::class, true)) {
                         $foreignkey_itemtype[$key] = $itemtype;
 
-                        $this->known_links[$known_key] = Dropdown::importExternal(
+                        $new_id = Dropdown::importExternal(
                             $foreignkey_itemtype[$key],
                             $value->$key,
                             $entities_id
                         );
+                        if ($new_id < 0) { //importExternal can return -1
+                            $new_id = 0;
+                        }
+                        $this->known_links[$known_key] = $new_id;
 
                         if (
                             $key == 'operatingsystemkernelversions_id'
                             && property_exists($value, 'operatingsystemkernels_id')
-                            && (int)$this->known_links[$known_key] > 0
+                            && (int) $this->known_links[$known_key] > 0
                         ) {
                             $kversion = new OperatingSystemKernelVersion();
                             $kversion->getFromDB($this->known_links[$known_key]);
@@ -271,7 +322,7 @@ abstract class InventoryAsset
                             if ($kversion->fields['operatingsystemkernels_id'] != $oskernels_id) {
                                 $kversion->update([
                                     'id'                          => $kversion->getID(),
-                                    'operatingsystemkernels_id'   => $oskernels_id
+                                    'operatingsystemkernels_id'   => $oskernels_id,
                                 ]);
                             }
                         }
@@ -317,6 +368,19 @@ abstract class InventoryAsset
     public function setEntityID($id): InventoryAsset
     {
         $this->entities_id = $id;
+        return $this;
+    }
+
+    /**
+     * Set entity recursive from main asset
+     *
+     * @param integer $is_recursive
+     *
+     * @return $this
+     */
+    public function setEntityRecursive($is_recursive): InventoryAsset
+    {
+        $this->is_recursive = $is_recursive;
         return $this;
     }
 
@@ -439,12 +503,29 @@ abstract class InventoryAsset
             }
             $known_key = md5($key . $val);
             if (in_array($key, $locks)) {
-                $input[$key] = $this->raw_links[$known_key];
+                if (isset($this->raw_links[$known_key])) {
+                    if (isset($this->known_links[$known_key])) {
+                        $input[$key] = $this->known_links[$known_key];
+                        $input['_raw' . $key] = $this->raw_links[$known_key];
+                    } elseif (!$item->isNewItem()) {
+                        // If $item is new and the input key is locked, we do not want to set it using the raw value.
+                        // This is because locked fields are no longer processed or sanitized during the addition process.
+                        // For more details, see: https://github.com/glpi-project/glpi/pull/19426
+                        $input[$key] = $this->raw_links[$known_key];
+                    } else {
+                        $input[$key] = $val;
+                    }
+                }
             } elseif (isset($this->known_links[$known_key])) {
                 $input[$key] = $this->known_links[$known_key];
             } else {
                 $input[$key] = $val;
             }
+        }
+
+        if (isset($this->agent->fields['tag'])) {
+            // Pass the tag that can be used in rules criteria
+            $input['_tag'] = $this->agent->fields['tag'];
         }
         return $input;
     }

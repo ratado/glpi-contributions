@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -39,33 +39,32 @@ use Glpi\Toolbox\Sanitizer;
 
 // Use anonymous class so we can have constants that define special values without polluting the global table
 // and adding unnecessary variables to IDE autocomplete data that may result in errors
-$empty_data_builder = new class
-{
+$empty_data_builder = new class {
     /** @var int Self-service profile ID */
-    const PROFILE_SELF_SERVICE = 1;
+    public const PROFILE_SELF_SERVICE = 1;
     /** @var int Observer profile ID */
-    const PROFILE_OBSERVER     = 2;
+    public const PROFILE_OBSERVER     = 2;
     /** @var int Admin profile ID */
-    const PROFILE_ADMIN        = 3;
+    public const PROFILE_ADMIN        = 3;
     /** @var int Super-admin profile ID */
-    const PROFILE_SUPER_ADMIN  = 4;
+    public const PROFILE_SUPER_ADMIN  = 4;
     /** @var int Hotliner profile ID */
-    const PROFILE_HOTLINER     = 5;
+    public const PROFILE_HOTLINER     = 5;
     /** @var int Technician profile ID */
-    const PROFILE_TECHNICIAN   = 6;
+    public const PROFILE_TECHNICIAN   = 6;
     /** @var int Supervisor profile ID */
-    const PROFILE_SUPERVISOR   = 7;
+    public const PROFILE_SUPERVISOR   = 7;
     /** @var int Read-only profile ID */
-    const PROFILE_READ_ONLY    = 8;
+    public const PROFILE_READ_ONLY    = 8;
 
-    const USER_GLPI            = 2;
-    const USER_POST_ONLY       = 3;
-    const USER_TECH            = 4;
-    const USER_NORMAL          = 5;
-    const USER_SYSTEM          = 6;
+    public const USER_GLPI            = 2;
+    public const USER_POST_ONLY       = 3;
+    public const USER_TECH            = 4;
+    public const USER_NORMAL          = 5;
+    public const USER_SYSTEM          = 6;
 
     /** @var int Value indicating no rights */
-    const RIGHT_NONE           = 0;
+    public const RIGHT_NONE           = 0;
 
     public function getEmptyData(): array
     {
@@ -276,6 +275,7 @@ $empty_data_builder = new class
             'maintenance_mode' => '0',
             'maintenance_text' => '',
             'attach_ticket_documents_to_mail' => '0',
+            'attach_documents_to_notifications_for_anonymous' => '0',
             'backcreated' => '0',
             'task_state' => '1',
             'palette' => 'auror',
@@ -354,6 +354,8 @@ $empty_data_builder = new class
             'initialized_rules_collections' => '[]',
             'timeline_action_btn_layout' => 0,
             'timeline_date_format' => 0,
+            'are_apiclients_tokens_encrypted' => 1,
+            'are_users_tokens_encrypted' => 1,
         ];
 
         $tables['glpi_configs'] = [];
@@ -795,7 +797,7 @@ $empty_data_builder = new class
             $items = $default_dashboard['_items'];
             unset($default_dashboard['_items']);
             $tables['glpi_dashboards_dashboards'][] = array_merge([
-                'id' => $i
+                'id' => $i,
             ], $default_dashboard);
 
             foreach ($items as $item) {
@@ -1793,7 +1795,7 @@ $empty_data_builder = new class
                 'itemtype' => 'Plugin',
                 'num' => '8',
                 'rank' => '7',
-            ]
+            ],
         ];
 
         $ADDTODISPLAYPREF['Cluster'] = [31, 19];
@@ -2206,7 +2208,11 @@ $empty_data_builder = new class
                 'use_infocoms_alert' => 0,
                 'send_infocoms_alert_before_delay' => 0,
                 'use_reservations_alert' => 0,
+                'use_domains_alert' => 0,
+                'send_domains_alert_close_expiries_delay' => 30,
+                'send_domains_alert_expired_delay' => 1,
                 'autoclose_delay' => -10,
+                'autopurge_delay' => -10,
                 'notclosed_delay' => 0,
                 'calendars_strategy' => 0,
                 'auto_assign_mode' => -10,
@@ -2235,6 +2241,7 @@ $empty_data_builder = new class
                 'autofill_decommission_date' => 0,
                 'suppliers_as_private' => 0,
                 'enable_custom_css' => 0,
+                'custom_css_code' => '',
                 'anonymize_support_agents' => 0,
                 'display_users_initials' => 1,
                 'contracts_strategy_default' => 0,
@@ -4902,7 +4909,7 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
 &lt;ul&gt;##FOREACHplugins##
 &lt;li&gt;##plugin.name## :##plugin.old_version## -&gt; ##plugin.version##&lt;/li&gt;
 ##ENDFOREACHplugins##&lt;/ul&gt;
-&lt;p&gt;##lang.marketplace.url## : &lt;a title="##lang.marketplace.url##" href="##marketplace.url##" target="_blank" rel="noopener"&gt;##marketplace.url##&lt;/a&gt;&lt;/p&gt;'
+&lt;p&gt;##lang.marketplace.url## : &lt;a title="##lang.marketplace.url##" href="##marketplace.url##" target="_blank" rel="noopener"&gt;##marketplace.url##&lt;/a&gt;&lt;/p&gt;',
             ],
         ];
 
@@ -7979,6 +7986,12 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
                 'rights' => self::RIGHT_NONE,
 
             ],
+            [
+                'profiles_id' => self::PROFILE_SUPER_ADMIN,
+                'name' => 'system_logs',
+                'rights' => READ,
+
+            ],
         ];
 
 
@@ -8386,7 +8399,7 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
                 'id' => self::USER_GLPI,
                 'name' => 'glpi',
                 'realname' => null,
-                'password' => '$2y$10$rXXzbc2ShaiCldwkw4AZL.n.9QSH7c0c9XJAyyjrbL9BwmWditAYm',
+                'password' => password_hash('glpi', PASSWORD_DEFAULT),
                 'language' => null,
                 'list_limit' => '20',
                 'authtype' => '1',
@@ -8394,7 +8407,7 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
                 'id' => self::USER_POST_ONLY,
                 'name' => 'post-only',
                 'realname' => null,
-                'password' => '$2y$10$dTMar1F3ef5X/H1IjX9gYOjQWBR1K4bERGf4/oTPxFtJE/c3vXILm',
+                'password' => password_hash('postonly', PASSWORD_DEFAULT),
                 'language' => 'en_GB',
                 'list_limit' => '20',
                 'authtype' => '1',
@@ -8402,7 +8415,7 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
                 'id' => self::USER_TECH,
                 'name' => 'tech',
                 'realname' => null,
-                'password' => '$2y$10$.xEgErizkp6Az0z.DHyoeOoenuh0RcsX4JapBk2JMD6VI17KtB1lO',
+                'password' => password_hash('tech', PASSWORD_DEFAULT),
                 'language' => 'en_GB',
                 'list_limit' => '20',
                 'authtype' => '1',
@@ -8410,7 +8423,7 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
                 'id' => self::USER_NORMAL,
                 'name' => 'normal',
                 'realname' => null,
-                'password' => '$2y$10$Z6doq4zVHkSPZFbPeXTCluN1Q/r0ryZ3ZsSJncJqkN3.8cRiN0NV.',
+                'password' => password_hash('normal', PASSWORD_DEFAULT),
                 'language' => 'en_GB',
                 'list_limit' => '20',
                 'authtype' => '1',
@@ -8447,8 +8460,8 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
         $tables['glpi_agenttypes'] = [
             [
                 'id' => 1,
-                'name' => 'Core'
-            ]
+                'name' => 'Core',
+            ],
         ];
 
         $tables[SNMPCredential::getTable()] = [
@@ -8456,14 +8469,14 @@ style="color: #8b8c8f; font-weight: bold; text-decoration: underline;"&gt;
                 'id' => 1,
                 'name' => 'Public community v1',
                 'snmpversion' => 1,
-                'community' => 'public'
+                'community' => 'public',
             ],
             [
                 'id' => 2,
                 'name' => 'Public community v2c',
                 'snmpversion' => 2,
-                'community' => 'public'
-            ]
+                'community' => 'public',
+            ],
         ];
 
         return $tables;

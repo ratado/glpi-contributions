@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -40,14 +40,14 @@
  */
 class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
 {
-   // From CommonDBRelation
+    // From CommonDBRelation
     public static $itemtype_1          = 'KnowbaseItem';
     public static $items_id_1          = 'knowbaseitems_id';
     public static $itemtype_2          = 'KnowbaseItemCategory';
     public static $items_id_2          = 'knowbaseitemcategories_id';
     public static $checkItem_2_Rights  = self::HAVE_VIEW_RIGHT_ON_ITEM;
 
-   // From CommonDBTM
+    // From CommonDBTM
     public $dohistory = true;
 
     public static $rightname = 'knowbase';
@@ -77,14 +77,14 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
                 'glpi_knowbaseitems' => [
                     'ON'  => [
                         $kbi_cat_table        => 'knowbaseitems_id',
-                        'glpi_knowbaseitems' => 'id'
-                    ]
-                ]
+                        'glpi_knowbaseitems' => 'id',
+                    ],
+                ],
             ],
             'WHERE'     => [],
             'GROUPBY'   => [
-                $kbi_cat_table . '.id'
-            ]
+                $kbi_cat_table . '.id',
+            ],
         ];
         $where = [];
 
@@ -125,7 +125,10 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
 
-        if (static::canView()) {
+        if (
+            ($item instanceof CommonDBTM)
+            && static::canView()
+        ) {
             $nb = 0;
             if ($_SESSION['glpishow_count_on_tabs']) {
                 $nb = countElementsInTable(
@@ -154,7 +157,7 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
 
         $canedit = $item->can($item_id, UPDATE);
 
-       // Total Number of events
+        // Total Number of events
         $number = countElementsInTable(
             self::getTable(),
             ['knowbaseitems_id' => $item->getID()]
@@ -191,7 +194,7 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
             Html::closeForm();
         }
 
-       // No Events in database
+        // No Events in database
         if ($number < 1) {
             $no_txt = ($item_type == KnowbaseItem::getType()) ?
             __('No linked items') :
@@ -204,11 +207,11 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
             return;
         }
 
-       // Display the pager
+        // Display the pager
         $type_name = self::getTypeName(1);
         Html::printAjaxPager($type_name, $start, $number);
 
-       // Output events
+        // Output events
         echo "<div class='center'>";
 
         if ($canedit) {
@@ -217,7 +220,7 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
             = ['num_displayed'
                         => min($_SESSION['glpilist_limit'], $number),
                 'container'
-                        => 'mass' . __CLASS__ . $rand
+                        => 'mass' . __CLASS__ . $rand,
             ];
             Html::showMassiveActions($massiveactionparams);
         }
@@ -247,7 +250,7 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
 
             $link = $linked_category::getFormURLWithID($linked_category->getID());
 
-           // show line
+            // show line
             echo "<tr class='tab_bg_2'>";
 
             if ($canedit) {
@@ -280,7 +283,7 @@ class KnowbaseItem_KnowbaseItemCategory extends CommonDBRelation
         array &$actions,
         $itemtype,
         $is_deleted = false,
-        CommonDBTM $checkitem = null
+        ?CommonDBTM $checkitem = null
     ) {
 
         $kb_item = new KnowbaseItem();

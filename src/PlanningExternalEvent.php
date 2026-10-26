@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -49,7 +49,7 @@ class PlanningExternalEvent extends CommonDBTM implements CalDAVCompatibleItemIn
     public $dohistory = true;
     public static $rightname = 'externalevent';
 
-    const MANAGE_BG_EVENTS =   1024;
+    public const MANAGE_BG_EVENTS =   1024;
 
     public static function getTypeName($nb = 0)
     {
@@ -68,12 +68,12 @@ class PlanningExternalEvent extends CommonDBTM implements CalDAVCompatibleItemIn
 
     public static function canUpdate()
     {
-       // we permits globally to update this object,
-       // as users can update their onw items
+        // we permits globally to update this object,
+        // as users can update their onw items
         return Session::haveRightsOr(self::$rightname, [
             CREATE,
             UPDATE,
-            self::MANAGE_BG_EVENTS
+            self::MANAGE_BG_EVENTS,
         ]);
     }
 
@@ -83,8 +83,8 @@ class PlanningExternalEvent extends CommonDBTM implements CalDAVCompatibleItemIn
             return false;
         }
 
-       // the current user can update only this own events without UPDATE right
-       // but not bg one, see above
+        // the current user can update only this own events without UPDATE right
+        // but not bg one, see above
         if (
             $this->fields['users_id'] != Session::getLoginUserID()
             && !Session::haveRight(self::$rightname, UPDATE)
@@ -102,8 +102,8 @@ class PlanningExternalEvent extends CommonDBTM implements CalDAVCompatibleItemIn
             return false;
         }
 
-       // the current user can update only this own events without PURGE right
-       // but not bg one, see above
+        // the current user can update only this own events without PURGE right
+        // but not bg one, see above
         if (
             $this->fields['users_id'] != Session::getLoginUserID()
             && !Session::haveRight(self::$rightname, PURGE)
@@ -160,7 +160,7 @@ class PlanningExternalEvent extends CommonDBTM implements CalDAVCompatibleItemIn
         $is_ajax  = isset($options['from_planning_edit_ajax']) && $options['from_planning_edit_ajax'];
         $is_rrule = strlen($this->fields['rrule'] ?? '') > 0;
 
-       // set event for another user
+        // set event for another user
         if (
             isset($options['res_itemtype'])
             && isset($options['res_items_id'])
@@ -178,7 +178,7 @@ class PlanningExternalEvent extends CommonDBTM implements CalDAVCompatibleItemIn
                 'value'     => $this->fields['planningexternaleventtemplates_id'],
                 'entity'    => $this->getEntityID(),
                 'rand'      => $rand,
-                'on_change' => "template_update$rand(this.value)"
+                'on_change' => "template_update$rand(this.value)",
             ]);
 
             $ajax_url = $CFG_GLPI["root_doc"] . "/ajax/planning.php";
@@ -256,13 +256,15 @@ JAVASCRIPT;
         User::dropdown([
             'name'          => 'users_id',
             'right'         => 'all',
-            'value'         => $this->fields['users_id']
+            'value'         => $this->fields['users_id'],
         ]);
         echo "</td>";
         echo "</tr>";
 
         echo "<tr class='tab_bg_2'><td colspan='2'>" . __('Guests') . "</td>";
         echo "<td colspan='2'>";
+        // Hidden input to ensure users_id_guests is submitted even when empty
+        echo Html::hidden('users_id_guests', ['value' => '']);
         User::dropdown([
             'name'          => 'users_id_guests[]',
             'right'         => 'all',
@@ -295,7 +297,7 @@ JAVASCRIPT;
         if ($canedit) {
             PlanningEventCategory::dropdown([
                 'value' => $this->fields['planningeventcategories_id'],
-                'rand'  => $rand
+                'rand'  => $rand,
             ]);
         } else {
             echo Dropdown::getDropdownName(
@@ -334,7 +336,8 @@ JAVASCRIPT;
         echo "<tr class='tab_bg_2'><td  colspan='2'>" . __('Repeat') . "</td>";
         echo "<td>";
         echo self::showRepetitionForm($this->fields['rrule'] ?? '', [
-            'rand' => $rand_rrule
+            'rand'  => $rand_rrule,
+            'begin' => $this->fields['begin'],
         ]);
         echo "</td></tr>";
 
@@ -401,7 +404,7 @@ JAVASCRIPT;
             'OR' => [
                 self::getTableField('users_id')        => $users_id,
                 self::getTableField('users_id_guests') => ['LIKE', '%"' . $users_id . '"%'],
-            ]
+            ],
         ]);
     }
 
@@ -468,7 +471,7 @@ JAVASCRIPT;
         unset($input['content']);
 
         if ($vcomp instanceof VTodo && !array_key_exists('state', $input)) {
-           // Force default state to TO DO or event will be considered as VEVENT
+            // Force default state to TO DO or event will be considered as VEVENT
             $input['state'] = \Planning::TODO;
         }
 
@@ -492,7 +495,7 @@ JAVASCRIPT;
             'OR' => [
                 self::getTableField('users_id') => $_SESSION['glpiID'],
                 self::getTableField('users_id_guests') => ['LIKE', '%"' . $_SESSION['glpiID'] . '"%'],
-            ]
+            ],
         ];
 
         if (Session::haveRight(Planning::$rightname, Planning::READGROUP)) {

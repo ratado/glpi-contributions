@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -74,7 +74,7 @@ if (isset($_POST["add"])) {
         );
     }
     Html::back();
-} else if (isset($_POST["purge"])) {
+} elseif (isset($_POST["purge"])) {
     $cost->check($_POST["id"], PURGE);
     if ($cost->delete($_POST, 1)) {
         Event::log(
@@ -87,7 +87,7 @@ if (isset($_POST["add"])) {
         );
     }
     Html::redirect($itemtype::getFormURLWithID($cost->fields[$fk]));
-} else if (isset($_POST["update"])) {
+} elseif (isset($_POST["update"])) {
     $cost->check($_POST["id"], UPDATE);
 
     if ($cost->update($_POST)) {

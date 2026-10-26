@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -444,12 +444,12 @@ HTML;
                 $color     = Toolbox::getFgColor($bgcolor);
 
                 $palette_style .= "
-               #chart-{$p['rand']} .line-$letter {
+               #chart-{$p['rand']} .line-$index {
                   background-color: $bgcolor;
                   color: $color;
                }
 
-               #chart-{$p['rand']} .line-$letter:hover {
+               #chart-{$p['rand']} .line-$index:hover {
                   background-color: $bgcolor_h;
                   font-weight: bold;
                }
@@ -526,7 +526,7 @@ HTML;
             'rand'         => mt_rand(),
         ];
         $p = array_merge($default, $params);
-        $p['cache_key'] = $p['cache_key'] ?? $p['rand'];
+        $p['cache_key'] ??= $p['rand'];
         $default_entry = [
             'url'    => '',
             'icon'   => '',
@@ -543,7 +543,7 @@ HTML;
         $dark_bg_color = Toolbox::getFgColor($p['color'], 80);
         $dark_fg_color = Toolbox::getFgColor($p['color'], 40);
 
-        $chart_id = "chart-{$p['cache_key']}";
+        $chart_id = Toolbox::slugify("chart-{$p['cache_key']}");
 
         $class = "pie";
         $class .= $p['half'] ? " half" : "";
@@ -863,7 +863,7 @@ JAVASCRIPT;
             ];
         }
 
-       // chartist bar graphs are always multiple lines
+        // chartist bar graphs are always multiple lines
         if (!$params['distributed']) {
             $series = [$series];
         }
@@ -1005,7 +1005,7 @@ JAVASCRIPT;
         ];
         $p = array_merge($defaults, $params);
 
-        $p['cache_key'] = $p['cache_key'] ?? $p['rand'];
+        $p['cache_key'] ??= $p['rand'];
         $nb_series = count($series);
         $nb_labels = min($p['limit'], count($labels));
         if ($p['distributed']) {
@@ -1038,7 +1038,7 @@ JAVASCRIPT;
 
         $animation_duration = self::$animation_duration;
 
-        $chart_id = 'chart_' . $p['cache_key'];
+        $chart_id = Toolbox::slugify('chart_' . $p['cache_key']);
 
         $class = "bar";
         $class .= $p['horizontal'] ? " horizontal" : "";
@@ -1146,7 +1146,7 @@ HTML;
             distributeSeries: true,";
         }
 
-       // just to avoid issues with syntax coloring
+        // just to avoid issues with syntax coloring
         $point_labels = $p['point_labels'] ? "true" : "false;";
         $is_multiple  = $p['multiple'] ? "true" : "false;";
 
@@ -1366,7 +1366,7 @@ JAVASCRIPT;
             ];
         }
 
-       // chartist line graphs are always multiple lines
+        // chartist line graphs are always multiple lines
         $series = [$series];
 
         return self::getLinesGraph($params, $labels, $series);
@@ -1466,7 +1466,7 @@ JAVASCRIPT;
             'rand'         => mt_rand(),
         ];
         $p = array_merge($defaults, $params);
-        $p['cache_key'] = $p['cache_key'] ?? $p['rand'];
+        $p['cache_key'] ??= $p['rand'];
 
         $nb_series = count($series);
         $nb_labels = min($p['limit'], count($labels));
@@ -1484,7 +1484,7 @@ JAVASCRIPT;
         $json_labels = json_encode($labels);
         $json_series = json_encode($series);
 
-        $chart_id = 'chart_' . $p['cache_key'];
+        $chart_id = Toolbox::slugify('chart_' . $p['cache_key']);
 
         $fg_color        = Toolbox::getFgColor($p['color']);
         $line_color      = Toolbox::getFgColor($p['color'], 10);
@@ -1724,7 +1724,7 @@ JAVASCRIPT;
         ];
         $p = array_merge($default, $params);
 
-       // fix auto-escaping
+        // fix auto-escaping
         if (isset($p['markdown_content'])) {
             $p['markdown_content'] = \Html::cleanPostForTextArea($p['markdown_content']);
         }
@@ -1733,7 +1733,7 @@ JAVASCRIPT;
         $fg_color     = Toolbox::getFgColor($p['color']);
         $border_color = Toolbox::getFgColor($p['color'], 10);
         $md           = new MarkdownExtra();
-       // Prevent escaping as code is already escaped by GLPI sanityze
+        // Prevent escaping as code is already escaped by GLPI sanityze
         $md->code_span_content_func  = function ($code) {
             return $code;
         };
@@ -1741,12 +1741,14 @@ JAVASCRIPT;
             return $code;
         };
 
+        $content = RichText::getSafeHtml($md->transform($p['markdown_content']));
+
         $html = <<<HTML
       <div
          class="card markdown"
          style="background-color: {$p['color']}; color: {$fg_color}; border-color: {$border_color}">
 
-         <div class="html_content">{$md->transform($p['markdown_content'])}</div>
+         <div class="html_content">{$content}</div>
          <textarea
             class="markdown_content"
             placeholder="{$ph}">{$p['markdown_content']}</textarea>
@@ -1805,7 +1807,7 @@ HTML;
 
         $class = count($p['filters']) > 0 ? " filter-" . implode(' filter-', $p['filters']) : "";
 
-       // prepare search data
+        // prepare search data
         $_GET['_in_modal'] = true;
         $params = [
             'criteria' => $p['s_criteria'],
@@ -1814,14 +1816,14 @@ HTML;
 
         ob_start();
         $params = Search::manageParams($p['itemtype'], $params, false);
-       // remove parts of search list
+        // remove parts of search list
         $params = array_merge($params, [
             'showmassiveactions' => false,
             'dont_flush'         => true,
             'show_pager'         => false,
             'show_footer'        => false,
             'no_sort'            => true,
-            'list_limit'         => $p['limit']
+            'list_limit'         => $p['limit'],
         ]);
         Search::showList($p['itemtype'], $params);
 
@@ -1902,7 +1904,8 @@ HTML;
             $content_size = strlen($entry['content']);
             $content = strlen($entry['content'])
             ? RichText::getEnhancedHtml($entry['content']) .
-              ($content_size > 300
+              (
+                  $content_size > 300
                ? "<p class='read_more'><span class='read_more_button'>...</span></p>"
                : ""
               )
@@ -2025,14 +2028,14 @@ JAVASCRIPT;
         $colors = [];
 
         for ($i = 1; $i <= $nb_series; $i++) {
-            $names[$i - 1] = $i - 1;
+            $names[$i - 1] = chr(97 + ($i - 1) % 26);
 
-           // adjust luminosity
+            // adjust luminosity
             $i_l_step = $i * $step_l + $min_l / 100;
             $hsl['L'] = min(1, $revert
             ? 1 - $i_l_step
             : $i_l_step);
-           // adjust saturation
+            // adjust saturation
             if ($hsl['H'] != 0 && $hsl['H'] != 1) {
                 $i_s_step = $i * $step_s + $min_s / 100;
                 $hsl['S'] = min(1, $revert

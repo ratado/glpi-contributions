@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -52,14 +52,14 @@ abstract class AbstractPluginToCoreCommand extends AbstractCommand
      *
      * @var integer
      */
-    const ERROR_PLUGIN_VERSION_OR_DATA_INVALID = 1;
+    public const ERROR_PLUGIN_VERSION_OR_DATA_INVALID = 1;
 
     /**
      * Error code returned when import failed.
      *
      * @var integer
      */
-    const ERROR_PLUGIN_IMPORT_FAILED = 2;
+    public const ERROR_PLUGIN_IMPORT_FAILED = 2;
 
     /**
      * Target items mapping.
@@ -103,7 +103,7 @@ abstract class AbstractPluginToCoreCommand extends AbstractCommand
             $output->writeln(
                 [
                     sprintf(__('You are about to launch migration of "%s" plugin data into GLPI core tables.'), $this->getPluginKey()),
-                    __('It is better to make a backup of your existing data before continuing.')
+                    __('It is better to make a backup of your existing data before continuing.'),
                 ],
                 OutputInterface::VERBOSITY_QUIET
             );
@@ -164,7 +164,7 @@ abstract class AbstractPluginToCoreCommand extends AbstractCommand
                 continue;
             }
 
-            list($tablename, $fieldname) = explode('.', $field);
+            [$tablename, $fieldname] = explode('.', $field);
             if (!$this->db->tableExists($tablename) || !$this->db->fieldExists($tablename, $fieldname)) {
                 $this->output->writeln(
                     '<error>' . sprintf(__('Plugin database field "%s" is missing.'), $field) . '</error>',
@@ -192,7 +192,7 @@ abstract class AbstractPluginToCoreCommand extends AbstractCommand
      *
      * @return void
      */
-    protected function handleImportError($message, ProgressBar $progress_bar = null, bool $prevent_exit = false): void
+    protected function handleImportError($message, ?ProgressBar $progress_bar = null, bool $prevent_exit = false): void
     {
         $skip_errors = $this->input->getOption('skip-errors');
 
@@ -325,7 +325,7 @@ abstract class AbstractPluginToCoreCommand extends AbstractCommand
      *
      * @return null|CommonDBTM Stored item.
      */
-    protected function storeItem(string $itemtype, ?int $existing_item_id, array $input, ProgressBar $progress_bar = null): ?CommonDBTM
+    protected function storeItem(string $itemtype, ?int $existing_item_id, array $input, ?ProgressBar $progress_bar = null): ?CommonDBTM
     {
         if (!is_a($itemtype, CommonDBTM::class, true)) {
             throw new \LogicException(sprintf('Invalid itemtype "%s".', $itemtype));
@@ -373,7 +373,7 @@ abstract class AbstractPluginToCoreCommand extends AbstractCommand
      *
      * @return void
      */
-    protected function storeInfocomForItem(CommonDBTM $item, array $infocom_input, ProgressBar $progress_bar = null): void
+    protected function storeInfocomForItem(CommonDBTM $item, array $infocom_input, ?ProgressBar $progress_bar = null): void
     {
         $infocom = new Infocom();
 
@@ -385,7 +385,7 @@ abstract class AbstractPluginToCoreCommand extends AbstractCommand
         );
         if ($exists) {
             $infocom_input += [
-                'id' => $infocom->fields['id']
+                'id' => $infocom->fields['id'],
             ];
             $success = $infocom->update($infocom_input);
         } else {

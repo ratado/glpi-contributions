@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -43,10 +43,10 @@ class PDU_Rack extends CommonDBRelation
     public static $mustBeAttached_1      = false;
     public static $mustBeAttached_2      = false;
 
-    const SIDE_LEFT   = 1;
-    const SIDE_RIGHT  = 2;
-    const SIDE_TOP    = 3;
-    const SIDE_BOTTOM = 4;
+    public const SIDE_LEFT   = 1;
+    public const SIDE_RIGHT  = 2;
+    public const SIDE_TOP    = 3;
+    public const SIDE_BOTTOM = 4;
 
     public static function getTypeName($nb = 0)
     {
@@ -89,18 +89,13 @@ class PDU_Rack extends CommonDBRelation
     {
         $error_detected = [];
 
-        $pdus_id  = $this->fields['pdus_id'];
-        $racks_id = $this->fields['racks_id'];
-        $position = $this->fields['position'];
-        $side     = $this->fields['side'];
-
-       //check for requirements
+        //check for requirements
         if ($this->isNewItem()) {
-            if (!isset($input['pdus_id'])) {
+            if (empty($input['pdus_id'])) {
                 $error_detected[] = __('A pdu is required');
             }
 
-            if (!isset($input['racks_id'])) {
+            if (empty($input['racks_id'])) {
                 $error_detected[] = __('A rack is required');
             }
 
@@ -113,21 +108,13 @@ class PDU_Rack extends CommonDBRelation
             }
         }
 
-        if (isset($input['pdus_id'])) {
-            $pdus_id = $input['pdus_id'];
-        }
-        if (isset($input['racks_id'])) {
-            $racks_id = $input['racks_id'];
-        }
-        if (isset($input['position'])) {
-            $position = $input['position'];
-        }
-        if (isset($input['side'])) {
-            $side = $input['side'];
-        }
+        $pdus_id  = $input['pdus_id'] ?? $this->fields['pdus_id'] ?? null;
+        $racks_id = $input['racks_id'] ?? $this->fields['racks_id'] ?? null;
+        $position = $input['position'] ?? $this->fields['position'] ?? 0;
+        $side     = $input['side'] ?? $this->fields['side'] ?? null;
 
         if (!count($error_detected)) {
-           //check if required U are available at position
+            //check if required U are available at position
             $required_units = 1;
 
             $rack = new Rack();
@@ -141,14 +128,14 @@ class PDU_Rack extends CommonDBRelation
             $model = new PDUModel();
             if ($model->getFromDB($pdu->fields['pdumodels_id'])) {
                 if ($model->fields['required_units'] > 1) {
-                    $required_units = $model->fields['required_units'];
+                    $required_units = (int) $model->fields['required_units'];
                 }
             }
 
             if (
                 in_array($side, [self::SIDE_LEFT, self::SIDE_RIGHT])
                 && ($position > $rack->fields['number_units']
-                 || $position + $required_units  > $rack->fields['number_units'] + 1)
+                 || $position + $required_units  > (int) $rack->fields['number_units'] + 1)
             ) {
                 $error_detected[] = __('Item is out of rack bounds');
             } else {
@@ -218,11 +205,11 @@ class PDU_Rack extends CommonDBRelation
         /** @var \DBmysql $DB */
         global $DB;
 
-       // search used racked (or sided mounted) pdus
+        // search used racked (or sided mounted) pdus
         $used = [];
         foreach (
             $DB->request([
-                'FROM' => $this->getTable()
+                'FROM' => $this->getTable(),
             ]) as $not_racked
         ) {
             $used[] = $not_racked['pdus_id'];
@@ -232,8 +219,8 @@ class PDU_Rack extends CommonDBRelation
                 'SELECT' => 'items_id',
                 'FROM'   => Item_Rack::getTable(),
                 'WHERE'  => [
-                    'itemtype' => 'PDU'
-                ]
+                    'itemtype' => 'PDU',
+                ],
             ]) as $racked
         ) {
             $used[] = $racked['items_id'];
@@ -287,8 +274,8 @@ class PDU_Rack extends CommonDBRelation
                 'min'    => 1,
                 'max'    => $rack->fields['number_units'],
                 'step'   => 1,
-            // 'used'   => $rack->getFilled($this->fields['itemtype'], $this->fields['items_id']),
-                'rand'   => $rand
+                // 'used'   => $rack->getFilled($this->fields['itemtype'], $this->fields['items_id']),
+                'rand'   => $rand,
             ]
         );
         echo "</td>";
@@ -302,7 +289,7 @@ class PDU_Rack extends CommonDBRelation
             'bgcolor',
             [
                 'value'  => $this->fields['bgcolor'],
-                'rand'   => $rand
+                'rand'   => $rand,
             ]
         );
         echo "</td>";
@@ -326,8 +313,8 @@ class PDU_Rack extends CommonDBRelation
         $items   = $DB->request([
             'FROM'   => self::getTable(),
             'WHERE'  => [
-                'racks_id' => $rack->getID()
-            ]
+                'racks_id' => $rack->getID(),
+            ],
         ]);
 
         if (!count($items)) {
@@ -338,7 +325,7 @@ class PDU_Rack extends CommonDBRelation
                 Html::openMassiveActionsForm('mass' . __CLASS__ . $rand);
                 $massiveactionparams = [
                     'num_displayed'   => min($_SESSION['glpilist_limit'], count($items)),
-                    'container'       => 'mass' . __CLASS__ . $rand
+                    'container'       => 'mass' . __CLASS__ . $rand,
                 ];
                 Html::showMassiveActions($massiveactionparams);
             }
@@ -397,13 +384,13 @@ class PDU_Rack extends CommonDBRelation
         $sides = self::getSides();
 
         $found_pdus = [];
-       // find pdus from this relation
+        // find pdus from this relation
         $iterator = $DB->request([
             'FROM' => self::getTable(),
             'WHERE' => [
-                'racks_id' => $rack->getID()
+                'racks_id' => $rack->getID(),
             ],
-            'ORDER' => 'side'
+            'ORDER' => 'side',
         ]);
         foreach ($iterator as $current) {
             $found_pdus[] = [
@@ -414,13 +401,13 @@ class PDU_Rack extends CommonDBRelation
                 'bgcolor'  => $current['bgcolor'],
             ];
         }
-       // find pdus from item_rack relation
+        // find pdus from item_rack relation
         $iterator = $DB->request([
             'FROM' => Item_Rack::getTable(),
             'WHERE' => [
                 'racks_id' => $rack->getID(),
-                'itemtype' => 'PDU'
-            ]
+                'itemtype' => 'PDU',
+            ],
         ]);
         foreach ($iterator as $current) {
             $found_pdus[] = [
@@ -456,16 +443,16 @@ class PDU_Rack extends CommonDBRelation
                                  title='" . __("On left") . " (" . $current_pdu['position'] . ")'></i>";
                                 break;
                             case self::SIDE_RIGHT:
-                                 echo "<i class='fa fa-arrow-right fa-fw'
+                                echo "<i class='fa fa-arrow-right fa-fw'
                                  title='" . __("On right") . " (" . $current_pdu['position'] . ")'></i>";
                                 break;
                             case self::SIDE_TOP:
                                 echo "<i class='fa fa-arrow-up fa-fw'
-                                 title='" . __("On left") . "'></i>";
+                                 title='" . __("On top") . " (" . $current_pdu['position'] . ")'></i>";
                                 break;
                             case self::SIDE_BOTTOM:
                                 echo "<i class='fa fa-arrow-down fa-fw'
-                                 title='" . __("On left") . "'></i>";
+                                 title='" . __("On bottom") . " (" . $current_pdu['position'] . ")'></i>";
                                 break;
                         }
                     }
@@ -477,8 +464,8 @@ class PDU_Rack extends CommonDBRelation
 
                     echo "<td>";
                     if ($pdu_m->getFromDB($pdu->fields['pdumodels_id'])) {
-                         echo "<i class='fa fa-bolt'></i>";
-                         echo $pdu_m->fields['max_power'] . "W";
+                        echo "<i class='fa fa-bolt'></i>";
+                        echo $pdu_m->fields['max_power'] . "W";
                     }
                     echo "</td>";
                     echo "</tr>";
@@ -545,7 +532,7 @@ JAVASCRIPT;
         $rel   = new self();
 
         $found_pdus_side = self::getForRackSide($rack, $side);
-       // check if the rack has sided pdu on other side (to get symetrical view)
+        // check if the rack has sided pdu on other side (to get symetrical view)
         $found_all_pdus_side = self::getForRackSide($rack, [$side, self::getOtherSide($side)]);
 
         $float = false;
@@ -709,9 +696,9 @@ JAVASCRIPT;
             'FROM'  => self::getTable(),
             'WHERE' => [
                 'racks_id' => $rack->getID(),
-                'side'     => $side
+                'side'     => $side,
             ],
-            'ORDER' => 'position ASC'
+            'ORDER' => 'position ASC',
         ]);
     }
 
@@ -728,7 +715,7 @@ JAVASCRIPT;
 
         return $DB->request([
             'SELECT' => $fields_requested,
-            'FROM'  => self::getTable()
+            'FROM'  => self::getTable(),
         ]);
     }
 

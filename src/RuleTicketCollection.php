@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -35,7 +35,7 @@
 
 class RuleTicketCollection extends RuleCollection
 {
-   // From RuleCollection
+    // From RuleCollection
     public static $rightname                             = 'rule_ticket';
     public $use_output_rule_process_as_next_input = true;
     public $menu_option                           = 'ticket';
@@ -139,7 +139,7 @@ class RuleTicketCollection extends RuleCollection
         }
 
         $input['_groups_id_of_requester'] = [];
-       // Get groups of users
+        // Get groups of users
         if (isset($input['_users_id_requester'])) {
             if (!is_array($input['_users_id_requester'])) {
                 $requesters = [$input['_users_id_requester']];

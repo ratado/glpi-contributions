@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -55,29 +55,29 @@ class DeviceHardDrive extends CommonDevice
                     'label' => __('Capacity by default'),
                     'type'  => 'integer',
                     'min'   => 0,
-                    'unit'  => __('Mio')
+                    'unit'  => __('Mio'),
                 ],
                 [
                     'name'  => 'rpm',
                     'label' => __('Rpm'),
-                    'type'  => 'text'
+                    'type'  => 'text',
                 ],
                 [
                     'name'  => 'cache',
                     'label' => __('Cache'),
                     'type'  => 'integer',
-                    'unit'  => __('Mio')
+                    'unit'  => __('Mio'),
                 ],
                 [
                     'name'  => 'deviceharddrivemodels_id',
                     'label' => _n('Model', 'Models', 1),
-                    'type'  => 'dropdownValue'
+                    'type'  => 'dropdownValue',
                 ],
                 [
                     'name'  => 'interfacetypes_id',
                     'label' => __('Interface'),
-                    'type'  => 'dropdownValue'
-                ]
+                    'type'  => 'dropdownValue',
+                ],
             ]
         );
     }
@@ -116,7 +116,7 @@ class DeviceHardDrive extends CommonDevice
             'table'              => 'glpi_interfacetypes',
             'field'              => 'name',
             'name'               => __('Interface'),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         $tab[] = [
@@ -124,7 +124,7 @@ class DeviceHardDrive extends CommonDevice
             'table'              => 'glpi_deviceharddrivemodels',
             'field'              => 'name',
             'name'               => _n('Model', 'Models', 1),
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         return $tab;
@@ -164,8 +164,8 @@ class DeviceHardDrive extends CommonDevice
     public static function getHTMLTableHeader(
         $itemtype,
         HTMLTableBase $base,
-        HTMLTableSuperHeader $super = null,
-        HTMLTableHeader $father = null,
+        ?HTMLTableSuperHeader $super = null,
+        ?HTMLTableHeader $father = null,
         array $options = []
     ) {
 
@@ -187,9 +187,9 @@ class DeviceHardDrive extends CommonDevice
 
 
     public function getHTMLTableCellForItem(
-        HTMLTableRow $row = null,
-        CommonDBTM $item = null,
-        HTMLTableCell $father = null,
+        ?HTMLTableRow $row = null,
+        ?CommonDBTM $item = null,
+        ?HTMLTableCell $father = null,
         array $options = []
     ) {
 
@@ -231,7 +231,7 @@ class DeviceHardDrive extends CommonDevice
 
         return ['designation'       => 'equal',
             'manufacturers_id'  => 'equal',
-            'interfacetypes_id' => 'equal'
+            'interfacetypes_id' => 'equal',
         ];
     }
 
@@ -254,9 +254,9 @@ class DeviceHardDrive extends CommonDevice
             'joinparams'         => [
                 'beforejoin'         => [
                     'table'              => 'glpi_items_deviceharddrives',
-                    'joinparams'         => $main_joinparams
-                ]
-            ]
+                    'joinparams'         => $main_joinparams,
+                ],
+            ],
         ];
 
         $tab[] = [

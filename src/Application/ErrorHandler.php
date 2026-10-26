@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -50,7 +50,7 @@ class ErrorHandler
      *
      * @var array
      */
-    const ERROR_LEVEL_MAP = [
+    public const ERROR_LEVEL_MAP = [
         E_ERROR             => LogLevel::CRITICAL,
         E_WARNING           => LogLevel::WARNING,
         E_PARSE             => LogLevel::ALERT,
@@ -62,7 +62,7 @@ class ErrorHandler
         E_USER_ERROR        => LogLevel::ERROR,
         E_USER_WARNING      => LogLevel::WARNING,
         E_USER_NOTICE       => LogLevel::NOTICE,
-        E_STRICT            => LogLevel::NOTICE,
+        2048                => LogLevel::NOTICE, // E_STRICT, deprecated in PHP 8.4
         E_RECOVERABLE_ERROR => LogLevel::ERROR,
         E_DEPRECATED        => LogLevel::NOTICE,
         E_USER_DEPRECATED   => LogLevel::NOTICE,
@@ -73,7 +73,7 @@ class ErrorHandler
      *
      * @var array
      */
-    const FATAL_ERRORS = [
+    public const FATAL_ERRORS = [
         E_ERROR,
         E_PARSE,
         E_CORE_ERROR,
@@ -142,7 +142,7 @@ class ErrorHandler
     /**
      * @param LoggerInterface|null $logger
      */
-    public function __construct(LoggerInterface $logger = null)
+    public function __construct(?LoggerInterface $logger = null)
     {
         $this->logger = $logger;
     }
@@ -225,8 +225,10 @@ class ErrorHandler
     public function register(): void
     {
         set_error_handler([$this, 'handleError']);
-        set_exception_handler([$this, 'handleException']);
-        register_shutdown_function([$this, 'handleFatalError']);
+        if (!defined('TU_USER')) {
+            set_exception_handler([$this, 'handleException']);
+            register_shutdown_function([$this, 'handleFatalError']);
+        }
         $this->reserved_memory = str_repeat('x', 50 * 1024); // reserve 50 kB of memory space
     }
 
@@ -243,7 +245,7 @@ class ErrorHandler
     public function handleError(int $error_code, string $error_message, string $filename, int $line_number)
     {
 
-       // Have to false to forward to PHP internal error handler.
+        // Have to false to forward to PHP internal error handler.
         $return = !$this->forward_to_internal_handler;
 
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
@@ -251,16 +253,16 @@ class ErrorHandler
         $error_trace = $this->getTraceAsString($trace);
 
         if (in_array($error_code, self::FATAL_ERRORS)) {
-           // Fatal errors are handled by shutdown function
-           // (as some are not recoverable and cannot be handled here).
-           // Store backtrace to be able to use it there.
+            // Fatal errors are handled by shutdown function
+            // (as some are not recoverable and cannot be handled here).
+            // Store backtrace to be able to use it there.
             $this->last_fatal_trace = $error_trace;
             return $return;
         }
 
         if (!(error_reporting() & $error_code)) {
-           // Do not handle error if '@' operator is used on errored expression
-           // see https://www.php.net/manual/en/language.operators.errorcontrol.php
+            // Do not handle error if '@' operator is used on errored expression
+            // see https://www.php.net/manual/en/language.operators.errorcontrol.php
             return $return;
         }
 
@@ -404,7 +406,7 @@ class ErrorHandler
      */
     public function handleFatalError(): void
     {
-       // Free reserved memory to be able to handle "out of memory" errors
+        // Free reserved memory to be able to handle "out of memory" errors
         $this->reserved_memory = null;
 
         $error = error_get_last();
@@ -423,8 +425,8 @@ class ErrorHandler
                 $error['line']
             );
 
-           // debug_backtrace is not available in shutdown function
-           // so get stored trace if any exists
+            // debug_backtrace is not available in shutdown function
+            // so get stored trace if any exists
             $error_trace = $this->last_fatal_trace ?? '';
 
             $log_level = self::ERROR_LEVEL_MAP[$error['type']];
@@ -434,8 +436,8 @@ class ErrorHandler
         }
 
         if ($this->exit_code !== null) {
-           // If an exit code is defined, register a shutdown function that will be called after
-           // thoose that are already defined, in order to exit the script with the correct code.
+            // If an exit code is defined, register a shutdown function that will be called after
+            // thoose that are already defined, in order to exit the script with the correct code.
             $exit_code = $this->exit_code;
             register_shutdown_function(
                 'register_shutdown_function',
@@ -540,7 +542,7 @@ class ErrorHandler
                 $message = sprintf('<%1$s>%2$s</%1$s>', $format, $message);
             }
             $this->output_handler->writeln($message, $verbosity);
-        } else if (!isCommandLine()) {
+        } elseif (!isCommandLine()) {
             echo '<div class="alert alert-important alert-danger glpi-debug-alert" style="z-index:10000">'
             . '<span class="b">' . $error_type . ': </span>' . $message . '</div>';
         } else {
@@ -569,7 +571,7 @@ class ErrorHandler
             E_USER_ERROR        => 'User Error',
             E_USER_WARNING      => 'User Warning',
             E_USER_NOTICE       => 'User Notice',
-            E_STRICT            => 'Runtime Notice',
+            2048                => 'Runtime Notice', // E_STRICT, deprecated in PHP 8.4
             E_RECOVERABLE_ERROR => 'Catchable Fatal Error',
             E_DEPRECATED        => 'Deprecated function',
             E_USER_DEPRECATED   => 'User deprecated function',

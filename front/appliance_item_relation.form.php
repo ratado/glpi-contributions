@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -43,7 +43,7 @@ if (isset($_POST['add'])) {
     $app_item_rel->check(-1, CREATE, $_POST);
     $app_item_rel->add($_POST);
     Html::back();
-} else if (isset($_POST['purge'])) {
+} elseif (isset($_POST['purge'])) {
     $app_item_rel->check($_POST['id'], PURGE);
     $app_item_rel->delete($_POST, 1);
     Html::back();

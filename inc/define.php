@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -36,7 +36,7 @@
 use Glpi\SocketModel;
 
 // Current version of GLPI
-define('GLPI_VERSION', '10.0.13-dev');
+define('GLPI_VERSION', '10.0.28');
 
 $schema_file = sprintf('%s/install/mysql/glpi-empty.sql', GLPI_ROOT);
 define(
@@ -49,8 +49,8 @@ if (!defined('GLPI_MARKETPLACE_PRERELEASES')) {
 }
 
 define('GLPI_MIN_PHP', '7.4.0'); // Must also be changed in top of index.php
-define('GLPI_MAX_PHP', '8.4.0'); // (Exclusive) Must also be changed in top of index.php
-define('GLPI_YEAR', '2024');
+define('GLPI_MAX_PHP', '8.6.0'); // (Exclusive) Must also be changed in top of index.php
+define('GLPI_YEAR', '2026');
 
 //Define a global recipient address for email notifications
 //define('GLPI_FORCE_MAIL', 'me@localhost');
@@ -68,16 +68,19 @@ define("UNLOCK", 128);
 
 // dictionnaries
 $CFG_GLPI['languages'] = [
-   //Code       Name in native lang          LANG FILE      jquery tinymce english name            standard plural number
-    'ar_SA'  => ['العَرَبِيَّةُ',                   'ar_SA.mo',    'ar',    'ar', 'arabic',               103],
-   //'az_AZ'  => ['Azerbaijani',               'az_AZ.mo',    'az',    'az', 'azeri',                2], //asked on transifex, not present
+    //Code       Name in native lang          LANG FILE      jquery tinymce english name            standard plural number
+    'ar_SA'  => ['العربية السعودية',          'ar_SA.mo',    'ar',    'ar_SA', 'arabic',            103],
+    'ar_IQ'  => ['العربية العراق',            'ar_IQ.mo',    'ar',    'ar', 'irak arabic',          103],
+    'ar_SY'  => ['العربية سوريا',             'ar_SY.mo',    'ar',    'ar', 'syria arabic',         103],
+    'az_AZ'  => ['Azərbaycan dili',           'az_AZ.mo',    'az',    'az', 'azerbaijani',          2],
     'bg_BG'  => ['Български',                 'bg_BG.mo',    'bg',    'bg', 'bulgarian',            2],
+    'bn_BD'  => ['বাংলা (বাংলাদেশ)',          'bn_BD.mo',    'bn',    'bn_BD', 'bengali',           2],
     'id_ID'  => ['Bahasa Indonesia',          'id_ID.mo',    'id',    'id', 'indonesian',           2],
     'ms_MY'  => ['Bahasa Melayu',             'ms_MY.mo',    'ms',    'ms', 'malay',                2],
     'ca_ES'  => ['Català',                    'ca_ES.mo',    'ca',    'ca', 'catalan',              2], // ca_CA
     'cs_CZ'  => ['Čeština',                   'cs_CZ.mo',    'cs',    'cs', 'czech',                10],
     'de_DE'  => ['Deutsch',                   'de_DE.mo',    'de',    'de', 'german',               2],
-    'da_DK'  => ['Dansk',                     'da_DK.mo',    'da',    'da', 'danish',               2]     , // dk_DK
+    'da_DK'  => ['Dansk',                     'da_DK.mo',    'da',    'da', 'danish',               2], // dk_DK
     'et_EE'  => ['Eesti',                     'et_EE.mo',    'et',    'et', 'estonian',             2], // ee_ET
     'en_GB'  => ['English',                   'en_GB.mo',    'en-GB', 'en', 'english',              2],
     'en_US'  => ['English (US)',              'en_US.mo',    'en-GB', 'en', 'english',              2],
@@ -95,18 +98,19 @@ $CFG_GLPI['languages'] = [
     'gl_ES'  => ['Galego',                    'gl_ES.mo',    'gl',    'gl', 'galician',             2],
     'el_GR'  => ['Ελληνικά',                  'el_GR.mo',    'el',    'el', 'greek',                2], // el_EL
     'he_IL'  => ['עברית',                     'he_IL.mo',    'he',    'he', 'hebrew',               2], // he_HE
-    'hi_IN'  => ['हिन्दी',                     'hi_IN.mo',    'hi',    'hi_IN', 'hindi' ,            2],
+    'hi_IN'  => ['हिन्दी',                     'hi_IN.mo',    'hi',    'hi_IN', 'hindi',            2],
     'hr_HR'  => ['Hrvatski',                  'hr_HR.mo',    'hr',    'hr', 'croatian',             2],
     'hu_HU'  => ['Magyar',                    'hu_HU.mo',    'hu',    'hu', 'hungarian',            2],
     'it_IT'  => ['Italiano',                  'it_IT.mo',    'it',    'it', 'italian',              2],
+    'km_KH'  => ['ខ្មែរ (កម្ពុជា)',              'km_KH.mo',    'km',    'km_KH', 'cambodgian khmer',  0],
     'kn'     => ['ಕನ್ನಡ',                      'kn.mo',       'en-GB', 'en', 'kannada',              2],
     'lv_LV'  => ['Latviešu',                  'lv_LV.mo',    'lv',    'lv', 'latvian',              2],
     'lt_LT'  => ['Lietuvių',                  'lt_LT.mo',    'lt',    'lt', 'lithuanian',           2],
     'mn_MN'  => ['Монгол хэл',                'mn_MN.mo',    'mn',    'mn', 'mongolian',            2],
     'nl_NL'  => ['Nederlands',                'nl_NL.mo',    'nl',    'nl', 'dutch',                2],
     'nl_BE'  => ['Flemish',                   'nl_BE.mo',    'nl',    'nl', 'flemish',              2],
-    'nb_NO'  => ['Norsk (Bokmål)',            'nb_NO.mo',    'no',    'nb', 'norwegian',            2], // no_NB
-    'nn_NO'  => ['Norsk (Nynorsk)',           'nn_NO.mo',    'no',    'nn', 'norwegian',            2], // no_NN
+    'nb_NO'  => ['Norsk (Bokmål)',            'nb_NO.mo',    'no',    'nb', 'norwegian',            2],
+    'nn_NO'  => ['Norsk (Nynorsk)',           'nn_NO.mo',    'no',    'nn', 'norwegian',            2],
     'fa_IR'  => ['فارسی',                     'fa_IR.mo',    'fa',    'fa', 'persian',              2],
     'pl_PL'  => ['Polski',                    'pl_PL.mo',    'pl',    'pl', 'polish',               2],
     'pt_PT'  => ['Português',                 'pt_PT.mo',    'pt',    'pt', 'portuguese',           2],
@@ -115,6 +119,7 @@ $CFG_GLPI['languages'] = [
     'ru_RU'  => ['Русский',                   'ru_RU.mo',    'ru',    'ru', 'russian',              2],
     'sk_SK'  => ['Slovenčina',                'sk_SK.mo',    'sk',    'sk', 'slovak',               10],
     'sl_SI'  => ['Slovenščina',               'sl_SI.mo',    'sl',    'sl', 'slovenian slovene',    2],
+    'sq_AL'  => ['Shqip',                     'sq_AL.mo',    'sq',    'sq', 'albanian',             2],
     'sr_RS'  => ['Srpski',                    'sr_RS.mo',    'sr',    'sr', 'serbian',              2],
     'fi_FI'  => ['Suomi',                     'fi_FI.mo',    'fi',    'fi', 'finish',               2],
     'sv_SE'  => ['Svenska',                   'sv_SE.mo',    'sv',    'sv', 'swedish',              2],
@@ -130,7 +135,60 @@ $CFG_GLPI['languages'] = [
     'be_BY'  => ['Belarussian',               'be_BY.mo',    'be',    'be', 'belarussian',          3],
     'is_IS'  => ['íslenska',                  'is_IS.mo',    'is',    'en', 'icelandic',            2],
     'eo'     => ['Esperanto',                 'eo.mo',       'eo',    'en', 'esperanto',            2],
-    'es_CL'  => ['Español chileno',           'es_CL',       'es',    'es', 'spanish chilean',      2]
+    'es_CL'  => ['Español chileno',           'es_CL.mo',       'es',    'es', 'spanish chilean',      2],
+];
+
+// Mapping of short language codes to their main locale
+$CFG_GLPI['main_languages'] = [
+    // 'ar' => 'ar_SA', // not sure about the default region for arabic language
+    'az' => 'az_AZ',
+    'bg' => 'bg_BG',
+    'bn' => 'bn_BD',
+    'id' => 'id_ID',
+    'ms' => 'ms_MY',
+    'ca' => 'ca_ES',
+    'cs' => 'cs_CZ',
+    'de' => 'de_DE',
+    'da' => 'da_DK',
+    'et' => 'et_EE',
+    'en' => 'en_GB',
+    'es' => 'es_ES',
+    'eu' => 'eu_ES',
+    'fr' => 'fr_FR',
+    'gl' => 'gl_ES',
+    'el' => 'el_GR',
+    'he' => 'he_IL',
+    'hi' => 'hi_IN',
+    'hr' => 'hr_HR',
+    'hu' => 'hu_HU',
+    'it' => 'it_IT',
+    'km' => 'km_KH',
+    'lv' => 'lv_LV',
+    'lt' => 'lt_LT',
+    'mn' => 'mn_MN',
+    'nl' => 'nl_NL',
+    'nb' => 'nb_NO',
+    'nn' => 'nn_NO',
+    'fa' => 'fa_IR',
+    'pl' => 'pl_PL',
+    'pt' => 'pt_BR',
+    'ro' => 'ro_RO',
+    'ru' => 'ru_RU',
+    'sk' => 'sk_SK',
+    'sl' => 'sl_SI',
+    'sq' => 'sq_AL',
+    'sr' => 'sr_RS',
+    'fi' => 'fi_FI',
+    'sv' => 'sv_SE',
+    'vi' => 'vi_VN',
+    'th' => 'th_TH',
+    'tr' => 'tr_TR',
+    'uk' => 'uk_UA',
+    'ja' => 'ja_JP',
+    'zh' => 'zh_CN',
+    'ko' => 'ko_KR',
+    'be' => 'be_BY',
+    'is' => 'is_IS',
 ];
 
 $DEFAULT_PLURAL_NUMBER = 2;
@@ -187,19 +245,19 @@ $CFG_GLPI["unicity_types"]                = ['Budget', 'Computer', 'Contact', 'C
     'Infocom', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'Software',
     'SoftwareLicense', 'Supplier','User', 'Certificate',
-    'Rack', 'Enclosure', 'PDU', 'Cluster', 'Item_DeviceSimcard'
+    'Rack', 'Enclosure', 'PDU', 'Cluster', 'Item_DeviceSimcard',
 ];
 
 $CFG_GLPI["state_types"]                  = ['Computer', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'SoftwareLicense',
     'Certificate', 'Enclosure', 'PDU', 'Line',
     'Rack', 'SoftwareVersion', 'Cluster', 'Contract',
-    'Appliance', 'DatabaseInstance', 'Cable', 'Unmanaged', 'PassiveDCEquipment'
+    'Appliance', 'DatabaseInstance', 'Cable', 'Unmanaged', 'PassiveDCEquipment',
 ];
 
 $CFG_GLPI["asset_types"]                  = ['Computer', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'SoftwareLicense',
-    'Certificate', 'Unmanaged', 'Appliance'
+    'Certificate', 'Unmanaged', 'Appliance',
 ];
 
 $CFG_GLPI["project_asset_types"]          = ['Computer', 'Monitor', 'NetworkEquipment',
@@ -209,7 +267,7 @@ $CFG_GLPI["project_asset_types"]          = ['Computer', 'Monitor', 'NetworkEqui
     'DeviceControl', 'DeviceGraphicCard', 'DeviceSoundCard',
     'DevicePci', 'DeviceCase', 'DevicePowerSupply', 'DeviceGeneric',
     'DeviceBattery', 'DeviceFirmware', 'DeviceCamera',
-    'Certificate'
+    'Certificate', 'Appliance',
 ];
 
 
@@ -222,14 +280,14 @@ $CFG_GLPI["document_types"]               = ['Budget', 'CartridgeItem', 'Change'
     'SoftwareLicense', 'Supplier', 'Ticket','User',
     'Certificate', 'Cluster', 'ITILFollowup', 'ITILSolution',
     'ChangeTask', 'ProblemTask', 'TicketTask', 'Appliance',
-    'DatabaseInstance'
+    'DatabaseInstance', 'Rack',
 ];
 
 $CFG_GLPI["consumables_types"]            = ['Group', 'User'];
 
 $CFG_GLPI["report_types"]                 = ['Computer', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'Project',
-    'Software', 'SoftwareLicense', 'Certificate'
+    'Software', 'SoftwareLicense', 'Certificate',
 ];
 
 
@@ -241,31 +299,31 @@ $CFG_GLPI["infocom_types"]                = ['Cartridge', 'CartridgeItem', 'Comp
     'Printer', 'Software', 'SoftwareLicense',
     'Line', 'Certificate', 'Domain', 'Appliance', 'Item_DeviceSimcard',
     'Rack', 'Enclosure', 'PDU', 'PassiveDCEquipment',
-    'DatabaseInstance', 'Cable'
+    'DatabaseInstance', 'Cable',
 ];
 
 $CFG_GLPI["reservation_types"]            = ['Computer', 'Monitor', 'NetworkEquipment',
-    'Peripheral', 'Phone', 'Printer', 'Software'
+    'Peripheral', 'Phone', 'Printer', 'Software',
 ];
 
 $CFG_GLPI["linkuser_types"]               = ['Computer', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'Software',
-    'SoftwareLicense', 'Certificate', 'Appliance', 'Item_DeviceSimcard', 'Line'
+    'SoftwareLicense', 'Certificate', 'Appliance', 'Item_DeviceSimcard', 'Line',
 ];
 
 $CFG_GLPI["linkgroup_types"]              = ['Computer', 'Consumable', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'Software',
-    'SoftwareLicense', 'Certificate', 'Appliance', 'Item_DeviceSimcard', 'Line'
+    'SoftwareLicense', 'Certificate', 'Appliance', 'Item_DeviceSimcard', 'Line',
 ];
 
 $CFG_GLPI["linkuser_tech_types"]          = ['Computer', 'ConsumableItem', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'Software',
-    'SoftwareLicense', 'Certificate', 'Appliance', 'DatabaseInstance'
+    'SoftwareLicense', 'Certificate', 'Appliance', 'DatabaseInstance',
 ];
 
 $CFG_GLPI["linkgroup_tech_types"]         = ['Computer', 'ConsumableItem', 'Monitor', 'NetworkEquipment',
     'Peripheral', 'Phone', 'Printer', 'Software',
-    'SoftwareLicense', 'Certificate', 'Appliance', 'DatabaseInstance'
+    'SoftwareLicense', 'Certificate', 'Appliance', 'DatabaseInstance',
 ];
 
 $CFG_GLPI["location_types"]               = ['Budget', 'CartridgeItem', 'ConsumableItem',
@@ -274,7 +332,7 @@ $CFG_GLPI["location_types"]               = ['Budget', 'CartridgeItem', 'Consuma
     'Printer', 'Software', 'SoftwareLicense',
     'Ticket', 'User', 'Certificate', 'Item_DeviceSimcard',
     'Line', 'Appliance', 'PassiveDCEquipment', 'DataCenter',
-    'DCRoom', 'Rack', 'Enclosure', 'PDU'
+    'DCRoom', 'Rack', 'Enclosure', 'PDU',
 ];
 
 $CFG_GLPI["ticket_types"]                 = ['Computer', 'Monitor', 'NetworkEquipment',
@@ -282,14 +340,14 @@ $CFG_GLPI["ticket_types"]                 = ['Computer', 'Monitor', 'NetworkEqui
     'SoftwareLicense', 'Certificate',
     'Line', 'DCRoom', 'Rack', 'Enclosure', 'Cluster', 'PDU',
     'Domain', 'DomainRecord', 'Appliance', 'Item_DeviceSimcard', 'PassiveDCEquipment',
-    'DatabaseInstance', 'Database', 'Cable'
+    'DatabaseInstance', 'Database', 'Cable',
 ];
 
 $CFG_GLPI["link_types"]                   = ['Budget', 'CartridgeItem', 'Computer',
     'ConsumableItem', 'Contact', 'Contract', 'Monitor',
     'NetworkEquipment', 'Peripheral', 'Phone',
     'Printer', 'Software', 'Supplier', 'User', 'Certificate', 'Cluster',
-    'DCRoom', 'Domain', 'Appliance', 'DatabaseInstance'
+    'DCRoom', 'Domain', 'Appliance', 'DatabaseInstance',
 ];
 
 $CFG_GLPI["dictionnary_types"]            = ['ComputerModel', 'ComputerType', 'Manufacturer',
@@ -302,20 +360,20 @@ $CFG_GLPI["dictionnary_types"]            = ['ComputerModel', 'ComputerType', 'M
     'Software', 'OperatingSystemArchitecture',
     'OperatingSystemKernel', 'OperatingSystemKernelVersion',
     'OperatingSystemEdition', 'ImageResolution', 'ImageFormat',
-    'DatabaseInstanceType', SocketModel::class, 'CableType'
+    'DatabaseInstanceType', SocketModel::class, 'CableType',
 ];
 
 $CFG_GLPI["helpdesk_visible_types"]       = ['Software', 'Appliance', 'DatabaseInstance'];
 
 $CFG_GLPI["networkport_types"]            = ['Computer', 'Monitor', 'NetworkEquipment', 'Peripheral',
-    'Phone', 'Printer', 'Enclosure', 'PDU', 'Cluster', 'Unmanaged'
+    'Phone', 'Printer', 'Enclosure', 'PDU', 'Cluster', 'Unmanaged',
 ];
 
 // Warning : the order is used for displaying different NetworkPort types ! Keep it !
-$CFG_GLPI['networkport_instantiations']   = ['NetworkPortEthernet', 'NetworkPortWifi' ,
+$CFG_GLPI['networkport_instantiations']   = ['NetworkPortEthernet', 'NetworkPortWifi',
     'NetworkPortAggregate', 'NetworkPortAlias',
     'NetworkPortDialup',   'NetworkPortLocal',
-    'NetworkPortFiberchannel'
+    'NetworkPortFiberchannel',
 ];
 
 $CFG_GLPI['device_types']                 = ['DeviceMotherboard', 'DeviceFirmware', 'DeviceProcessor',
@@ -323,12 +381,12 @@ $CFG_GLPI['device_types']                 = ['DeviceMotherboard', 'DeviceFirmwar
     'DeviceDrive', 'DeviceBattery', 'DeviceGraphicCard',
     'DeviceSoundCard', 'DeviceControl', 'DevicePci',
     'DeviceCase', 'DevicePowerSupply', 'DeviceGeneric',
-    'DeviceSimcard', 'DeviceSensor', 'DeviceCamera'
+    'DeviceSimcard', 'DeviceSensor', 'DeviceCamera',
 ];
 
 
 $CFG_GLPI["socket_types"]                  = ['Computer','NetworkEquipment',
-    'Peripheral','Phone','Printer', 'PassiveDCEquipment'
+    'Peripheral','Phone','Printer', 'PassiveDCEquipment',
 ];
 
 $CFG_GLPI['itemdevices'] = [];
@@ -338,7 +396,7 @@ foreach ($CFG_GLPI['device_types'] as $dtype) {
 }
 
 $CFG_GLPI["itemdevices_types"]            = ['Computer', 'NetworkEquipment', 'Peripheral',
-    'Phone', 'Printer', 'Enclosure'
+    'Phone', 'Printer', 'Enclosure',
 ];
 
 $CFG_GLPI["itemdevices_itemaffinity"]     = ['Computer'];
@@ -373,6 +431,10 @@ $CFG_GLPI['itemdevicemotherboard_types']  = ['Computer', 'Phone'];
 
 $CFG_GLPI['itemdevicecamera_types']  = ['Computer', 'Phone'];
 
+$CFG_GLPI['itemdevicedrive_types']  = ['Computer', 'Peripheral'];
+
+$CFG_GLPI['itemdevicecontrol_types']  = ['Computer', 'Peripheral', 'Phone', 'NetworkEquipment', 'Printer'];
+
 $CFG_GLPI["notificationtemplates_types"]  = ['CartridgeItem', 'Change', 'ConsumableItem',
     'Contract', 'CronTask', 'DBConnection',
     'FieldUnicity', 'Infocom', 'MailCollector',
@@ -380,7 +442,7 @@ $CFG_GLPI["notificationtemplates_types"]  = ['CartridgeItem', 'Change', 'Consuma
     'Project', 'ProjectTask', 'Reservation',
     'SoftwareLicense', 'Ticket', 'User',
     'SavedSearch_Alert', 'Certificate', 'Glpi\\Marketplace\\Controller',
-    'Domain'
+    'Domain',
 ];
 
 $CFG_GLPI["contract_types"]               = array_merge(
@@ -388,18 +450,18 @@ $CFG_GLPI["contract_types"]               = array_merge(
         'Peripheral', 'Phone', 'Printer', 'Project', 'Line',
         'Software', 'SoftwareLicense', 'Certificate',
         'DCRoom', 'Rack', 'Enclosure', 'Cluster', 'PDU', 'Appliance', 'Domain',
-        'DatabaseInstance'
+        'DatabaseInstance', 'PassiveDCEquipment',
     ],
     $CFG_GLPI['itemdevices']
 );
 
 
 $CFG_GLPI["union_search_type"]            = ['ReservationItem' => "reservation_types",
-    AllAssets::getType()       => "asset_types"
+    AllAssets::getType()       => "asset_types",
 ];
 
 $CFG_GLPI["systeminformations_types"]     = ['AuthLDAP', 'DBConnection', 'MailCollector',
-    'Plugin'
+    'Plugin',
 ];
 
 $CFG_GLPI["rulecollections_types"]        = [
@@ -410,13 +472,13 @@ $CFG_GLPI["rulecollections_types"]        = [
     'RuleRightCollection',
     'RuleSoftwareCategoryCollection',
     'RuleTicketCollection',
-                                                  //'RuleImportComputerCollection', //deprecated
-    'RuleAssetCollection'
+    //'RuleImportComputerCollection', //deprecated
+    'RuleAssetCollection',
 ];
 
 // Items which can planned something
 $CFG_GLPI['planning_types']               = ['ChangeTask', 'ProblemTask', 'Reminder',
-    'TicketTask', 'ProjectTask', 'PlanningExternalEvent'
+    'TicketTask', 'ProjectTask', 'PlanningExternalEvent',
 ];
 $CFG_GLPI['planning_add_types']           = ['PlanningExternalEvent'];
 
@@ -436,7 +498,7 @@ $CFG_GLPI["globalsearch_types"]           = ['Computer', 'Contact', 'Contract',
     'User', 'Group', 'Project', 'Supplier',
     'Budget', 'Certificate', 'Line', 'Datacenter',
     'DCRoom', 'Enclosure', 'PDU', 'Rack', 'Cluster', 'PassiveDCEquipment',
-    'Domain', 'Appliance'
+    'Domain', 'Appliance',
 ];
 
 // New config options which can be missing during migration
@@ -467,7 +529,7 @@ $CFG_GLPI['user_pref_field'] = ['backcreated', 'csv_delimiter', 'date_format',
     'highcontrast_css', 'default_dashboard_central', 'default_dashboard_assets',
     'default_dashboard_helpdesk', 'default_dashboard_mini_ticket', 'default_central_tab',
     'fold_menu', 'fold_search', 'savedsearches_pinned', 'richtext_layout', 'timeline_order',
-    'itil_layout', 'timeline_action_btn_layout', 'timeline_date_format'
+    'itil_layout', 'timeline_action_btn_layout', 'timeline_date_format',
 ];
 
 $CFG_GLPI['lock_lockable_objects'] = ['Budget',  'Change', 'Contact', 'Contract', 'Document',
@@ -476,14 +538,14 @@ $CFG_GLPI['lock_lockable_objects'] = ['Budget',  'Change', 'Contact', 'Contract'
     'NetworkEquipment', 'NetworkName', 'Peripheral', 'Phone',
     'Printer', 'Problem', 'Profile', 'Project', 'Reminder',
     'RSSFeed', 'Software', 'Supplier', 'Ticket', 'User',
-    'SoftwareLicense', 'Certificate'
+    'SoftwareLicense', 'Certificate',
 ];
 
 $CFG_GLPI['inventory_types'] = [
     'Computer',
     'Phone',
     'Printer',
-    'NetworkEquipment'
+    'NetworkEquipment',
 ];
 
 $CFG_GLPI['inventory_lockable_objects'] = ['Computer_Item',  'Item_SoftwareLicense',
@@ -492,7 +554,8 @@ $CFG_GLPI['inventory_lockable_objects'] = ['Computer_Item',  'Item_SoftwareLicen
     'Item_DeviceControl', 'Item_DeviceDrive', 'Item_DeviceFirmware', 'Item_DeviceGeneric', 'Item_DeviceGraphicCard',
     'Item_DeviceHardDrive', 'Item_DeviceMemory', 'Item_DeviceMotherboard', 'Item_DeviceNetworkCard', 'Item_DevicePci',
     'Item_DevicePowerSupply', 'Item_DeviceProcessor', 'Item_DeviceSensor', 'Item_DeviceSimcard', 'Item_DeviceSoundCard',
-    'DatabaseInstance', 'Item_RemoteManagement','Monitor', 'Domain_Item'
+    'DatabaseInstance', 'Item_RemoteManagement','Monitor', 'Domain_Item', 'Peripheral', 'Unmanaged', 'Database',
+    'Item_DeviceCamera', 'Item_DeviceCamera_ImageFormat', 'Item_DeviceCamera_ImageResolution',
 ];
 
 $CFG_GLPI["kb_types"]              = ['Budget', 'Change', 'Computer',
@@ -502,13 +565,13 @@ $CFG_GLPI["kb_types"]              = ['Budget', 'Change', 'Computer',
     'Problem', 'Project', 'Software',
     'SoftwareLicense', 'Supplier',
     'Ticket', 'Certificate', 'Appliance',
-    'DatabaseInstance'
+    'DatabaseInstance',
 ];
 $CFG_GLPI["certificate_types"]     = ['Computer',
     'NetworkEquipment', 'Peripheral',
     'Phone', 'Printer',
     'SoftwareLicense', 'User', 'Domain', 'Appliance',
-    'DatabaseInstance'
+    'DatabaseInstance',
 ];
 
 $CFG_GLPI["rackable_types"]        = ['Computer', 'Monitor', 'NetworkEquipment', 'Peripheral', 'Enclosure', 'PDU', 'PassiveDCEquipment'];
@@ -524,11 +587,11 @@ $CFG_GLPI['disk_types'] = ['Computer', 'NetworkEquipment', 'Phone', 'Printer'];
 $CFG_GLPI['kanban_types']        = ['Project'];
 
 $CFG_GLPI['domain_types']        = ['Computer', 'Monitor', 'NetworkEquipment', 'Peripheral',
-    'Phone', 'Printer', 'Software', 'Appliance', 'Certificate', 'DatabaseInstance', 'Database', 'Unmanaged'
+    'Phone', 'Printer', 'Software', 'Appliance', 'Certificate', 'DatabaseInstance', 'Database', 'Unmanaged',
 ];
 
 $CFG_GLPI['appliance_types']     = ['Computer', 'Monitor', 'NetworkEquipment', 'Peripheral', 'Phone',
-    'Printer', 'Software', 'Appliance', 'Cluster', 'DatabaseInstance', 'Database'
+    'Printer', 'Software', 'Appliance', 'Cluster', 'DatabaseInstance', 'Database',
 ];
 
 $CFG_GLPI['appliance_relation_types'] = ['Location', 'Network', 'Domain'];
@@ -549,7 +612,7 @@ $CFG_GLPI['javascript'] = [
             'masonry',
             'tinymce',
             'dashboard',
-        ]
+        ],
     ],
     'assets'    => [
         'dashboard'   => ['dashboard'],
@@ -565,7 +628,7 @@ $CFG_GLPI['javascript'] = [
         'ticket'    => ['rateit', 'tinymce', 'kanban', 'dashboard'],
         'problem'   => ['tinymce', 'kanban', 'sortable'],
         'change'    => ['tinymce', 'kanban', 'sortable'],
-        'stat'      => ['charts', 'rateit']
+        'stat'      => ['charts', 'rateit'],
     ],
     'tools'     => [
         'project'                 => ['kanban', 'tinymce', 'sortable'],
@@ -577,7 +640,7 @@ $CFG_GLPI['javascript'] = [
     ],
     'management' => [
         'datacenter' => [
-            'dcroom' => ['gridstack', 'rack']
+            'dcroom' => ['gridstack', 'rack'],
         ],
     ],
     'config' => [
@@ -588,18 +651,18 @@ $CFG_GLPI['javascript'] = [
             'TaskTemplate'          => ['tinymce'],
         ],
         'notification' => [
-            'notificationtemplate' => ['tinymce']
+            'notificationtemplate' => ['tinymce'],
         ],
         'plugin' => [
-            'marketplace' => ['marketplace']
+            'marketplace' => ['marketplace'],
         ],
-        'config' => ['clipboard', 'tinymce']
+        'config' => ['clipboard', 'tinymce'],
     ],
     'admin'        => ['clipboard', 'sortable'],
     'preference'   => ['clipboard'],
     'self-service' => array_merge(['tinymce'], $reservations_libs),
     'tickets'      => [
-        'ticket' => ['tinymce']
+        'ticket' => ['tinymce'],
     ],
     'create_ticket' => ['tinymce'],
     'reservation'   => array_merge(['tinymce'], $reservations_libs),

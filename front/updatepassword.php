@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -78,7 +78,7 @@ if (array_key_exists('update', $_POST)) {
         ];
         if ($input['password'] === $input['current_password']) {
             $error_messages = [__('The new password must be different from current password')];
-        } else if ($input['password'] !== $input['password2']) {
+        } elseif ($input['password'] !== $input['password2']) {
             $error_messages = [__('The two passwords do not match')];
         } else {
             try {

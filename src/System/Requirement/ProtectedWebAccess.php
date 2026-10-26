@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -80,7 +80,7 @@ class ProtectedWebAccess extends AbstractRequirement
         $check_access = false;
         foreach ($this->directories as $dir) {
             if (str_starts_with($dir, GLPI_ROOT)) {
-               // Only check access if one of the data directories is under GLPI document root.
+                // Only check access if one of the data directories is under GLPI document root.
                 $check_access = true;
                 break;
             }
@@ -96,11 +96,11 @@ class ProtectedWebAccess extends AbstractRequirement
         });
         $oldlevel = error_reporting(0);
 
-       //create a context to set timeout
+        //create a context to set timeout
         $context = stream_context_create([
             'http' => [
-                'timeout' => 2.0
-            ]
+                'timeout' => 2.0,
+            ],
         ]);
 
         $protocol = 'http';

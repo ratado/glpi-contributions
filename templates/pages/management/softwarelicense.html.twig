@@ -5,8 +5,7 @@
  #
  # http://glpi-project.org
  #
- # @copyright 2015-2024 Teclib' and contributors.
- # @copyright 2003-2014 by the INDEPNET Development Team.
+ # @copyright 2015-2026 Teclib' and contributors.
  # @licence   https://www.gnu.org/licenses/gpl-3.0.html
  #
  # ---------------------------------------------------------------------
@@ -121,9 +120,8 @@
       'min': 1,
       'max': 10000,
       'step': 1,
-      'toadd': {'-1': __('Unlimited')},
-      'add_field_html': validity_msg
-   }) }}
+      'toadd': {'-1': __('Unlimited')}
+   }|merge(item.isNewItem() ? {} : {'add_field_html': validity_msg})) }}
 
    {{ fields.dropdownYesNo('allow_overquota', item.fields['allow_overquota'], __('Allow Over-Quota')) }}
 

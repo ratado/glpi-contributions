@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @copyright 2010-2022 by the FusionInventory Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
@@ -38,23 +38,13 @@ use Glpi\Plugin\Hooks;
 
 class RuleImportEntity extends Rule
 {
-   // From Rule
+    // From Rule
     public static $rightname = 'rule_import';
     public $can_sort  = true;
 
     public function getTitle()
     {
         return __('Rules for assigning an item to an entity');
-    }
-
-
-    /**
-     * @see Rule::maxActionsCount()
-     **/
-    public function maxActionsCount()
-    {
-       // Unlimited
-        return 5;
     }
 
     public function executeActions($output, $params, array $input = [])
@@ -68,9 +58,9 @@ class RuleImportEntity extends Rule
                         break;
 
                     case "regex_result":
-                      //Assign entity using the regex's result
+                        //Assign entity using the regex's result
                         if ($action->fields["field"] == "_affect_entity_by_tag") {
-                             //Get the TAG from the regex's results
+                            //Get the TAG from the regex's results
                             if (isset($this->regex_results[0])) {
                                 $res = RuleAction::getRegexResultById(
                                     $action->fields["value"],
@@ -80,8 +70,8 @@ class RuleImportEntity extends Rule
                                 $res = $action->fields["value"];
                             }
                             if ($res != null) {
-                                 //Get the entity associated with the TAG
-                                 $target_entity = Entity::getEntityIDByTag(addslashes($res));
+                                //Get the entity associated with the TAG
+                                $target_entity = Entity::getEntityIDByTag(addslashes($res));
                                 if ($target_entity != '') {
                                     $output["entities_id"] = $target_entity;
                                 }
@@ -101,42 +91,42 @@ class RuleImportEntity extends Rule
         return [
             'tag' => [
                 'field' => 'name',
-                'name' => __('Inventory tag')
+                'name' => __('Inventory tag'),
             ],
             'domain' => [
                 'field' => 'name',
-                'name' => Domain::getTypeName(1)
+                'name' => Domain::getTypeName(1),
             ],
             'subnet' => [
                 'field' => 'name',
-                'name' => __('Subnet')
+                'name' => __('Subnet'),
             ],
             'ip' => [
                 'field' => 'name',
-                'name' => IPAddress::getTypeName(1)
+                'name' => IPAddress::getTypeName(1),
             ],
             'name' => [
                 'field' => 'name',
-                'name' => __("Equipment name")
+                'name' => __("Equipment name"),
             ],
             'serial' => [
                 'field' => 'name',
-                'name' => __('Serial number')
+                'name' => __('Serial number'),
             ],
             'itemtype' => [
                 'field' => 'itemtype',
-                'name' => __('Itemtype')
+                'name' => __('Itemtype'),
             ],
             'oscomment' => [
                 'field' => 'name',
-                'name' => sprintf('%s > %s', OperatingSystem::getTypeName(1), __('Comments'))
+                'name' => sprintf('%s > %s', OperatingSystem::getTypeName(1), __('Comments')),
             ],
             '_source' => [
                 'table' => '',
                 'field' => '_source',
                 'name' => __('Source'),
-                'allow_condition' => [Rule::PATTERN_IS, Rule::PATTERN_IS_NOT]
-            ]
+                'allow_condition' => [Rule::PATTERN_IS, Rule::PATTERN_IS_NOT],
+            ],
         ];
     }
 
@@ -156,7 +146,7 @@ class RuleImportEntity extends Rule
 
         if ($criteria['field'] == '_source') {
             $tab = ['GLPI' => __('GLPI'), 'NATIVE_INVENTORY' => AutoUpdateSystem::getLabelFor(AutoUpdateSystem::NATIVE_INVENTORY)];
-            foreach ($PLUGIN_HOOKS['import_item'] as $plug => $types) {
+            foreach ($PLUGIN_HOOKS[Hooks::IMPORT_ITEM] ?? [] as $plug => $types) {
                 if (!Plugin::isPluginActive($plug)) {
                     continue;
                 }
@@ -180,11 +170,11 @@ class RuleImportEntity extends Rule
                 return true;
 
             case Rule::PATTERN_EXISTS:
-                echo Dropdown::showYesNo($name, 1, 0);
+                Dropdown::showYesNo($name, 1, 0);
                 return true;
 
             case Rule::PATTERN_DOES_NOT_EXISTS:
-                echo Dropdown::showYesNo($name, 1, 0);
+                Dropdown::showYesNo($name, 1, 0);
                 return true;
         }
         return false;
@@ -226,7 +216,7 @@ class RuleImportEntity extends Rule
                 $output = $this->executeActions($output, $params);
                 if (!isset($output['pass_rule'])) {
                     $this->updateOnlyCriteria($options, $refoutput, $output);
-                   //Hook
+                    //Hook
                     $hook_params["sub_type"] = $this->getType();
                     $hook_params["ruleid"]   = $this->fields["id"];
                     $hook_params["input"]    = $input;
@@ -245,7 +235,7 @@ class RuleImportEntity extends Rule
             'entities_id' => [
                 'name' => Entity::getTypeName(1),
                 'type' => 'dropdown',
-                'table' => Entity::getTable()
+                'table' => Entity::getTable(),
             ],
             'locations_id' => [
                 'name' => Location::getTypeName(1),
@@ -259,21 +249,21 @@ class RuleImportEntity extends Rule
             ],
             '_ignore_import' => [
                 'name' => __('Refuse import'),
-                'type' => 'yesonly'
+                'type' => 'yesonly',
             ],
             'is_recursive' => [
                 'name' => __('Child entities'),
-                'type' => 'yesno'
+                'type' => 'yesno',
             ],
             'groups_id_tech' => [
                 'name' => __('Group in charge'),
                 'type' => 'dropdown',
-                'table' => Group::getTable()
+                'table' => Group::getTable(),
             ],
             'users_id_tech' => [
                 'name' => __('Technician in charge'),
-                'type' => 'dropdown_users'
-            ]
+                'type' => 'dropdown_users',
+            ],
         ];
         $actions = array_merge(parent::getActions(), $actions);
 

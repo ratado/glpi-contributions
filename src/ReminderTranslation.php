@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -133,7 +133,7 @@ class ReminderTranslation extends CommonDBChild
             $params = ['type'             => __CLASS__,
                 'parenttype'       => get_class($item),
                 'reminders_id' => $item->fields['id'],
-                'id'               => -1
+                'id'               => -1,
             ];
             Ajax::updateItemJsCode(
                 "viewtranslation" . $item->getID() . "$rand",
@@ -218,7 +218,7 @@ class ReminderTranslation extends CommonDBChild
         if ($ID > 0) {
             $this->check($ID, READ);
         } else {
-           // Create item
+            // Create item
             $item                = $options['parent'];
             $options['itemtype'] = get_class($item);
             $options['reminders_id'] = $item->getID();
@@ -237,7 +237,7 @@ class ReminderTranslation extends CommonDBChild
                 "language",
                 ['display_none' => false,
                     'value'        => $_SESSION['glpilanguage'],
-                    'used'         => self::getAlreadyTranslatedForItem($item)
+                    'used'         => self::getAlreadyTranslatedForItem($item),
                 ]
             );
         }
@@ -255,7 +255,7 @@ class ReminderTranslation extends CommonDBChild
         Html::textarea(['name'              => 'text',
             'value'             => RichText::getSafeHtml($this->fields["text"], true),
             'enable_richtext'   => true,
-            'enable_fileupload' => false
+            'enable_fileupload' => false,
         ]);
         echo "</td></tr>\n";
 
@@ -277,7 +277,7 @@ class ReminderTranslation extends CommonDBChild
         $obj   = new self();
         $found = $obj->find([
             'reminders_id'   => $item->getID(),
-            'language'           => $_SESSION['glpilanguage']
+            'language'           => $_SESSION['glpilanguage'],
         ]);
 
         if (
@@ -310,9 +310,9 @@ class ReminderTranslation extends CommonDBChild
      * It be translated if translation if globally on and item is an instance of CommonDropdown
      * or CommonTreeDropdown and if translation is enabled for this class
      *
-     * @param item the item to check
+     * @param CommonGLPI $item the item to check
      *
-     * @return true if item can be translated, false otherwise
+     * @return boolean true if item can be translated, false otherwise
      **/
     public static function canBeTranslated(CommonGLPI $item)
     {
@@ -342,7 +342,7 @@ class ReminderTranslation extends CommonDBChild
     /**
      * Get already translated languages for item
      *
-     * @param item
+     * @param CommonDBTM $item
      *
      * @return array of already translated languages
      **/
@@ -355,7 +355,7 @@ class ReminderTranslation extends CommonDBChild
 
         $iterator = $DB->request([
             'FROM'   => getTableForItemType(__CLASS__),
-            'WHERE'  => ['reminders_id' => $item->getID()]
+            'WHERE'  => ['reminders_id' => $item->getID()],
         ]);
 
         foreach ($iterator as $data) {

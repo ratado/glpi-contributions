@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -105,7 +105,7 @@ class HookManager
      * Add a functional hook
      *
      * @param string $hook
-     * @param string $file
+     * @param callable $function
      */
     public function registerFunctionalHook(
         string $hook,
@@ -128,7 +128,7 @@ class HookManager
      *
      * @param string $hook
      * @param string $itemtype
-     * @param string $file
+     * @param callable $function
      */
     public function registerItemHook(
         string $hook,

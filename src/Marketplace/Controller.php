@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -57,9 +57,9 @@ class Controller extends CommonGLPI
     public static $rightname = 'config';
     public static $api       = null;
 
-    const MP_REPLACE_ASK   = 1;
-    const MP_REPLACE_YES   = 2;
-    const MP_REPLACE_NEVER = 3;
+    public const MP_REPLACE_ASK   = 1;
+    public const MP_REPLACE_YES   = 2;
+    public const MP_REPLACE_NEVER = 3;
 
     public function __construct(string $plugin_key = "")
     {
@@ -84,6 +84,15 @@ class Controller extends CommonGLPI
 
 
     /**
+     * @param string $url
+     * @return string
+     */
+    private static function getPluginArchiveDestination(string $url): string
+    {
+        return GLPI_TMP_DIR . '/' . mt_rand() . '.' . basename(parse_url($url, PHP_URL_PATH));
+    }
+
+    /**
      * Download and uncompress plugin archive
      *
      * @return bool
@@ -98,8 +107,7 @@ class Controller extends CommonGLPI
         $plugin   = $api->getPlugin($this->plugin_key, true);
 
         $url      = $plugin['installation_url'] ?? "";
-        $filename = basename(parse_url($url, PHP_URL_PATH));
-        $dest     = GLPI_TMP_DIR . '/' . $filename;
+        $dest     = self::getPluginArchiveDestination($url);
 
         if (!$api->downloadArchive($url, $dest, $this->plugin_key)) {
             Session::addMessageAfterRedirect(
@@ -123,7 +131,7 @@ class Controller extends CommonGLPI
 
         // Some plugins archives may be huge, as they may embed some binaries.
         // Upgrade memory limit to 512M, which should be enough.
-        $memory_limit = (int)Toolbox::getMemoryLimit();
+        $memory_limit = (int) Toolbox::getMemoryLimit();
         if ($memory_limit > 0 && $memory_limit < (512 * 1024 * 1024)) {
             ini_set('memory_limit', '512M');
         }
@@ -161,7 +169,7 @@ class Controller extends CommonGLPI
             // to prevent message like 'Plugin "xxx" version changed. It has been deactivated as its update process has to be launched.'.
             $plugin_inst->update([
                 'id'    => $plugin_inst->fields['id'],
-                'state' => Plugin::NOTUPDATED
+                'state' => Plugin::NOTUPDATED,
             ]);
         }
 
@@ -199,7 +207,7 @@ class Controller extends CommonGLPI
 
         $url      = $plugin['installation_url'];
         $filename = basename(parse_url($url, PHP_URL_PATH));
-        $dest     = GLPI_TMP_DIR . '/' . mt_rand() . '.' . $filename;
+        $dest     = self::getPluginArchiveDestination($url);
 
         if (!$api->downloadArchive($url, $dest, $this->plugin_key, false)) {
             http_response_code(500);
@@ -243,7 +251,7 @@ class Controller extends CommonGLPI
                 // Plugin has been found outside marketplace and marketplace priority is lower than its parent directory
                 // -> disallow plugin update from marketplace as it cannot be loaded from there.
                 return false;
-            } else if ($found_in_marketplace_dir) {
+            } elseif ($found_in_marketplace_dir) {
                 // Plugin has been found on marketplace and marketplace priority is higher than other location
                 // -> allow plugin update from marketplace as it is already loaded from there.
                 return is_writable(GLPI_MARKETPLACE_DIR . '/' . $this->plugin_key) && !self::hasVcsDirectory($this->plugin_key);
@@ -265,7 +273,7 @@ class Controller extends CommonGLPI
      *
      * @return string|false new version number
      */
-    public function checkUpdate(Plugin $plugin_inst = null)
+    public function checkUpdate(?Plugin $plugin_inst = null)
     {
         $api          = self::getAPI();
         $api_plugin   = $api->getPlugin($this->plugin_key);
@@ -323,7 +331,7 @@ class Controller extends CommonGLPI
      *
      * @return integer 0 : nothing to do 1 : done with success
      */
-    public static function cronCheckAllUpdates(CronTask $task = null): int
+    public static function cronCheckAllUpdates(?CronTask $task = null): int
     {
         /** @var array $CFG_GLPI */
         global $CFG_GLPI;
@@ -347,7 +355,7 @@ class Controller extends CommonGLPI
             }
 
             NotificationEvent::raiseEvent('checkpluginsupdate', new self(), [
-                'plugins' => $updates
+                'plugins' => $updates,
             ]);
         }
 
@@ -549,7 +557,7 @@ class Controller extends CommonGLPI
         $plugin->checkPluginState($this->plugin_key);
         $plugin->getFromDBbyDir($this->plugin_key);
 
-       // reload plugins
+        // reload plugins
         $plugin->init(true);
 
         ob_end_clean();

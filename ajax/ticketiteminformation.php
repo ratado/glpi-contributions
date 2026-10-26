@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -34,6 +34,8 @@
  */
 
 // Direct access to file
+use Glpi\Http\Response;
+
 if (strpos($_SERVER['PHP_SELF'], "ticketiteminformation.php")) {
     $AJAX_INCLUDE = 1;
     include('../inc/includes.php');
@@ -55,9 +57,9 @@ if (
     isset($_POST['itemtype'])
     && isset($_POST['items_id']) && ($_POST['items_id'] > 0)
 ) {
-   // Security
-    if (!class_exists($_POST['itemtype'])) {
-        exit();
+    // Security
+    if (!($item = getItemForItemtype($_POST['itemtype'])) || !$item->can($_POST['items_id'], READ)) {
+        Response::sendError(403, 'Not allowed');
     }
 
     $days   = 3;

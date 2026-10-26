@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -53,14 +53,14 @@ if ($_POST["authtype"] > 0) {
         case Auth::EXTERNAL:
             AuthLDAP::dropdown([
                 'name'      => "auths_id",
-                'condition' => ['is_active' => 1]
+                'condition' => ['is_active' => 1],
             ]);
             break;
 
         case Auth::MAIL:
             AuthMail::dropdown([
                 'name'      => "auths_id",
-                'condition' => ['is_active' => 1]
+                'condition' => ['is_active' => 1],
             ]);
             break;
     }

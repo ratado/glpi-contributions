@@ -3,7 +3,7 @@
 The present file will list all changes made to the project; according to the
 [Keep a Changelog](http://keepachangelog.com/) project.
 
-## [10.0.13] unreleased
+## [10.0.28] 2026-09-30
 
 ### Added
 
@@ -18,6 +18,331 @@ The present file will list all changes made to the project; according to the
 #### Added
 
 #### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.27] 2026-09-16
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.26] 2026-06-24
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.25] 2026-04-29
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.24] 2026-03-03
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.23] 2026-01-28
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.22] 2025-12-04
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.21] 2025-12-03
+
+### Added
+
+### Changed
+- It is again possible to "Merge as Followup" into resolved/closed tickets.
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.20] 2025-09-10
+
+### Added
+
+### Changed
+- Assign contract Ticket rule action now works with update rules.
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.19] 2025-07-16
+
+### Added
+
+### Changed
+- Only unsolved/unclosed tickets will be shown in the dropdown when performing the "Merge as Followup" action.
+- Domain records must be attached to a domain. Existing unattached records will remain but will require a domain if edited.
+- Inactive suppliers are hidden in assigned technician dropdown results. This does not affect items already assigned to inactive suppliers.
+- Requesting an item with ID 0 (except for entities) from the API will now return a 404 instead of listing all items of the itemtype.
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.18] 2025-02-12
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.17] 2024-11-06
+
+### Added
+
+### Changed
+- Searching IDs in dropdowns now matches the beginning of the ID instead of anywhere in the ID.
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+- `NotificationTarget::canNotificationContentBeDisclosed()` method that can be overriden to indicates whether a notification contents should be undisclosed.
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.16] 2024-07-03
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.15] 2024-04-24
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.14] 2024-03-14
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+
+#### Deprecated
+
+#### Removed
+
+
+## [10.0.13] 2024-03-13
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### API changes
+
+#### Added
+
+#### Changes
+- `condition` and `displaywith` parameters must now be added in IDOR token creation data when they are not empty.
 
 #### Deprecated
 

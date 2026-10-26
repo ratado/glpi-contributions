@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -34,7 +34,7 @@
  */
 
 use Glpi\Mail\SMTP\OauthConfig;
-use PHPMailer\PHPMailer\OAuth;
+use Glpi\Mail\SMTP\OAuthTokenProvider;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
 
@@ -59,7 +59,7 @@ class GLPIMailer extends PHPMailer
 
         $this->Encoding           = self::ENCODING_QUOTED_PRINTABLE;
 
-       // Comes from config
+        // Comes from config
         $this->SetLanguage("en", Config::getLibraryDir("PHPMailer") . "/language/");
 
         if ($CFG_GLPI['smtp_mode'] != MAIL_MAIL) {
@@ -77,7 +77,7 @@ class GLPIMailer extends PHPMailer
                     $refresh_token = (new GLPIKey())->decrypt($CFG_GLPI['smtp_oauth_refresh_token']);
 
                     $this->setOAuth(
-                        new OAuth(
+                        new OAuthTokenProvider(
                             [
                                 'provider'     => $provider,
                                 'clientId'     => $client_id,
@@ -97,18 +97,18 @@ class GLPIMailer extends PHPMailer
 
                 if ($CFG_GLPI['smtp_mode'] == MAIL_SMTPSSL) {
                     $this->SMTPSecure = "ssl";
-                } else if ($CFG_GLPI['smtp_mode'] == MAIL_SMTPTLS) {
+                } elseif ($CFG_GLPI['smtp_mode'] == MAIL_SMTPTLS) {
                     $this->SMTPSecure = "tls";
                 } else {
-                   // Don't automatically enable encryption if the GLPI config doesn't specify it
+                    // Don't automatically enable encryption if the GLPI config doesn't specify it
                     $this->SMTPAutoTLS = false;
                 }
 
                 if (!$CFG_GLPI['smtp_check_certificate']) {
                     $this->SMTPOptions = ['ssl' => ['verify_peer'       => false,
                         'verify_peer_name'  => false,
-                        'allow_self_signed' => true
-                    ]
+                        'allow_self_signed' => true,
+                    ],
                     ];
                 }
             }
@@ -128,6 +128,33 @@ class GLPIMailer extends PHPMailer
         }
     }
 
+    public function smtpConnect($options = null)
+    {
+        /** @var array $CFG_GLPI */
+        global $CFG_GLPI;
+
+        $result = parent::smtpConnect($options);
+
+        if (
+            $this->oauth instanceof OAuthTokenProvider
+            && $result === true
+            && ($refresh_token = $this->oauth->getOauthToken()->getRefreshToken() ?? null) !== null
+            && $refresh_token !== (new GLPIKey())->decrypt($CFG_GLPI['smtp_oauth_refresh_token'])
+        ) {
+            // The refresh token may be refreshed itself.
+            // Be sure to always store any new refresh token.
+            Config::setConfigurationValues(
+                'core',
+                [
+                    'smtp_oauth_refresh_token' => $refresh_token,
+                ]
+            );
+            $CFG_GLPI['smtp_oauth_refresh_token'] = (new GLPIKey())->encrypt($refresh_token);
+        }
+
+        return $result;
+    }
+
     public static function validateAddress($address, $patternselect = "pcre8")
     {
         if (empty($address)) {
@@ -135,7 +162,7 @@ class GLPIMailer extends PHPMailer
         }
         $isValid = parent::validateAddress($address, $patternselect);
         if (!$isValid && str_ends_with($address, '@localhost')) {
-           //since phpmailer6, @localhost address are no longer valid...
+            //since phpmailer6, @localhost address are no longer valid...
             $isValid = parent::ValidateAddress($address . '.me');
         }
         return $isValid;
@@ -144,7 +171,7 @@ class GLPIMailer extends PHPMailer
     public function setLanguage($langcode = 'en', $lang_path = '')
     {
         if ($lang_path == '') {
-            $local_path = dirname(Config::getLibraryDir('PHPMailer\PHPMailer\PHPMailer'))  . '/language/';
+            $local_path = dirname(Config::getLibraryDir('PHPMailer\PHPMailer\PHPMailer')) . '/language/';
             if (is_dir($local_path)) {
                 $lang_path = $local_path;
             }

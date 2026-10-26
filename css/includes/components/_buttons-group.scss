@@ -5,7 +5,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -61,4 +61,23 @@ which broke styles of btn-group > .btn-check
     .btn-outline-#{$color} {
         @include button-check($value);
     }
+}
+
+.btn-group.flex-row-reverse > .btn {
+    border-radius: 0 !important;
+}
+
+.btn-group.flex-row-reverse > .btn:first-child {
+    border-top-right-radius: 4px !important;
+    border-bottom-right-radius: 4px !important;
+}
+
+.btn-group.flex-row-reverse > .btn:last-child {
+    border-top-left-radius: 4px !important;
+    border-bottom-left-radius: 4px !important;
+    border-right: unset !important;
+}
+
+.btn-group > .btn:not(:last-child):not(.dropdown-toggle), .btn-group > .btn-group:not(:last-child) > .btn {
+    border-right: unset !important;
 }

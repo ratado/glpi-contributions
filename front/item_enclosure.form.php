@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -42,19 +42,19 @@ $enclosure = new Enclosure();
 
 if (isset($_POST['update'])) {
     $ien->check($_POST['id'], UPDATE);
-   //update existing relation
+    //update existing relation
     if ($ien->update($_POST)) {
         $url = $enclosure->getFormURLWithID($_POST['enclosures_id']);
     } else {
         $url = $ien->getFormURLWithID($_POST['id']);
     }
     Html::redirect($url);
-} else if (isset($_POST['add'])) {
+} elseif (isset($_POST['add'])) {
     $ien->check(-1, CREATE, $_POST);
     $ien->add($_POST);
     $url = $enclosure->getFormURLWithID($_POST['enclosures_id']);
     Html::redirect($url);
-} else if (isset($_POST['purge'])) {
+} elseif (isset($_POST['purge'])) {
     $ien->check($_POST['id'], PURGE);
     $ien->delete($_POST, 1);
     $url = $enclosure->getFormURLWithID($_POST['enclosures_id']);
@@ -70,7 +70,7 @@ if (isset($_REQUEST['id'])) {
     $params['id'] = $_REQUEST['id'];
 } else {
     $params = [
-        'enclosures_id'   => $_REQUEST['enclosure']
+        'enclosures_id'   => $_REQUEST['enclosure'],
     ];
 }
 

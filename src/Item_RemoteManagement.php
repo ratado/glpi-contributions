@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -56,20 +56,19 @@ class Item_RemoteManagement extends CommonDBChild
     public function getTabNameForItem(CommonGLPI $item, $withtemplate = 0)
     {
         $nb = 0;
-        switch ($item->getType()) {
-            default:
-                if ($_SESSION['glpishow_count_on_tabs']) {
-                    $nb = countElementsInTable(
-                        self::getTable(),
-                        [
-                            'items_id'     => $item->getID(),
-                            'itemtype'     => $item->getType()
-                        ]
-                    );
-                }
-                return self::createTabEntry(self::getTypeName(Session::getPluralNumber()), $nb);
+        if (
+            $_SESSION['glpishow_count_on_tabs']
+            && ($item instanceof CommonDBTM)
+        ) {
+            $nb = countElementsInTable(
+                self::getTable(),
+                [
+                    'items_id'     => $item->getID(),
+                    'itemtype'     => $item->getType(),
+                ]
+            );
         }
-        return '';
+        return self::createTabEntry(self::getTypeName(Session::getPluralNumber()), $nb);
     }
 
 
@@ -98,8 +97,9 @@ class Item_RemoteManagement extends CommonDBChild
             'FROM'      => self::getTable(),
             'WHERE'     => [
                 'itemtype'     => $item->getType(),
-                'items_id'     => $item->fields['id']
-            ]
+                'items_id'     => $item->fields['id'],
+                'is_deleted'   => 0,
+            ],
         ]);
         return $iterator;
     }
@@ -146,7 +146,7 @@ class Item_RemoteManagement extends CommonDBChild
             = ['num_displayed'
                         => min($_SESSION['glpilist_limit'], count($iterator)),
                 'container'
-                        => 'mass' . __CLASS__ . $rand
+                        => 'mass' . __CLASS__ . $rand,
             ];
             Html::showMassiveActions($massiveactionparams);
         }
@@ -244,7 +244,7 @@ class Item_RemoteManagement extends CommonDBChild
 
         $tab[] = [
             'id'                 => 'common',
-            'name'               => __('Characteristics')
+            'name'               => __('Characteristics'),
         ];
 
         $tab[] = [
@@ -275,7 +275,7 @@ class Item_RemoteManagement extends CommonDBChild
         $name = self::getTypeName(Session::getPluralNumber());
         $tab[] = [
             'id'                 => 'remote_management',
-            'name'               => $name
+            'name'               => $name,
         ];
 
         $tab[] = [
@@ -287,8 +287,8 @@ class Item_RemoteManagement extends CommonDBChild
             'massiveaction'      => false,
             'datatype'           => 'dropdown',
             'joinparams'         => [
-                'jointype'           => 'itemtype_item'
-            ]
+                'jointype'           => 'itemtype_item',
+            ],
         ];
 
         $tab[] = [
@@ -301,8 +301,8 @@ class Item_RemoteManagement extends CommonDBChild
             'datatype'           => 'dropdown',
             'massiveaction'      => false,
             'joinparams'         => [
-                'jointype'           => 'itemtype_item'
-            ]
+                'jointype'           => 'itemtype_item',
+            ],
         ];
 
         return $tab;
@@ -314,7 +314,7 @@ class Item_RemoteManagement extends CommonDBChild
         $itemtype = null;
         if (isset($options['itemtype']) && !empty($options['itemtype'])) {
             $itemtype = $options['itemtype'];
-        } else if (isset($this->fields['itemtype']) && !empty($this->fields['itemtype'])) {
+        } elseif (isset($this->fields['itemtype']) && !empty($this->fields['itemtype'])) {
             $itemtype = $this->fields['itemtype'];
         } else {
             throw new \RuntimeException('Unable to retrieve itemtype');
@@ -372,7 +372,7 @@ class Item_RemoteManagement extends CommonDBChild
             $types,
             [
                 'value'   => $this->fields['type'],
-                'display' => false
+                'display' => false,
             ]
         );
         echo "</td></tr>";

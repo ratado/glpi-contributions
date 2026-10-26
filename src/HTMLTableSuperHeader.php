@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -39,9 +39,9 @@
  **/
 class HTMLTableSuperHeader extends HTMLTableHeader
 {
-   /// The headers of each column
+    /// The headers of each column
     private $headerSets = [];
-   /// The table that owns the current super header
+    /// The table that owns the current super header
     private $table;
 
 
@@ -51,7 +51,7 @@ class HTMLTableSuperHeader extends HTMLTableHeader
      * @param string               $content  see inc/HTMLTableEntity#__construct()
      * @param HTMLTableSuperHeader $father   HTMLTableSuperHeader objet (default NULL)
      **/
-    public function __construct(HTMLTableMain $table, $name, $content, HTMLTableSuperHeader $father = null)
+    public function __construct(HTMLTableMain $table, $name, $content, ?HTMLTableSuperHeader $father = null)
     {
 
         $this->table = $table;

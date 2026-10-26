@@ -3,6 +3,7 @@
 /config/glpi.key
 /config/glpicrypt.key
 /config/local_define.php
+/config/ldap/
 /tests/config_db*
 /tests/cache.php
 /marketplace/*
@@ -16,8 +17,6 @@
 /.settings/
 /.vscode/
 /.idea/
-/tools/composer.lock
-/tools/vendor/
 /tools/api/
 /tools/htmlcov/
 /vendor/*
@@ -46,3 +45,11 @@ phpunit.xml
 /inventory-vendors/*.json
 /locales/*.mo
 /inc/downstream.php
+/docker-compose.override.yaml
+/.devcontainer/docker-compose.override.yaml
+phpstan.neon
+/.phpunit.result.cache
+/phpunit/files/
+/phpunit/config
+/.dump/
+.devcontainer/custom

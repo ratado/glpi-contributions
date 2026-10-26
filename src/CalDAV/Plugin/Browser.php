@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -66,7 +66,7 @@ class Browser extends Plugin
      */
     private function canDisplayDebugInterface()
     {
-        /** @var $authPlugin \Sabre\DAV\Auth\Plugin */
+        /** @var \Sabre\DAV\Auth\Plugin $authPlugin */
         $authPlugin = $this->server->getPlugin('auth');
         if (!$authPlugin) {
             return false;

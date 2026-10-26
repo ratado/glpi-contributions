@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -39,14 +39,14 @@ include('../inc/includes.php');
 header("Content-Type: text/html; charset=UTF-8");
 Html::header_nocache();
 
-Session::checkLoginUser();
+Session::checkCentralAccess();
 
 switch ($_POST['action']) {
     case 'getItemsFromItemtype':
         if ($_POST['itemtype'] && class_exists($_POST['itemtype'])) {
             $_POST['itemtype']::dropdown(['name'                => $_POST['dom_name'],
                 'display_emptychoice' => true,
-                'rand' => $_POST['dom_rand']
+                'rand' => $_POST['dom_rand'],
             ]);
         }
         break;
@@ -55,8 +55,8 @@ switch ($_POST['action']) {
         NetworkPort::dropdown(['name'                => 'networkports_id',
             'display_emptychoice' => true,
             'condition'           => ["items_id" => $_POST['items_id'],
-                "itemtype" => $_POST['itemtype']
-            ]
+                "itemtype" => $_POST['itemtype'],
+            ],
         ]);
         break;
 }

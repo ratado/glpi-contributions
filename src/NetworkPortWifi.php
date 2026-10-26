@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -93,8 +93,8 @@ class NetworkPortWifi extends NetworkPortInstantiation
     public function getInstantiationHTMLTableHeaders(
         HTMLTableGroup $group,
         HTMLTableSuperHeader $super,
-        HTMLTableSuperHeader $internet_super = null,
-        HTMLTableHeader $father = null,
+        ?HTMLTableSuperHeader $internet_super = null,
+        ?HTMLTableHeader $father = null,
         array $options = []
     ) {
 
@@ -112,7 +112,7 @@ class NetworkPortWifi extends NetworkPortInstantiation
     public function getInstantiationHTMLTable(
         NetworkPort $netport,
         HTMLTableRow $row,
-        HTMLTableCell $father = null,
+        ?HTMLTableCell $father = null,
         array $options = []
     ) {
 
@@ -141,7 +141,7 @@ class NetworkPortWifi extends NetworkPortInstantiation
 
         $tab[] = [
             'id'                 => 'common',
-            'name'               => __('Characteristics')
+            'name'               => __('Characteristics'),
         ];
 
         $tab[] = [
@@ -152,8 +152,8 @@ class NetworkPortWifi extends NetworkPortInstantiation
             'name'               => __('MAC'),
             'massiveaction'      => false,
             'joinparams'         => [
-                'jointype'           => 'empty'
-            ]
+                'jointype'           => 'empty',
+            ],
         ];
 
         $tab[] = [
@@ -162,7 +162,7 @@ class NetworkPortWifi extends NetworkPortInstantiation
             'field'              => 'mode',
             'name'               => __('Wifi mode'),
             'massiveaction'      => false,
-            'datatype'           => 'specific'
+            'datatype'           => 'specific',
         ];
 
         $tab[] = [
@@ -170,7 +170,7 @@ class NetworkPortWifi extends NetworkPortInstantiation
             'table'              => $this->getTable(),
             'field'              => 'version',
             'name'               => __('Wifi protocol version'),
-            'massiveaction'      => false
+            'massiveaction'      => false,
         ];
 
         $tab[] = [
@@ -179,7 +179,7 @@ class NetworkPortWifi extends NetworkPortInstantiation
             'field'              => 'name',
             'name'               => WifiNetwork::getTypeName(1),
             'massiveaction'      => false,
-            'datatype'           => 'dropdown'
+            'datatype'           => 'dropdown',
         ];
 
         return $tab;
@@ -260,9 +260,9 @@ class NetworkPortWifi extends NetworkPortInstantiation
                 'jointype'           => 'standard',
                 'beforejoin'         => [
                     'table'              => 'glpi_networkportwifis',
-                    'joinparams'         => $joinparams
-                ]
-            ]
+                    'joinparams'         => $joinparams,
+                ],
+            ],
         ];
 
         $tab[] = [
@@ -276,9 +276,9 @@ class NetworkPortWifi extends NetworkPortInstantiation
                 'jointype'           => 'standard',
                 'beforejoin'         => [
                     'table'              => 'glpi_networkportwifis',
-                    'joinparams'         => $joinparams
-                ]
-            ]
+                    'joinparams'         => $joinparams,
+                ],
+            ],
         ];
     }
 }

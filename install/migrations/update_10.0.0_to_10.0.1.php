@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -70,7 +69,7 @@ function update1000to1001()
             $DB->updateOrInsert(
                 "glpi_displaypreferences",
                 [
-                    'rank'      => $rank++
+                    'rank'      => $rank++,
                 ],
                 Toolbox::addslashes_deep(
                     [
@@ -88,7 +87,7 @@ function update1000to1001()
             Toolbox::addslashes_deep(
                 [
                     'itemtype'  => $type,
-                    'num'       => $tab
+                    'num'       => $tab,
                 ]
             )
         );

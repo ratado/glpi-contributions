@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -36,17 +36,17 @@
 /// Rule collection class for Rights management
 class RuleRightCollection extends RuleCollection
 {
-   // From RuleCollection
+    // From RuleCollection
     public $stop_on_first_match = false;
     public static $rightname           = 'rule_ldap';
     public $menu_option         = 'right';
 
-   // Specific ones
-   /// Array containing results : entity + right
+    // Specific ones
+    /// Array containing results : entity + right
     public $rules_entity_rights = [];
-   /// Array containing results : only entity
+    /// Array containing results : only entity
     public $rules_entity        = [];
-   /// Array containing results : only right
+    /// Array containing results : only right
     public $rules_rights        = [];
 
 
@@ -82,11 +82,9 @@ class RuleRightCollection extends RuleCollection
             echo "<tr class='tab_bg_2'>";
             echo "<td class='center' colspan='4'>" . __('Entities assignment') . "</td>";
             foreach ($output["_ldap_rules"]["rules_entities"] as $entities) {
-                foreach ($entities as $entity) {
-                    $this->displayActionByName("entity", $entity[0]);
-                    if (isset($entity[1])) {
-                        $this->displayActionByName("recursive", $entity[1]);
-                    }
+                $this->displayActionByName("entity", $entities[0]);
+                if (isset($entities[1])) {
+                    $this->displayActionByName("is_recursive", $entities[1]);
                 }
             }
         }
@@ -188,17 +186,17 @@ class RuleRightCollection extends RuleCollection
                 'glpi_rulecriterias' => [
                     'ON' => [
                         'glpi_rulerightparameters' => 'value',
-                        'glpi_rulecriterias'       => 'criteria'
-                    ]
+                        'glpi_rulecriterias'       => 'criteria',
+                    ],
                 ],
                 'glpi_rules'         => [
                     'ON' => [
                         'glpi_rulecriterias' => 'rules_id',
-                        'glpi_rules'         => 'id'
-                    ]
-                ]
+                        'glpi_rules'         => 'id',
+                    ],
+                ],
             ],
-            'WHERE'           => ['glpi_rules.sub_type' => 'RuleRight']
+            'WHERE'           => ['glpi_rules.sub_type' => 'RuleRight'],
         ]);
 
         foreach ($iterator as $param) {
@@ -231,31 +229,37 @@ class RuleRightCollection extends RuleCollection
         // Some of the rule criteria is uppercase, but most other rule criterias are lowercase only
         $params_lower = array_change_key_case($params, CASE_LOWER);
 
-       //common parameters
+        //common parameters
         $rule_parameters = [
             'TYPE'       => $params_lower["type"] ?? "",
             'LOGIN'      => $params_lower["login"] ?? "",
             'MAIL_EMAIL' => $params_lower["email"] ?? $params_lower["mail_email"] ?? "",
-            '_groups_id' => $groups
+            '_groups_id' => $groups,
         ];
 
-       //IMAP/POP login method
+        //IMAP/POP login method
         if ($params_lower["type"] == Auth::MAIL) {
             $rule_parameters["MAIL_SERVER"] = $params_lower["mail_server"] ?? "";
         }
 
-       //LDAP type method
+        //LDAP type method
         if ($params_lower["type"] == Auth::LDAP) {
-           //Get all the field to retrieve to be able to process rule matching
+            //Get all the field to retrieve to be able to process rule matching
             $rule_fields = $this->getFieldsToLookFor();
 
-           //Get all the data we need from ldap to process the rules
+            //If we are oustide authentication process, $params_lower["connection"] is not set
+            if (empty($params_lower["connection"])) {
+                return $rule_parameters;
+            }
+
+            //Get all the data we need from ldap to process the rules
             $sz = @ldap_read(
                 $params_lower["connection"],
                 $params_lower["userdn"],
                 "objectClass=*",
                 $rule_fields
             );
+
             if ($sz === false) {
                 // 32 = LDAP_NO_SUCH_OBJECT => This error can be silented as it just means that search produces no result.
                 if (ldap_errno($params_lower["connection"]) !== 32) {
@@ -285,7 +289,7 @@ class RuleRightCollection extends RuleCollection
                         default: // ldap criteria (added by user)
                             if (isset($rule_input[$field])) {
                                 if (!is_array($rule_input[$field])) {
-                                     $rule_parameters[$field] = $rule_input[$field];
+                                    $rule_parameters[$field] = $rule_input[$field];
                                 } else {
                                     if (count($rule_input[$field])) {
                                         foreach ($rule_input[$field] as $key => $val) {

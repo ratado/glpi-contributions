@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
@@ -40,7 +40,7 @@
  **/
 class Item_Problem extends CommonItilObject_Item
 {
-   // From CommonDBRelation
+    // From CommonDBRelation
     public static $itemtype_1          = 'Problem';
     public static $items_id_1          = 'problems_id';
 
@@ -65,11 +65,11 @@ class Item_Problem extends CommonItilObject_Item
     public function prepareInputForAdd($input)
     {
 
-       // Avoid duplicate entry
+        // Avoid duplicate entry
         if (
             countElementsInTable($this->getTable(), ['problems_id' => $input['problems_id'],
                 'itemtype'    => $input['itemtype'],
-                'items_id'    => $input['items_id']
+                'items_id'    => $input['items_id'],
             ]) > 0
         ) {
             return false;
@@ -119,7 +119,7 @@ class Item_Problem extends CommonItilObject_Item
                                                               'glpi_entities',
                                                               $problem->fields['entities_id']
                                                           )
-                                                          : $problem->fields['entities_id'])
+                                                          : $problem->fields['entities_id']),
             ]);
             echo "</td><td class='center' width='30%'>";
             echo "<input type='submit' name='add' value=\"" . _sx('button', 'Add') . "\" class='btn btn-primary'>";
@@ -227,6 +227,7 @@ class Item_Problem extends CommonItilObject_Item
             $nb = 0;
             switch ($item->getType()) {
                 case 'Problem':
+                    /** @var Problem $item */
                     if ($_SESSION['glpishow_count_on_tabs']) {
                         $nb = self::countForMainItem($item);
                     }
@@ -235,26 +236,30 @@ class Item_Problem extends CommonItilObject_Item
                 case 'User':
                 case 'Group':
                 case 'Supplier':
+                    /** @var User|Group|Supplier $item */
                     if ($_SESSION['glpishow_count_on_tabs']) {
                         $from = $item->getType() == 'Group' ? 'glpi_groups_problems' : 'glpi_problems_' . strtolower($item->getType() . 's');
                         $result = $DB->request([
                             'COUNT'  => 'cpt',
                             'FROM'   => $from,
                             'WHERE'  => [
-                                $item->getForeignKeyField()   => $item->fields['id']
-                            ]
+                                $item->getForeignKeyField()   => $item->fields['id'],
+                            ],
                         ])->current();
                         $nb = $result['cpt'];
                     }
                     return self::createTabEntry(Problem::getTypeName(Session::getPluralNumber()), $nb);
 
                 default:
-                    if (Session::haveRight("problem", Problem::READALL)) {
+                    if (
+                        Session::haveRight("problem", Problem::READALL)
+                        && ($item instanceof CommonDBTM)
+                    ) {
                         if ($_SESSION['glpishow_count_on_tabs']) {
-                              // Direct one
-                              $nb = self::countForItem($item);
-                              // Linked items
-                              $linkeditems = $item->getLinkedItems();
+                            // Direct one
+                            $nb = self::countForItem($item);
+                            // Linked items
+                            $linkeditems = $item->getLinkedItems();
 
                             if (count($linkeditems)) {
                                 foreach ($linkeditems as $type => $tab) {

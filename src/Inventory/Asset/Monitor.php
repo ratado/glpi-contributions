@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @copyright 2010-2022 by the FusionInventory Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
@@ -44,15 +44,13 @@ use RuleImportAssetCollection;
 
 class Monitor extends InventoryAsset
 {
-    private $import_monitor_on_partial_sn = false;
-
     public function prepare(): array
     {
         $serials = [];
         $mapping = [
             'caption'      => 'name',
             'manufacturer' => 'manufacturers_id',
-            'description'  => 'comment'
+            'description'  => 'comment',
         ];
 
         foreach ($this->data as &$val) {
@@ -61,6 +59,7 @@ class Monitor extends InventoryAsset
                     $val->$dest = $val->$origin;
                 }
             }
+
             $val->is_dynamic = 1;
 
             if (!property_exists($val, 'name')) {
@@ -109,24 +108,24 @@ class Monitor extends InventoryAsset
         $iterator = $DB->request([
             'SELECT'    => [
                 'glpi_monitors.id',
-                'glpi_computers_items.id AS link_id'
+                'glpi_computers_items.id AS link_id',
             ],
             'FROM'      => 'glpi_computers_items',
             'LEFT JOIN' => [
                 'glpi_monitors' => [
                     'FKEY' => [
                         'glpi_monitors'         => 'id',
-                        'glpi_computers_items'  => 'items_id'
-                    ]
-                ]
+                        'glpi_computers_items'  => 'items_id',
+                    ],
+                ],
             ],
             'WHERE'     => [
                 'itemtype'                          => 'Monitor',
                 'computers_id'                      => $this->item->getID(),
                 'entities_id'                       => $this->entities_id,
                 'glpi_computers_items.is_dynamic'   => 1,
-                'glpi_monitors.is_global'           => 0
-            ]
+                'glpi_monitors.is_global'           => 0,
+            ],
         ]);
 
         foreach ($iterator as $data) {
@@ -148,10 +147,11 @@ class Monitor extends InventoryAsset
 
         foreach ($this->data as $key => $val) {
             $input = [
-                'itemtype'     => 'Monitor',
-                'name'         => $val->name,
-                'serial'       => $val->serial ?? '',
-                'entities_id'  => $entities_id
+                'itemtype'          => \Monitor::class,
+                'name'              => $val->name,
+                'serial'            => $val->serial ?? '',
+                'entities_id'       => $entities_id,
+                'model'             => $val->monitormodels_id ?? '',
             ];
             $data = $rule->processAllRules($input, [], ['class' => $this, 'return' => true]);
 
@@ -161,6 +161,7 @@ class Monitor extends InventoryAsset
                 if ($data['found_inventories'][0] == 0) {
                     // add monitor
                     $val->entities_id = $entities_id;
+                    $val->is_recursive = $this->is_recursive;
                     $val->is_dynamic = 1;
                     $items_id = $monitor->add(Sanitizer::sanitize($this->handleInput($val, $monitor)));
                 } else {
@@ -181,7 +182,7 @@ class Monitor extends InventoryAsset
                     'items_id'  => $items_id,
                     'itemtype'  => $itemtype,
                     'agents_id' => $agents_id,
-                    'method'    => 'inventory'
+                    'method'    => 'inventory',
                 ];
                 $rulesmatched->add($inputrulelog, [], false);
                 $rulesmatched->cleanOlddata($items_id, $itemtype);
@@ -200,7 +201,7 @@ class Monitor extends InventoryAsset
                 $this->addOrMoveItem($input);
             }
         } else {
-           // Check all fields from source:
+            // Check all fields from source:
             foreach ($monitors as $key => $monitors_id) {
                 foreach ($db_monitors as $keydb => $monits_id) {
                     if ($monitors_id == $monits_id) {
@@ -211,11 +212,9 @@ class Monitor extends InventoryAsset
                 }
             }
 
-           // Delete monitors links in DB
-            if (!$this->main_asset || !$this->main_asset->isPartial()) {
-                foreach ($db_monitors as $idtmp => $monits_id) {
-                    $computer_Item->delete(['id' => $idtmp], true);
-                }
+            // Delete monitors links in DB
+            foreach ($db_monitors as $idtmp => $monits_id) {
+                $computer_Item->delete(['id' => $idtmp], true);
             }
 
             foreach ($monitors as $key => $monitors_id) {
@@ -232,7 +231,6 @@ class Monitor extends InventoryAsset
 
     public function checkConf(Conf $conf): bool
     {
-        $this->import_monitor_on_partial_sn = $conf->import_monitor_on_partial_sn;
         return $conf->import_monitor == 1;
     }
 

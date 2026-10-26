@@ -7,8 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
- * @copyright 2003-2014 by the INDEPNET Development Team.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
  *
  * ---------------------------------------------------------------------
@@ -50,23 +49,23 @@ function update911to913()
     $updateresult     = true;
     $ADDTODISPLAYPREF = [];
 
-   //TRANS: %s is the number of new version
+    //TRANS: %s is the number of new version
     $migration->displayTitle(sprintf(__('Update to %s'), '9.1.3'));
     $migration->setVersion('9.1.3');
 
     $backup_tables = false;
-   // table already exist but deleted during the migration
-   // not table created during the migration
+    // table already exist but deleted during the migration
+    // not table created during the migration
     $newtables     = [];
 
     foreach ($newtables as $new_table) {
-       // rename new tables if exists ?
+        // rename new tables if exists ?
         if ($DB->tableExists($new_table)) {
             $migration->dropTable("backup_$new_table");
             $migration->displayWarning("$new_table table already exists. " .
                                     "A backup have been done to backup_$new_table.");
             $backup_tables = true;
-            $query         = $migration->renameTable("$new_table", "backup_$new_table");
+            $migration->renameTable("$new_table", "backup_$new_table");
         }
     }
     if ($backup_tables) {
@@ -76,16 +75,16 @@ function update911to913()
         );
     }
 
-   //Fix duplicated search options
+    //Fix duplicated search options
     if (countElementsInTable("glpi_displaypreferences", ['itemtype' => 'IPNetwork', 'num' => '17']) == 0) {
         $DB->updateOrDie(
             "glpi_displaypreferences",
             [
-                "num" => 17
+                "num" => 17,
             ],
             [
                 'itemtype'  => "IPNetwork",
-                'num'       => 13
+                'num'       => 13,
             ],
             "9.1.3 Fix duplicate IPNetwork Gateway search option"
         );
@@ -94,11 +93,11 @@ function update911to913()
         $DB->updateOrDie(
             "glpi_displaypreferences",
             [
-                "num" => 18
+                "num" => 18,
             ],
             [
                 'itemtype'  => "IPNetwork",
-                'num'       => 14
+                'num'       => 14,
             ],
             "9.1.3 Fix duplicate IPNetwork addressable network search option"
         );
@@ -115,7 +114,7 @@ function update911to913()
         "varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL"
     );
 
-   // ************ Keep it at the end **************
+    // ************ Keep it at the end **************
     $migration->executeMigration();
 
     return $updateresult;

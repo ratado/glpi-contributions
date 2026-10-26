@@ -7,7 +7,7 @@
  *
  * http://glpi-project.org
  *
- * @copyright 2015-2024 Teclib' and contributors.
+ * @copyright 2015-2026 Teclib' and contributors.
  * @copyright 2003-2014 by the INDEPNET Development Team.
  * @copyright 2010-2022 by the FusionInventory Development Team.
  * @licence   https://www.gnu.org/licenses/gpl-3.0.html
@@ -41,7 +41,6 @@ use AutoUpdateSystem;
 use Blacklist;
 use CommonDBTM;
 use Dropdown;
-use Glpi\Inventory\Asset\Printer as AssetPrinter;
 use Glpi\Inventory\Conf;
 use Glpi\Inventory\Request;
 use Glpi\Toolbox\Sanitizer;
@@ -65,11 +64,11 @@ abstract class MainAsset extends InventoryAsset
         'hardware'     => null,
         'bios'         => null,
         'users'        => null,
-        '\Glpi\Inventory\Asset\NetworkCard' => null
+        '\Glpi\Inventory\Asset\NetworkCard' => null,
     ];
     /** @var mixed */
     protected $raw_data;
-   /* @var array */
+    /* @var array */
     protected $hardware;
     /** @var integer */
     protected $states_id_default;
@@ -172,7 +171,7 @@ abstract class MainAsset extends InventoryAsset
      */
     protected function prepareForHardware($val)
     {
-        $hardware = (object)$this->extra_data['hardware'];
+        $hardware = (object) $this->extra_data['hardware'];
 
         $hw_mapping = [
             'name'           => 'name',
@@ -213,18 +212,18 @@ abstract class MainAsset extends InventoryAsset
             }
         } else {
             if (array_key_exists('bios', $this->extra_data)) {
-                $bios = (object)$this->extra_data['bios'];
+                $bios = (object) $this->extra_data['bios'];
                 if (
                     property_exists($hardware, 'chassis_type')
                     && !empty($hardware->chassis_type)
                 ) {
                     $val->$types_id = $hardware->chassis_type;
-                } else if (
+                } elseif (
                     property_exists($bios, 'type')
                     && !empty($bios->type)
                 ) {
                     $val->$types_id = $bios->type;
-                } else if (
+                } elseif (
                     property_exists($bios, 'mmodel')
                     && !empty($bios->mmodel)
                 ) {
@@ -246,11 +245,6 @@ abstract class MainAsset extends InventoryAsset
         /** @var \DBmysql $DB */
         global $DB;
 
-        if ($this->isPartial()) {
-            unset($val->users_id);
-            return;
-        }
-
         if (property_exists($val, 'users_id')) {
             if ($val->users_id == '') {
                 unset($val->users_id);
@@ -261,9 +255,9 @@ abstract class MainAsset extends InventoryAsset
                     'SELECT' => 'id',
                     'FROM'   => 'glpi_users',
                     'WHERE'  => [
-                        'name'   => Sanitizer::sanitize($split_user[0])
+                        'name'   => Sanitizer::sanitize($split_user[0]),
                     ],
-                    'LIMIT'  => 1
+                    'LIMIT'  => 1,
                 ]);
 
                 if (count($iterator)) {
@@ -298,7 +292,7 @@ abstract class MainAsset extends InventoryAsset
                 }
                 if ($cnt == 0) {
                     if (property_exists($a_users, 'login')) {
-                       // Search on domain
+                        // Search on domain
                         $where_add = [];
                         if (
                             property_exists($a_users, 'domain')
@@ -308,7 +302,7 @@ abstract class MainAsset extends InventoryAsset
                                 'glpi_authldaps',
                                 ['WHERE'  => ['inventory_domain' => Sanitizer::sanitize($a_users->domain)]]
                             );
-                             $ldaps_ids = [];
+                            $ldaps_ids = [];
                             foreach ($ldaps as $data_LDAP) {
                                 $ldaps_ids[] = $data_LDAP['id'];
                             }
@@ -321,12 +315,12 @@ abstract class MainAsset extends InventoryAsset
                             'SELECT' => ['id'],
                             'FROM'   => 'glpi_users',
                             'WHERE'  => [
-                                'name'   => Sanitizer::sanitize($a_users->login)
+                                'name'   => Sanitizer::sanitize($a_users->login),
                             ] + $where_add,
-                            'LIMIT'  => 1
+                            'LIMIT'  => 1,
                         ]);
                         if ($row = $iterator->current()) {
-                              $val->users_id = $row['id'];
+                            $val->users_id = $row['id'];
                         }
                     }
                 }
@@ -334,7 +328,7 @@ abstract class MainAsset extends InventoryAsset
                 if ($user != '') {
                     if (property_exists($val, 'contact')) {
                         if ($val->contact == '') {
-                             $val->contact = $user;
+                            $val->contact = $user;
                         } else {
                             $val->contact .= "/" . $user;
                         }
@@ -352,7 +346,7 @@ abstract class MainAsset extends InventoryAsset
 
     protected function prepareForBios($val)
     {
-        $bios = (object)$this->extra_data['bios'];
+        $bios = (object) $this->extra_data['bios'];
 
         if (property_exists($bios, 'assettag') && !empty($bios->assettag)) {
             $val->otherserial = $bios->assettag;
@@ -360,10 +354,10 @@ abstract class MainAsset extends InventoryAsset
 
         if (property_exists($bios, 'smanufacturer') && !empty($bios->smanufacturer)) {
             $val->manufacturers_id = $bios->smanufacturer;
-        } else if (property_exists($bios, 'mmanufacturer') && !empty($bios->mmanufacturer)) {
+        } elseif (property_exists($bios, 'mmanufacturer') && !empty($bios->mmanufacturer)) {
             $val->manufacturers_id = $bios->mmanufacturer;
             $val->mmanufacturer = $bios->mmanufacturer;
-        } else if (property_exists($bios, 'bmanufacturer') && !empty($bios->bmanufacturer)) {
+        } elseif (property_exists($bios, 'bmanufacturer') && !empty($bios->bmanufacturer)) {
             $val->manufacturers_id = $bios->bmanufacturer;
             $val->bmanufacturer = $bios->bmanufacturer;
         }
@@ -371,7 +365,7 @@ abstract class MainAsset extends InventoryAsset
         $models_id = $this->getModelsFieldName();
         if (property_exists($bios, 'smodel') && $bios->smodel != '') {
             $val->$models_id = $bios->smodel;
-        } else if (property_exists($bios, 'mmodel') && $bios->mmodel != '') {
+        } elseif (property_exists($bios, 'mmodel') && $bios->mmodel != '') {
             $val->$models_id = $bios->mmodel;
             $val->model = $bios->mmodel;
         }
@@ -463,7 +457,7 @@ abstract class MainAsset extends InventoryAsset
                             }
                         }
                         if (property_exists($network, 'subnet') && !empty($network->subnet)) {
-                                $input['subnet'][] = $network->subnet;
+                            $input['subnet'][] = $network->subnet;
                         }
                     }
                 }
@@ -475,7 +469,7 @@ abstract class MainAsset extends InventoryAsset
                 ) {
                     foreach ($netports as $network) {
                         if (property_exists($network, 'mac') && !empty($network->mac)) {
-                             $input['mac'][] = $network->mac;
+                            $input['mac'][] = $network->mac;
                         }
                         foreach ($network->ipaddress as $ip) {
                             if ($ip != '127.0.0.1' && $ip != '::1') {
@@ -552,6 +546,10 @@ abstract class MainAsset extends InventoryAsset
                     $input['entities_id'] = $dataEntity['entities_id'];
                 }
                 $this->entities_id = $input['entities_id'];
+                if (isset($dataEntity['is_recursive'])) {
+                    $input['is_recursive'] = $dataEntity['is_recursive'];
+                    $this->setEntityRecursive($dataEntity['is_recursive']);
+                }
 
                 // get data from rules (like locations_id, states_id, groups_id_tech, etc)
                 // we don't want virtual action (prefixed by _)
@@ -584,7 +582,7 @@ abstract class MainAsset extends InventoryAsset
             if (isset($datarules['_no_rule_matches']) and ($datarules['_no_rule_matches'] == '1')) {
                 //no rule matched, this is a new one
                 $this->rulepassed(0, $this->item->getType(), null);
-            } else if (!isset($datarules['found_inventories'])) {
+            } elseif (!isset($datarules['found_inventories'])) {
                 if ($this->isAccessPoint($data)) {
                     //Only main item is stored as refused, not all APs
                     unset($this->data[$key]);
@@ -609,7 +607,7 @@ abstract class MainAsset extends InventoryAsset
             'uuid'         => $input['uuid'] ?? '',
             'rules_id'     => $input['rules_id'],
             'entities_id'  => $input['entities_id'],
-            'autoupdatesystems_id' => $input['autoupdatesystems_id']
+            'autoupdatesystems_id' => $input['autoupdatesystems_id'],
         ];
 
         foreach (['ip', 'mac'] as $array) {
@@ -676,6 +674,13 @@ abstract class MainAsset extends InventoryAsset
             $val->states_id = $default_states_id > 0 ? $default_states_id : 0;
         }
 
+        // set states_id in known links if needed
+        if (property_exists($val, 'states_id')) {
+            $known_key = md5('states_id' . $val->states_id);
+            $this->known_links[$known_key] = $val->states_id;
+            $this->raw_links[$known_key] = $val->states_id;
+        }
+
         // append data from RuleImportEntity
         foreach ($this->ruleentity_data as $attribute => $value) {
             $known_key = md5($attribute . $value);
@@ -700,7 +705,15 @@ abstract class MainAsset extends InventoryAsset
 
         if ($items_id != 0) {
             $this->item->getFromDB($items_id);
+        } else {
+            // reset item with default values to be able to use handleLinks
+            // without keep previous item values (from stacked switch for example)
+            $this->item->reset();
         }
+
+        // set entities_id in known links
+        $entities_key = md5('entities_id' . $val->entities_id);
+        $this->known_links[$entities_key] = $val->entities_id;
 
         //handleLinks relies on $this->data; update it before the call
         $this->handleLinks();
@@ -745,9 +758,7 @@ abstract class MainAsset extends InventoryAsset
         } else {
             $val->states_id =  $this->item->fields['states_id'];
         }
-        $known_key = md5('states_id' . $val->states_id);
-        $this->known_links[$known_key] = $val->states_id;
-        $this->raw_links[$known_key] = $val->states_id;
+
         $val->id = $this->item->fields['id'];
 
         if ($entities_id == -1) {
@@ -784,7 +795,7 @@ abstract class MainAsset extends InventoryAsset
             $criteria = [
                 'domains_id' => $domain->getID(),
                 'itemtype' => $itemtype,
-                'items_id' => $items_id
+                'items_id' => $items_id,
             ];
             if (!$ditem->getFromDBByCrit($criteria)) {
                 $ditem->add($criteria + ['domainrelations_id' => \DomainRelation::BELONGS, 'is_dynamic' => 1], [], false);
@@ -797,7 +808,7 @@ abstract class MainAsset extends InventoryAsset
                     'items_id' => $items_id,
                     'domainrelations_id' => \DomainRelation::BELONGS,
                     'is_dynamic' => 1,
-                    ['NOT' => ['domains_id' => $domain->getID()]]
+                    ['NOT' => ['domains_id' => $domain->getID()]],
                 ],
                 1,
                 0
@@ -837,8 +848,8 @@ abstract class MainAsset extends InventoryAsset
             'itemtype' => $this->item->getType(),
             'items_id' => $items_id,
             'NOT' => [
-                'id' => $this->agent->fields['id']
-            ]
+                'id' => $this->agent->fields['id'],
+            ],
         ]);
 
         if ($this->is_discovery === true && !$this->isNew()) {
@@ -846,21 +857,24 @@ abstract class MainAsset extends InventoryAsset
             //Or printer that has not changed its IP
             //do not update to prevents discoveries to remove all ports, IPs and so on found with network inventory
             if (
-                $itemtype == NetworkEquipment::getType()
-                ||
                 (
-                $itemtype == Printer::getType()
-                && !AssetPrinter::needToBeUpdatedFromDiscovery($this->item, $val)
+                    $itemtype == NetworkEquipment::getType()
+                    || $itemtype == Printer::getType()
                 )
+                && !(\Glpi\Inventory\Asset\NetworkEquipment::needToBeUpdatedFromDiscovery($this->item, $val))
             ) {
                 //only update autoupdatesystems_id, last_inventory_update, snmpcredentials_id
                 $input = $this->handleInput($val, $this->item);
-                $this->item->update(Sanitizer::sanitize(['id' => $input['id'],
+                $update_data = [
+                    'id' => $input['id'],
                     'autoupdatesystems_id'  => $input['autoupdatesystems_id'],
                     'last_inventory_update' => $input['last_inventory_update'],
-                    'snmpcredentials_id'    => $input['snmpcredentials_id'],
-                    'is_dynamic'            => true
-                ]));
+                    'is_dynamic'            => true,
+                ];
+                if (isset($input['snmpcredentials_id'])) {
+                    $update_data['snmpcredentials_id'] = $input['snmpcredentials_id'];
+                }
+                $this->item->update(Sanitizer::sanitize($update_data));
                 //add rule matched log
                 $rulesmatched = new RuleMatchedLog();
                 $inputrulelog = [
@@ -869,7 +883,7 @@ abstract class MainAsset extends InventoryAsset
                     'items_id'  => $items_id,
                     'itemtype'  => $itemtype,
                     'agents_id' => $this->agent->fields['id'],
-                    'method'    => Request::NETDISCOVERY_TASK
+                    'method'    => Request::NETDISCOVERY_TASK,
                 ];
                 $rulesmatched->add($inputrulelog, [], false);
                 $rulesmatched->cleanOlddata($items_id, $itemtype);
@@ -882,7 +896,9 @@ abstract class MainAsset extends InventoryAsset
             $this->item->getType() != 'NetworkEquipment'
             && $this->item->getType() != 'Printer'
         ) {
-            $this->handlePorts();
+            if (!$this->isPartial() || count($this->ports)) {
+                $this->handlePorts();
+            }
         }
 
         if (method_exists($this, 'isWirelessController') && $this->isWirelessController()) {
@@ -906,7 +922,7 @@ abstract class MainAsset extends InventoryAsset
         $input = $this->handleInput($val, $this->item);
 
         if ($this->isNew()) {
-            // ONADD were already exececuted, and we want to skip rules that are only ONUPDATE
+            // ONADD were already executed, and we want to skip rules that are only ONUPDATE
             $input['_skip_rules'] = true;
         }
 
@@ -923,7 +939,7 @@ abstract class MainAsset extends InventoryAsset
             'items_id'  => $items_id,
             'itemtype'  => $itemtype,
             'agents_id' => $this->agent->fields['id'],
-            'method'    => $this->request_query ?? Request::INVENT_QUERY
+            'method'    => $this->request_query ?? Request::INVENT_QUERY,
         ];
         $rulesmatched->add($inputrulelog, [], false);
         $rulesmatched->cleanOlddata($items_id, $itemtype);
@@ -967,6 +983,16 @@ abstract class MainAsset extends InventoryAsset
         return $this->entities_id;
     }
 
+    /**
+     * Retrieve computer entities is_recursive
+     *
+     * @return integer
+     */
+    public function getEntityRecursive()
+    {
+        return $this->is_recursive;
+    }
+
     public function handleAssets()
     {
         $key = $this->current_key;
@@ -990,6 +1016,7 @@ abstract class MainAsset extends InventoryAsset
         foreach ($assets_list as $assets) {
             foreach ($assets as $asset) {
                 $asset->setEntityID($this->getEntityID());
+                $asset->setEntityRecursive($this->getEntityRecursive());
                 $asset->setExtraData($this->assets);
                 foreach ($this->assets as $asset_type => $asset_list) {
                     if ($asset_type != '\\' . get_class($asset)) {
@@ -1006,6 +1033,7 @@ abstract class MainAsset extends InventoryAsset
         //do controllers
         foreach ($controllers as $asset) {
             $asset->setEntityID($this->getEntityID());
+            $asset->setEntityRecursive($this->getEntityRecursive());
             $asset->setExtraData($this->assets);
             $asset->setExtraData(['\\' . get_class($this) => $mainasset]);
             //do not handle ignored controllers
